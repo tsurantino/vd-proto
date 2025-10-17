@@ -3,7 +3,8 @@
  * Main application controller that orchestrates the display simulation
  */
 import { VolumetricRenderer } from './VolumetricRenderer.js';
-import { EffectLibrary } from './effects/EffectLibrary.js';
+import { SceneLibrary } from './effects/SceneLibrary.js';
+import { GlobalEffects } from './effects/GlobalEffects.js';
 
 export class VolumetricDisplay {
     constructor(canvasId, gridX = 40, gridY = 20, gridZ = 40) {
@@ -19,15 +20,19 @@ export class VolumetricDisplay {
         const canvas = document.getElementById(canvasId);
         this.renderer = new VolumetricRenderer(canvas, gridX, gridY, gridZ);
 
-        // Initialize effect library
-        this.effectLibrary = new EffectLibrary(gridX, gridY, gridZ);
+        // Initialize scene library and global effects
+        this.sceneLibrary = new SceneLibrary(gridX, gridY, gridZ);
+        this.globalEffects = new GlobalEffects(gridX, gridY, gridZ);
 
         // State
-        this.currentEffectIndex = 0;
+        this.currentSceneType = 'shapeMorph';
         this.time = 0;
-        this.params = {
-            speed: 1.0,
-            density: 0.1,
+
+        // Scene parameters (start with defaults from first scene)
+        this.sceneParams = { ...this.sceneLibrary.getScene(this.currentSceneType).defaultParams };
+
+        // Global parameters
+        this.globalParams = {
             ledSize: 1.0,
             brightness: 0.8,
             gridOpacity: 0.2
@@ -50,32 +55,58 @@ export class VolumetricDisplay {
         this.isRunning = false;
     }
 
-    setEffect(index) {
-        if (index >= 0 && index < this.effectLibrary.getEffectCount()) {
-            if (index !== this.currentEffectIndex) {
+    setScene(sceneType) {
+        if (this.sceneLibrary.getScene(sceneType)) {
+            if (sceneType !== this.currentSceneType) {
                 // Start transition
                 this.oldVoxels = [...this.voxels];
                 this.isTransitioning = true;
                 this.transitionProgress = 0;
-                this.currentEffectIndex = index;
+                this.currentSceneType = sceneType;
                 this.time = 0;
+
+                // Reset to default parameters for new scene
+                this.sceneParams = { ...this.sceneLibrary.getScene(sceneType).defaultParams };
             }
         }
     }
 
-    setParameter(name, value) {
-        if (this.params.hasOwnProperty(name)) {
-            this.params[name] = value;
+    setSceneParameter(name, value) {
+        this.sceneParams[name] = value;
 
-            // Update particle systems if density changed
-            if (name === 'density') {
-                this.effectLibrary.updateDensity(value);
-            }
+        // Update particle systems if density changed
+        if (name === 'density') {
+            this.sceneLibrary.updateDensity(value);
         }
     }
 
-    getParameter(name) {
-        return this.params[name];
+    setGlobalParameter(name, value) {
+        this.globalParams[name] = value;
+    }
+
+    getSceneParameter(name) {
+        return this.sceneParams[name];
+    }
+
+    getGlobalParameter(name) {
+        return this.globalParams[name];
+    }
+
+    // Global effect controls
+    setDecay(value) {
+        this.globalEffects.setDecay(value);
+    }
+
+    setStrobe(mode) {
+        this.globalEffects.setStrobe(mode);
+    }
+
+    setPulse(mode) {
+        this.globalEffects.setPulse(mode);
+    }
+
+    setInvert(enabled) {
+        this.globalEffects.setInvert(enabled);
     }
 
     setFPSCallback(callback) {
@@ -87,15 +118,26 @@ export class VolumetricDisplay {
     }
 
     update() {
-        // Get current effect
-        const effect = this.effectLibrary.getEffect(this.currentEffectIndex);
+        const deltaTime = 0.016;
 
-        // Run effect to update voxel grid
-        effect.fn(this.voxels, this.time, this.params);
+        // Get current scene
+        const scene = this.sceneLibrary.getScene(this.currentSceneType);
+
+        // Run scene to update voxel grid
+        scene.fn(this.voxels, this.time, this.sceneParams);
+
+        // Apply global effects (only if any are active)
+        if (this.globalEffects.decay > 0 ||
+            this.globalEffects.strobe !== 'off' ||
+            this.globalEffects.pulse !== 'off' ||
+            this.globalEffects.invert) {
+            const processedVoxels = this.globalEffects.apply(this.voxels);
+            this.voxels = processedVoxels;
+        }
 
         // Handle transition
         if (this.isTransitioning) {
-            this.transitionProgress += 0.016 / this.transitionDuration;
+            this.transitionProgress += deltaTime / this.transitionDuration;
 
             if (this.transitionProgress >= 1) {
                 this.isTransitioning = false;
@@ -103,8 +145,9 @@ export class VolumetricDisplay {
             }
         }
 
-        // Increment time
-        this.time += 0.016;
+        // Update time
+        this.time += deltaTime;
+        this.globalEffects.update(deltaTime);
     }
 
     render() {
@@ -124,7 +167,7 @@ export class VolumetricDisplay {
         }
 
         // Render the voxel grid
-        const activeLEDs = this.renderer.render(renderVoxels, this.params);
+        const activeLEDs = this.renderer.render(renderVoxels, this.globalParams);
 
         // Update stats
         if (this.activeLEDsCallback) {
@@ -170,8 +213,25 @@ export class VolumetricDisplay {
         this.isRunning = false;
     }
 
-    getEffectNames() {
-        return this.effectLibrary.getEffectNames();
+    getSceneNames() {
+        return this.sceneLibrary.getSceneNames();
+    }
+
+    getSceneTypes() {
+        return this.sceneLibrary.getSceneTypes();
+    }
+
+    getCurrentSceneType() {
+        return this.currentSceneType;
+    }
+
+    getCurrentSceneParams() {
+        return { ...this.sceneParams };
+    }
+
+    getSceneDefaultParams(sceneType) {
+        const scene = this.sceneLibrary.getScene(sceneType);
+        return scene ? { ...scene.defaultParams } : {};
     }
 
     getGridInfo() {

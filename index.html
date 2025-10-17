@@ -9,7 +9,95 @@
 <body>
     <div id="container">
         <div id="canvas-container">
+            <div id="top-panel">
+                <div id="display-info-panel">
+                    <div class="display-info-header">
+                        <div class="display-info-stats">
+                            <span id="grid-resolution">40×20×40</span>
+                            <span id="camera-view">(0.0, 0.0)</span>
+                            <span id="active-leds">0</span>
+                            <span id="fps">0</span>
+                        </div>
+                        <div class="display-info-actions">
+                            <button class="action-btn-inline" id="toggle-rotate">Rot</button>
+                            <button class="action-btn-inline" id="toggle-axes">Axes</button>
+                            <button class="action-btn-inline" id="reset-view">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <canvas id="canvas"></canvas>
+            <div id="bottom-panels">
+                <div id="debug-panel">
+                    <div id="debug-header">
+                        <span>Debug Console</span>
+                        <button id="debug-toggle">▼</button>
+                    </div>
+                    <div id="debug-content">
+                        <div id="debug-stats">
+                            <div>Scene: <span id="debug-scene">-</span></div>
+                            <div>Active LEDs: <span id="debug-active-leds">-</span></div>
+                            <div>Global FX: <span id="debug-fx">-</span></div>
+                            <div>Frame Time: <span id="debug-frame-time">-</span></div>
+                        </div>
+                        <div id="debug-logs"></div>
+                        <button id="debug-clear">Clear</button>
+                    </div>
+                </div>
+
+                <div id="display-params-panel">
+                    <div class="panel-header-collapsible" id="display-params-header">
+                        <span>Display Parameters</span>
+                        <button class="collapse-toggle">▼</button>
+                    </div>
+                    <div class="panel-content" id="display-params-content">
+                        <div class="params-grid">
+                            <div class="param-item">
+                                <label>LED Size <span class="value-display" id="led-size-value">1.0</span></label>
+                                <input type="range" id="led-size" min="1" max="10" step="0.5" value="1.0">
+                            </div>
+                            <div class="param-item">
+                                <label>Brightness <span class="value-display" id="brightness-value">0.8</span></label>
+                                <input type="range" id="brightness" min="0.2" max="1" step="0.05" value="0.8">
+                            </div>
+                            <div class="param-item">
+                                <label>Grid Opacity <span class="value-display" id="grid-opacity-value">0.2</span></label>
+                                <input type="range" id="grid-opacity" min="0" max="0.5" step="0.05" value="0.2">
+                            </div>
+                        </div>
+                        <div class="rotation-controls-compact">
+                            <label>Rotation Rate</label>
+                            <div class="rotation-inputs-inline">
+                                <div class="rotation-input-inline">
+                                    <label>X</label>
+                                    <input type="number" id="rot-x" min="-20" max="20" value="0" class="rot-input">
+                                </div>
+                                <div class="rotation-input-inline">
+                                    <label>Y</label>
+                                    <input type="number" id="rot-y" min="-20" max="20" value="10" class="rot-input">
+                                </div>
+                                <div class="rotation-input-inline">
+                                    <label>Z</label>
+                                    <input type="number" id="rot-z" min="-20" max="20" value="0" class="rot-input">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rotation-controls-compact">
+                            <label>Reset View Point</label>
+                            <div class="rotation-inputs-inline">
+                                <div class="rotation-input-inline">
+                                    <label>X</label>
+                                    <input type="number" id="reset-x" min="-10" max="10" step="0.1" value="-3" class="rot-input">
+                                </div>
+                                <div class="rotation-input-inline">
+                                    <label>Y</label>
+                                    <input type="number" id="reset-y" min="-10" max="10" step="0.1" value="7" class="rot-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="controls">
             <h1>Volumetric Display</h1>
@@ -78,29 +166,28 @@
                 </div>
             </div>
 
-            <div class="section effects-section">
-                <div class="collapsible-header active" id="effects-header">
-                    <span>Effects</span>
+            <div class="section scenes-section">
+                <div class="collapsible-header active" id="scenes-header">
+                    <span>Scenes</span>
                 </div>
-                <div class="collapsible-content active" id="effects-content">
-                    <div id="effects-container">
-                        <!-- Effect buttons will be generated by JavaScript -->
+                <div class="collapsible-content active" id="scenes-content">
+                    <div class="subsection-title">Scene Type</div>
+                    <div id="scene-type-container" class="scene-type-buttons">
+                        <!-- Scene type buttons will be generated by JavaScript -->
+                    </div>
+
+                    <div class="subsection-title">Scene Parameters</div>
+                    <div id="scene-params-container">
+                        <!-- Scene-specific controls will be dynamically generated -->
                     </div>
                 </div>
             </div>
 
             <div class="section controls-section">
                 <div class="collapsible-header active" id="controls-header">
-                    <span>Controls</span>
+                    <span>Global Controls</span>
                 </div>
                 <div class="collapsible-content active" id="controls-content">
-                    <div class="control-group">
-                        <label>
-                            Scene Speed
-                            <span class="value-display" id="speed-value">1.0</span>
-                        </label>
-                        <input type="range" id="speed" min="0.1" max="10" step="0.1" value="1">
-                    </div>
                     <div class="control-group">
                         <label>
                             Color Speed
@@ -108,98 +195,46 @@
                         </label>
                         <input type="range" id="color-effect-speed" min="0.1" max="5" step="0.1" value="1.0">
                     </div>
-                </div>
-            </div>
 
-            <div class="section bottom-section">
-                <div class="collapsible-header" id="display-header">
-                    <span>Display Info & Controls</span>
-                </div>
-                <div class="collapsible-content active" id="display-content">
-                    <div class="stats">
-                        <div id="grid-resolution">Resolution: 40×20×40</div>
-                        <div id="camera-view">Camera: (0.0, 0.0, 0.0)</div>
-                        <div id="total-leds">Total LEDs: 32,000</div>
-                        <div id="active-leds">Active LEDs: 0</div>
-                        <div id="fps">FPS: 0</div>
-                    </div>
-
-                    <div class="view-controls">
-                        <button class="control-btn compact" id="toggle-rotate">Rotation</button>
-                        <button class="control-btn compact" id="toggle-axes">Axes</button>
-                        <button class="control-btn compact" id="reset-view">Reset</button>
-                    </div>
-                </div>
-
-                <div class="collapsible-header" id="params-header">
-                    <span>Parameters</span>
-                </div>
-                <div class="collapsible-content" id="params-content">
-                    <div class="control-group">
-                        <label>
-                            Density
-                            <span class="value-display" id="density-value">0.10</span>
-                        </label>
-                        <input type="range" id="density" min="0.1" max="1" step="0.05" value="0.1">
-                    </div>
+                    <div class="subsection-title">Global Effects</div>
 
                     <div class="control-group">
                         <label>
-                            LED Size
-                            <span class="value-display" id="led-size-value">1.0</span>
+                            Decay / Blur
+                            <span class="value-display" id="decay-value">0.0</span>
                         </label>
-                        <input type="range" id="led-size" min="1" max="10" step="0.5" value="1.0">
+                        <input type="range" id="decay" min="0" max="1" step="0.05" value="0">
                     </div>
 
                     <div class="control-group">
-                        <label>
-                            Brightness
-                            <span class="value-display" id="brightness-value">0.8</span>
-                        </label>
-                        <input type="range" id="brightness" min="0.2" max="1" step="0.05" value="0.8">
-                    </div>
-
-                    <div class="control-group">
-                        <label>
-                            Grid Opacity
-                            <span class="value-display" id="grid-opacity-value">0.2</span>
-                        </label>
-                        <input type="range" id="grid-opacity" min="0" max="0.5" step="0.05" value="0.2">
-                    </div>
-
-                    <div class="rotation-rate-group">
-                        <label>Rotation Rate</label>
-                        <div class="rotation-inputs-inline">
-                            <div class="rotation-input-inline">
-                                <label>X</label>
-                                <input type="number" id="rot-x" min="-20" max="20" value="0" class="rot-input">
-                            </div>
-                            <div class="rotation-input-inline">
-                                <label>Y</label>
-                                <input type="number" id="rot-y" min="-20" max="20" value="10" class="rot-input">
-                            </div>
-                            <div class="rotation-input-inline">
-                                <label>Z</label>
-                                <input type="number" id="rot-z" min="-20" max="20" value="0" class="rot-input">
-                            </div>
+                        <label>Strobe</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-mode="off" id="strobe-off">Off</button>
+                            <button class="toggle-btn" data-mode="slow" id="strobe-slow">Slow</button>
+                            <button class="toggle-btn" data-mode="medium" id="strobe-medium">Med</button>
+                            <button class="toggle-btn" data-mode="fast" id="strobe-fast">Fast</button>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label>Reset View Point</label>
-                        <div class="rotation-inputs-inline">
-                            <div class="rotation-input-inline">
-                                <label>X</label>
-                                <input type="number" id="reset-x" min="-10" max="10" step="0.1" value="-3" class="rot-input">
-                            </div>
-                            <div class="rotation-input-inline">
-                                <label>Y</label>
-                                <input type="number" id="reset-y" min="-10" max="10" step="0.1" value="7" class="rot-input">
-                            </div>
+                        <label>Pulse</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-mode="off" id="pulse-off">Off</button>
+                            <button class="toggle-btn" data-mode="slow" id="pulse-slow">Slow</button>
+                            <button class="toggle-btn" data-mode="medium" id="pulse-medium">Med</button>
+                            <button class="toggle-btn" data-mode="fast" id="pulse-fast">Fast</button>
                         </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="invert-checkbox">
+                            Invert
+                        </label>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 

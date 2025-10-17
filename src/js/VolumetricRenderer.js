@@ -384,34 +384,48 @@ export class VolumetricRenderer {
         // Sort by depth (back to front)
         points.sort((a, b) => a.z - b.z);
 
-        // Draw LEDs
-        points.forEach(p => {
+        // Draw LEDs - optimized batch rendering
+        const len = points.length;
+
+        // Pre-calculate colors and sizes
+        const renderData = new Array(len);
+        for (let i = 0; i < len; i++) {
+            const p = points[i];
             const size = params.ledSize * p.scale;
             const alpha = params.brightness * p.val;
-
-            // Get color for this voxel
             const color = this.getColorForVoxel(p.gridX, p.gridY, p.gridZ, p.val);
 
-            // Glow effect
-            const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 2);
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
-            gradient.addColorStop(0.5, `rgba(${color.r * 0.7}, ${color.g * 0.7}, ${color.b * 0.7}, ${alpha * 0.6})`);
-            gradient.addColorStop(1, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, 0)`);
+            renderData[i] = {
+                x: p.x,
+                y: p.y,
+                size: size,
+                alpha: alpha,
+                r: color.r,
+                g: color.g,
+                b: color.b
+            };
+        }
 
-            this.ctx.fillStyle = gradient;
+        // Draw glow layer
+        for (let i = 0; i < len; i++) {
+            const d = renderData[i];
+            this.ctx.fillStyle = `rgba(${d.r}, ${d.g}, ${d.b}, ${d.alpha * 0.3})`;
             this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, size * 2, 0, Math.PI * 2);
+            this.ctx.arc(d.x, d.y, d.size * 2, 0, Math.PI * 2);
             this.ctx.fill();
+        }
 
-            // Bright center
-            const brightR = Math.min(255, color.r + 55);
-            const brightG = Math.min(255, color.g + 30);
-            const brightB = Math.min(255, color.b);
-            this.ctx.fillStyle = `rgba(${brightR}, ${brightG}, ${brightB}, ${alpha})`;
+        // Draw center dots (brighter, smaller)
+        for (let i = 0; i < len; i++) {
+            const d = renderData[i];
+            const brightR = Math.min(255, d.r + 55);
+            const brightG = Math.min(255, d.g + 30);
+            const brightB = d.b;
+            this.ctx.fillStyle = `rgba(${brightR}, ${brightG}, ${brightB}, ${d.alpha})`;
             this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, size * 0.6, 0, Math.PI * 2);
+            this.ctx.arc(d.x, d.y, d.size * 0.8, 0, Math.PI * 2);
             this.ctx.fill();
-        });
+        }
 
         return activeLEDs;
     }
