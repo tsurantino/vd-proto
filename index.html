@@ -21,6 +21,17 @@
                 </div>
             </div>
 
+            <div class="section controls-section">
+                <div class="section-title">Controls</div>
+                <div class="control-group">
+                    <label>
+                        Speed
+                        <span class="value-display" id="speed-value">1.0</span>
+                    </label>
+                    <input type="range" id="speed" min="0.1" max="10" step="0.1" value="1">
+                </div>
+            </div>
+
             <div class="section bottom-section">
                 <div class="collapsible-header" id="display-header">
                     <span>Display Info & Controls</span>
@@ -47,14 +58,6 @@
                 <div class="collapsible-content" id="params-content">
                     <div class="control-group">
                         <label>
-                            Speed
-                            <span class="value-display" id="speed-value">1.0</span>
-                        </label>
-                        <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
-                    </div>
-
-                    <div class="control-group">
-                        <label>
                             Density
                             <span class="value-display" id="density-value">0.10</span>
                         </label>
@@ -66,7 +69,7 @@
                             LED Size
                             <span class="value-display" id="led-size-value">1.0</span>
                         </label>
-                        <input type="range" id="led-size" min="1" max="5" step="0.5" value="1.0">
+                        <input type="range" id="led-size" min="1" max="10" step="0.5" value="1.0">
                     </div>
 
                     <div class="control-group">

@@ -24,7 +24,6 @@ body {
 }
 
 canvas {
-    border: 1px solid #0ff;
     cursor: grab;
 }
 
@@ -69,7 +68,6 @@ h1 {
 .bottom-section {
     flex-shrink: 0;
     padding-top: 25px;
-    border-top: 1px solid #0aa;
 }
 
 .section-title {
