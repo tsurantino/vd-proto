@@ -2,6 +2,9 @@
  * Volumetric Renderer
  * Handles 3D projection and rendering of voxel grid
  */
+import { ColorMapper3D } from './color/ColorMapper3D.js';
+import { ColorEffects } from './effects/ColorEffects.js';
+
 export class VolumetricRenderer {
     constructor(canvas, gridX, gridY, gridZ) {
         this.canvas = canvas;
@@ -27,6 +30,10 @@ export class VolumetricRenderer {
         this.colorEffect = 'none'; // 'none', 'cycle', 'pulse', 'wave'
         this.colorEffectSpeed = 1.0;
         this.colorEffectTime = 0;
+
+        // Advanced color systems
+        this.colorMapper3D = new ColorMapper3D(gridX, gridY, gridZ);
+        this.colorEffects = new ColorEffects(gridX, gridY, gridZ);
 
         this.setupCanvas();
         this.setupMouseControls();
@@ -241,7 +248,11 @@ export class VolumetricRenderer {
     getColorForVoxel(x, y, z, val) {
         let color;
 
-        if (this.colorMode === 'single') {
+        // Check if 3D color mapping is enabled
+        const mapped3DColor = this.colorMapper3D.getColorForVoxel(x, y, z);
+        if (mapped3DColor) {
+            color = mapped3DColor;
+        } else if (this.colorMode === 'single') {
             color = { ...this.singleColor };
         } else {
             // Gradient based on height (y position)
@@ -261,7 +272,7 @@ export class VolumetricRenderer {
             };
         }
 
-        // Apply color effects
+        // Apply basic color effects (cycle, pulse, wave)
         if (this.colorEffect === 'cycle') {
             const hueShift = (this.colorEffectTime * 50) % 360;
             color = this.rotateHue(color, hueShift);
@@ -278,6 +289,9 @@ export class VolumetricRenderer {
             const hueShift = wave * 60;
             color = this.rotateHue(color, hueShift);
         }
+
+        // Apply advanced color effects
+        color = this.colorEffects.applyEffect(color, x, y, z, val);
 
         return color;
     }
@@ -351,6 +365,9 @@ export class VolumetricRenderer {
 
         // Update color effect time
         this.colorEffectTime += 0.016 * this.colorEffectSpeed;
+
+        // Update advanced color effects
+        this.colorEffects.update(0.016 * this.colorEffectSpeed);
 
         // Clear canvas
         this.ctx.fillStyle = '#000';

@@ -5,6 +5,8 @@
 import { VolumetricRenderer } from './VolumetricRenderer.js';
 import { SceneLibrary } from './effects/SceneLibrary.js';
 import { GlobalEffects } from './effects/GlobalEffects.js';
+import { ParameterAutomation } from './automation/ParameterAutomation.js';
+import { GlobalParameterMapper } from './utils/GlobalParameterMapper.js';
 
 export class VolumetricDisplay {
     constructor(canvasId, gridX = 40, gridY = 20, gridZ = 40) {
@@ -24,6 +26,9 @@ export class VolumetricDisplay {
         this.sceneLibrary = new SceneLibrary(gridX, gridY, gridZ);
         this.globalEffects = new GlobalEffects(gridX, gridY, gridZ);
 
+        // Initialize parameter automation
+        this.parameterAutomation = new ParameterAutomation();
+
         // State
         this.currentSceneType = 'shapeMorph';
         this.time = 0;
@@ -31,12 +36,16 @@ export class VolumetricDisplay {
         // Scene parameters (start with defaults from first scene)
         this.sceneParams = { ...this.sceneLibrary.getScene(this.currentSceneType).defaultParams };
 
-        // Global parameters
-        this.globalParams = {
+        // Display parameters
+        this.displayParams = {
             ledSize: 1.0,
             brightness: 0.8,
-            gridOpacity: 0.2
+            gridOpacity: 0.2,
+            speed: 1.0 // Global speed multiplier
         };
+
+        // Global scene parameters (shared across all scenes)
+        this.globalSceneParams = GlobalParameterMapper.getDefaults();
 
         // Transition state
         this.isTransitioning = false;
@@ -74,22 +83,72 @@ export class VolumetricDisplay {
     setSceneParameter(name, value) {
         this.sceneParams[name] = value;
 
+        // Parameters that should NOT reset time (need continuous time for smooth animation)
+        const timePreservingParams = ['scrollSpeed', 'scrollDirection'];
+
+        // Only reset time if this parameter requires it (not scroll-related)
+        if (!timePreservingParams.includes(name)) {
+            // Clear voxels to prevent lingering from previous parameter state
+            this.voxels.fill(0);
+
+            // Reset time for clean animation restart
+            this.time = 0;
+        }
+
+        // Update particle systems if density changed (via global params)
+        const mappedParams = GlobalParameterMapper.mapToScene(
+            this.currentSceneType,
+            this.globalSceneParams,
+            this.sceneParams
+        );
+        if (mappedParams.density !== undefined) {
+            this.sceneLibrary.updateDensity(mappedParams.density);
+        }
+    }
+
+    setGlobalSceneParameter(name, value) {
+        this.globalSceneParams[name] = value;
+
+        // Parameters that should NOT reset time (need continuous time for smooth animation)
+        const timePreservingParams = ['scrollSpeed', 'scrollDirection'];
+
+        // Only reset time if this parameter requires it (not scroll-related)
+        if (!timePreservingParams.includes(name)) {
+            // Clear voxels to prevent lingering from previous parameter state
+            this.voxels.fill(0);
+
+            // Reset time for clean animation restart
+            this.time = 0;
+        }
+
         // Update particle systems if density changed
         if (name === 'density') {
             this.sceneLibrary.updateDensity(value);
         }
     }
 
-    setGlobalParameter(name, value) {
-        this.globalParams[name] = value;
+    setDisplayParameter(name, value) {
+        this.displayParams[name] = value;
     }
 
     getSceneParameter(name) {
         return this.sceneParams[name];
     }
 
-    getGlobalParameter(name) {
-        return this.globalParams[name];
+    getGlobalSceneParameter(name) {
+        return this.globalSceneParams[name];
+    }
+
+    getDisplayParameter(name) {
+        return this.displayParams[name];
+    }
+
+    getGlobalSceneParams() {
+        return { ...this.globalSceneParams };
+    }
+
+    getActiveGlobalParameters() {
+        return GlobalParameterMapper.getActiveParameters(this.currentSceneType);
     }
 
     // Global effect controls
@@ -118,13 +177,41 @@ export class VolumetricDisplay {
     }
 
     update() {
-        const deltaTime = 0.016;
+        const deltaTime = 0.016 * this.displayParams.speed;
+
+        // Update parameter automation
+        this.parameterAutomation.update(deltaTime);
+
+        // Apply automated values to scene parameters
+        const automatedSceneParams = { ...this.sceneParams };
+        for (const [paramName, _] of Object.entries(this.sceneParams)) {
+            const automatedValue = this.parameterAutomation.getAutomatedValue(paramName);
+            if (automatedValue !== null) {
+                automatedSceneParams[paramName] = automatedValue;
+            }
+        }
+
+        // Apply automated values to global scene parameters
+        const automatedGlobalParams = { ...this.globalSceneParams };
+        for (const [paramName, _] of Object.entries(this.globalSceneParams)) {
+            const automatedValue = this.parameterAutomation.getAutomatedValue(paramName);
+            if (automatedValue !== null) {
+                automatedGlobalParams[paramName] = automatedValue;
+            }
+        }
+
+        // Map global parameters to scene-specific format
+        const mappedParams = GlobalParameterMapper.mapToScene(
+            this.currentSceneType,
+            automatedGlobalParams,
+            automatedSceneParams
+        );
 
         // Get current scene
         const scene = this.sceneLibrary.getScene(this.currentSceneType);
 
-        // Run scene to update voxel grid
-        scene.fn(this.voxels, this.time, this.sceneParams);
+        // Run scene to update voxel grid (use mapped params)
+        scene.fn(this.voxels, this.time, mappedParams);
 
         // Apply global effects (only if any are active)
         if (this.globalEffects.decay > 0 ||
@@ -167,7 +254,7 @@ export class VolumetricDisplay {
         }
 
         // Render the voxel grid
-        const activeLEDs = this.renderer.render(renderVoxels, this.globalParams);
+        const activeLEDs = this.renderer.render(renderVoxels, this.displayParams);
 
         // Update stats
         if (this.activeLEDsCallback) {

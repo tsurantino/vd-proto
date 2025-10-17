@@ -196,6 +196,241 @@ colorEffectSpeedSlider.addEventListener('input', (e) => {
 });
 
 // ============================================================================
+// GLOBAL SCENE PARAMETERS
+// ============================================================================
+
+const globalParamsContainer = document.getElementById('global-params-container');
+
+function createGlobalParameterControls() {
+    console.log('Creating global parameter controls');
+
+    // Size/Scale
+    createGlobalSliderControl('size', 'Size / Scale', display.getGlobalSceneParameter('size'), 0.1, 3, 0.1);
+
+    // Density/Thickness
+    createGlobalSliderControl('density', 'Density / Thickness', display.getGlobalSceneParameter('density'), 0, 1, 0.05);
+
+    // Object Count
+    createGlobalSliderControl('objectCount', 'Object Count', display.getGlobalSceneParameter('objectCount'), 1, 4, 1);
+
+    // Object Arrangement
+    createGlobalSelectControl('objectArrangement', 'Object Arrangement', display.getGlobalSceneParameter('objectArrangement'), [
+        { value: 'circular', label: 'Circular' },
+        { value: 'linear', label: 'Linear/Trailing' }
+    ]);
+
+    // Object Offset (time stagger between objects)
+    createGlobalSliderControl('objectOffset', 'Object Time Offset', display.getGlobalSceneParameter('objectOffset'), 0, 1, 0.05);
+
+    // Animation Speed
+    createGlobalSliderControl('animationSpeed', 'Animation Speed', display.getGlobalSceneParameter('animationSpeed'), 0.1, 3, 0.1);
+
+    // Movement Controls Section Header
+    const movementHeader = document.createElement('div');
+    movementHeader.className = 'subsection-title';
+    movementHeader.textContent = 'Movement Controls';
+    movementHeader.style.marginTop = '15px';
+    globalParamsContainer.appendChild(movementHeader);
+
+    // Rotation Controls
+    createGlobalSliderControl('rotationX', 'Rotation X', display.getGlobalSceneParameter('rotationX'), -1, 1, 0.1);
+    createGlobalSliderControl('rotationY', 'Rotation Y', display.getGlobalSceneParameter('rotationY'), -1, 1, 0.1);
+    createGlobalSliderControl('rotationZ', 'Rotation Z', display.getGlobalSceneParameter('rotationZ'), -1, 1, 0.1);
+
+    // Translation Controls
+    createGlobalSliderControl('translateX', 'Translate X Speed', display.getGlobalSceneParameter('translateX'), 0, 1, 0.05);
+    createGlobalSliderControl('translateZ', 'Translate Z Speed', display.getGlobalSceneParameter('translateZ'), 0, 1, 0.05);
+    createGlobalSliderControl('translateAmplitude', 'Translate Distance', display.getGlobalSceneParameter('translateAmplitude'), 0, 1, 0.05);
+
+    // Bounce Controls
+    createGlobalSliderControl('bounceSpeed', 'Bounce Speed', display.getGlobalSceneParameter('bounceSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('bounceHeight', 'Bounce Height', display.getGlobalSceneParameter('bounceHeight'), 0, 1, 0.05);
+
+    // Orbit Controls
+    createGlobalSliderControl('orbitSpeed', 'Orbit Speed', display.getGlobalSceneParameter('orbitSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('orbitRadius', 'Orbit Radius', display.getGlobalSceneParameter('orbitRadius'), 0, 1, 0.05);
+
+    // Pulse Controls
+    createGlobalSliderControl('pulseSpeed', 'Pulse Speed', display.getGlobalSceneParameter('pulseSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('pulseAmount', 'Pulse Amount', display.getGlobalSceneParameter('pulseAmount'), 0, 1, 0.05);
+
+    // Advanced Movement Section Header
+    const advMovementHeader = document.createElement('div');
+    advMovementHeader.className = 'subsection-title';
+    advMovementHeader.textContent = 'Advanced Movement';
+    advMovementHeader.style.marginTop = '15px';
+    globalParamsContainer.appendChild(advMovementHeader);
+
+    // Spiral Controls
+    createGlobalSliderControl('spiralSpeed', 'Spiral Speed', display.getGlobalSceneParameter('spiralSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('spiralRadius', 'Spiral Radius', display.getGlobalSceneParameter('spiralRadius'), 0, 1, 0.05);
+    createGlobalSliderControl('spiralHeight', 'Spiral Height', display.getGlobalSceneParameter('spiralHeight'), 0, 1, 0.05);
+
+    // Wobble Controls
+    createGlobalSliderControl('wobbleSpeed', 'Wobble Speed', display.getGlobalSceneParameter('wobbleSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('wobbleAmount', 'Wobble Amount', display.getGlobalSceneParameter('wobbleAmount'), 0, 1, 0.05);
+
+    // Figure-8 Controls
+    createGlobalSliderControl('figure8Speed', 'Figure-8 Speed', display.getGlobalSceneParameter('figure8Speed'), 0, 1, 0.05);
+    createGlobalSliderControl('figure8Size', 'Figure-8 Size', display.getGlobalSceneParameter('figure8Size'), 0, 1, 0.05);
+
+    // Elliptical Orbit Controls
+    createGlobalSliderControl('ellipseSpeed', 'Ellipse Speed', display.getGlobalSceneParameter('ellipseSpeed'), 0, 1, 0.05);
+    createGlobalSliderControl('ellipseRadiusX', 'Ellipse Radius X', display.getGlobalSceneParameter('ellipseRadiusX'), 0, 1, 0.05);
+    createGlobalSliderControl('ellipseRadiusZ', 'Ellipse Radius Z', display.getGlobalSceneParameter('ellipseRadiusZ'), 0, 1, 0.05);
+
+    // Scroll Controls
+    createGlobalSliderControl('scrollSpeed', 'Scroll Speed', display.getGlobalSceneParameter('scrollSpeed'), 0, 5, 0.1);
+    createGlobalSelectControl('scrollDirection', 'Scroll Direction', display.getGlobalSceneParameter('scrollDirection'), [
+        { value: 'x', label: 'X' },
+        { value: 'y', label: 'Y' },
+        { value: 'z', label: 'Z' },
+        { value: 'diagonal', label: 'Diagonal' }
+    ]);
+
+    // Legacy Animation Type (for procedural/plasma scenes only)
+    createGlobalSelectControl('animationType', 'Legacy Animation', display.getGlobalSceneParameter('animationType'), [
+        { value: 'none', label: 'None' },
+        { value: 'evolve', label: 'Evolve' },
+        { value: 'scroll', label: 'Scroll' }
+    ]);
+
+    // Wave/Procedural Section Header
+    const waveHeader = document.createElement('div');
+    waveHeader.className = 'subsection-title';
+    waveHeader.textContent = 'Wave & Procedural';
+    waveHeader.style.marginTop = '15px';
+    globalParamsContainer.appendChild(waveHeader);
+
+    // Frequency
+    createGlobalSliderControl('frequency', 'Frequency', display.getGlobalSceneParameter('frequency'), 0.1, 2, 0.1);
+
+    // Amplitude/Intensity
+    createGlobalSliderControl('amplitude', 'Amplitude / Intensity', display.getGlobalSceneParameter('amplitude'), 0, 1, 0.05);
+
+    // Detail Level
+    createGlobalSliderControl('detailLevel', 'Detail Level', display.getGlobalSceneParameter('detailLevel'), 1, 5, 1);
+
+    // Spacing/Offset
+    createGlobalSliderControl('spacing', 'Spacing / Offset', display.getGlobalSceneParameter('spacing'), 0, 1, 0.05);
+
+    // Direction
+    createGlobalSelectControl('direction', 'Direction', display.getGlobalSceneParameter('direction'), [
+        { value: 'radial', label: 'Radial' },
+        { value: 'x', label: 'X' },
+        { value: 'y', label: 'Y' },
+        { value: 'z', label: 'Z' },
+        { value: 'diagonal', label: 'Diagonal' },
+        { value: 'random', label: 'Random' }
+    ]);
+
+    // Depth/Height
+    createGlobalSliderControl('depth', 'Depth / Height', display.getGlobalSceneParameter('depth'), 0, 1, 0.05);
+
+    // Inversion
+    createGlobalCheckboxControl('inversion', 'Invert', display.getGlobalSceneParameter('inversion'));
+
+    console.log('Global parameter controls created');
+    updateActiveGlobalIndicators();
+}
+
+function createGlobalSliderControl(paramName, label, currentValue, min, max, step) {
+    const group = document.createElement('div');
+    group.className = 'control-group global-param';
+    group.dataset.param = paramName;
+
+    const labelEl = document.createElement('label');
+    labelEl.innerHTML = `${label} <span class="value-display" id="global-param-${paramName}-value">${currentValue.toFixed(step >= 1 ? 0 : 2)}</span>`;
+    group.appendChild(labelEl);
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.id = `global-param-${paramName}`;
+    slider.min = min;
+    slider.max = max;
+    slider.step = step;
+    slider.value = currentValue;
+
+    slider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.setGlobalSceneParameter(paramName, val);
+        document.getElementById(`global-param-${paramName}-value`).textContent = val.toFixed(step >= 1 ? 0 : 2);
+    });
+
+    group.appendChild(slider);
+    globalParamsContainer.appendChild(group);
+}
+
+function createGlobalSelectControl(paramName, label, currentValue, options) {
+    const group = document.createElement('div');
+    group.className = 'control-group global-param';
+    group.dataset.param = paramName;
+
+    const labelEl = document.createElement('label');
+    labelEl.textContent = label;
+    group.appendChild(labelEl);
+
+    const select = document.createElement('select');
+    select.className = 'param-select';
+    select.id = `global-param-${paramName}`;
+
+    options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        option.selected = opt.value === currentValue;
+        select.appendChild(option);
+    });
+
+    select.addEventListener('change', (e) => {
+        display.setGlobalSceneParameter(paramName, e.target.value);
+    });
+
+    group.appendChild(select);
+    globalParamsContainer.appendChild(group);
+}
+
+function createGlobalCheckboxControl(paramName, label, currentValue) {
+    const group = document.createElement('div');
+    group.className = 'control-group global-param';
+    group.dataset.param = paramName;
+
+    const labelEl = document.createElement('label');
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `global-param-${paramName}`;
+    checkbox.checked = currentValue;
+
+    checkbox.addEventListener('change', (e) => {
+        display.setGlobalSceneParameter(paramName, e.target.checked);
+    });
+
+    labelEl.appendChild(checkbox);
+    labelEl.appendChild(document.createTextNode(` ${label}`));
+    group.appendChild(labelEl);
+    globalParamsContainer.appendChild(group);
+}
+
+function updateActiveGlobalIndicators() {
+    // Get which global params affect the current scene
+    const activeParams = display.getActiveGlobalParameters();
+
+    // Update visual indicators
+    document.querySelectorAll('.global-param').forEach(el => {
+        const paramName = el.dataset.param;
+        if (activeParams.includes(paramName)) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    });
+}
+
+// Initialize global parameter controls
+createGlobalParameterControls();
+
+// ============================================================================
 // SCENE CONTROLS
 // ============================================================================
 
@@ -210,7 +445,11 @@ const sceneNames = {
     'shapeMorph': 'Shape Morph',
     'particleFlow': 'Particle Flow',
     'waveField': 'Wave Field',
-    'procedural': 'Procedural'
+    'procedural': 'Procedural',
+    'vortex': 'Vortex',
+    'grid': 'Grid',
+    'text3D': 'Text 3D',
+    'plasma': 'Plasma'
 };
 
 if (!sceneTypeContainer) {
@@ -228,6 +467,7 @@ if (!sceneTypeContainer) {
             btn.classList.add('active');
             display.setScene(sceneType);
             updateSceneControls(sceneType);
+            updateActiveGlobalIndicators();
         });
 
         sceneTypeContainer.appendChild(btn);
@@ -258,13 +498,25 @@ function updateSceneControls(sceneType) {
     } else if (sceneType === 'procedural') {
         console.log('Creating Procedural controls');
         createProceduralControls(params);
+    } else if (sceneType === 'vortex') {
+        console.log('Creating Vortex controls');
+        createVortexControls(params);
+    } else if (sceneType === 'grid') {
+        console.log('Creating Grid controls');
+        createGridControls(params);
+    } else if (sceneType === 'text3D') {
+        console.log('Creating Text 3D controls');
+        createText3DControls(params);
+    } else if (sceneType === 'plasma') {
+        console.log('Creating Plasma controls');
+        createPlasmaControls(params);
     }
     console.log('Scene controls created');
 }
 
 function createShapeMorphControls(params) {
-    // Shape select
-    createSelectControl('shape', 'Shape', params.shape, [
+    // Shape select (scene-specific)
+    createSelectControl('shape', 'Shape', params.shape || 'sphere', [
         { value: 'sphere', label: 'Sphere' },
         { value: 'helix', label: 'Helix' },
         { value: 'torus', label: 'Torus' },
@@ -273,24 +525,12 @@ function createShapeMorphControls(params) {
         { value: 'plane', label: 'Plane' }
     ]);
 
-    // Animation type
-    createSelectControl('animation', 'Animation', params.animation, [
-        { value: 'pulse', label: 'Pulse' },
-        { value: 'rotate', label: 'Rotate' },
-        { value: 'breathe', label: 'Breathe' },
-        { value: 'morph', label: 'Morph' }
-    ]);
-
-    // Numeric controls
-    createSliderControl('size', 'Size', params.size, 0.5, 3, 0.1);
-    createSliderControl('thickness', 'Thickness', params.thickness, 0.1, 1, 0.1);
-    createSliderControl('speed', 'Speed', params.speed, 0.1, 10, 0.1);
-    createSliderControl('objectCount', 'Object Count', params.objectCount, 1, 4, 1);
+    // Note: size, thickness, objectCount, animation moved to global parameters
 }
 
 function createParticleFlowControls(params) {
-    // Pattern select
-    createSelectControl('pattern', 'Pattern', params.pattern, [
+    // Pattern select (scene-specific)
+    createSelectControl('pattern', 'Pattern', params.pattern || 'rain', [
         { value: 'rain', label: 'Rain' },
         { value: 'stars', label: 'Stars' },
         { value: 'fountain', label: 'Fountain' },
@@ -298,61 +538,80 @@ function createParticleFlowControls(params) {
         { value: 'explode', label: 'Explode' }
     ]);
 
-    // Numeric controls
-    createSliderControl('density', 'Density', params.density, 0.05, 1, 0.05);
-    createSliderControl('velocity', 'Velocity', params.velocity, 0.5, 3, 0.1);
-    createSliderControl('speed', 'Speed', params.speed, 0.1, 10, 0.1);
-    createSliderControl('turbulence', 'Turbulence', params.turbulence, 0, 1, 0.05);
-    createSliderControl('trailLength', 'Trail Length', params.trailLength, 0, 5, 1);
+    // Note: particle size controlled by global "Size / Scale" parameter
+    // Note: density, velocity (animationSpeed), and movement all moved to global parameters
 }
 
 function createWaveFieldControls(params) {
-    // Wave type select
-    createSelectControl('waveType', 'Wave Type', params.waveType, [
+    // Wave type select (scene-specific)
+    createSelectControl('waveType', 'Wave Type', params.waveType || 'ripple', [
         { value: 'ripple', label: 'Ripple' },
         { value: 'plane', label: 'Plane' },
         { value: 'standing', label: 'Standing' },
         { value: 'interference', label: 'Interference' }
     ]);
 
-    // Direction select
-    createSelectControl('direction', 'Direction', params.direction, [
-        { value: 'radial', label: 'Radial' },
-        { value: 'x', label: 'X' },
-        { value: 'y', label: 'Y' },
-        { value: 'z', label: 'Z' },
-        { value: 'diagonal', label: 'Diagonal' }
-    ]);
-
-    // Numeric controls
-    createSliderControl('frequency', 'Frequency', params.frequency, 0.1, 2, 0.1);
-    createSliderControl('amplitude', 'Amplitude', params.amplitude, 0.5, 3, 0.1);
-    createSliderControl('speed', 'Speed', params.speed, 0.1, 10, 0.1);
+    // Note: frequency, amplitude, direction moved to global parameters
 }
 
 function createProceduralControls(params) {
-    // Algorithm select
-    createSelectControl('algorithm', 'Algorithm', params.algorithm, [
+    // Algorithm select (scene-specific)
+    createSelectControl('algorithm', 'Algorithm', params.algorithm || 'perlin', [
         { value: 'perlin', label: 'Perlin' }
         // Future: simplex, cellular, voronoi, fractal
     ]);
 
-    // Animation type select
-    createSelectControl('animationType', 'Animation', params.animationType, [
-        { value: 'scroll', label: 'Scroll' },
-        { value: 'evolve', label: 'Evolve' },
-        { value: 'morph', label: 'Morph' },
-        { value: 'none', label: 'Static' }
+    // Note: scale (size), threshold (amplitude), octaves (detailLevel), animationType, inversion moved to global parameters
+}
+
+function createVortexControls(params) {
+    // Type select (scene-specific)
+    createSelectControl('type', 'Type', params.type || 'tornado', [
+        { value: 'tornado', label: 'Tornado' },
+        { value: 'whirlpool', label: 'Whirlpool' },
+        { value: 'galaxy', label: 'Galaxy' }
+        // Note: 'double' removed - use objectCount=2 in global params instead
     ]);
 
-    // Numeric controls
-    createSliderControl('scale', 'Scale', params.scale, 0.05, 0.5, 0.01);
-    createSliderControl('threshold', 'Threshold', params.threshold, 0, 0.8, 0.05);
-    createSliderControl('octaves', 'Octaves', params.octaves, 1, 5, 1);
-    createSliderControl('speed', 'Speed', params.speed, 0.1, 10, 0.1);
+    // Note: radius (amplitude), twist (animationSpeed), density, height (depth), objectCount moved to global parameters
+}
 
-    // Inversion checkbox
-    createCheckboxControl('inversion', 'Invert', params.inversion);
+function createGridControls(params) {
+    // Pattern select (scene-specific)
+    createSelectControl('pattern', 'Pattern', params.pattern || 'cube', [
+        { value: 'cube', label: 'Cube' },
+        { value: 'sphere', label: 'Sphere' },
+        { value: 'tunnel', label: 'Tunnel' },
+        { value: 'layers', label: 'Layers' }
+    ]);
+
+    // Note: spacing, thickness (density), offset moved to global parameters
+}
+
+function createText3DControls(params) {
+    // Style select (scene-specific)
+    createSelectControl('style', 'Style', params.style || 'block', [
+        { value: 'block', label: 'Block' },
+        { value: 'outline', label: 'Outline' }
+    ]);
+
+    // Text input (scene-specific)
+    createTextControl('text', 'Text', params.text || 'HELLO');
+
+    // Note: size, depth moved to global parameters
+}
+
+function createPlasmaControls(params) {
+    // No scene-specific controls - everything uses global parameters
+    // Note: scale (size), complexity (frequency), threshold (amplitude), layers (detailLevel) moved to global parameters
+
+    const notice = document.createElement('div');
+    notice.className = 'scene-notice';
+    notice.textContent = 'All parameters controlled by global settings';
+    notice.style.padding = '10px';
+    notice.style.fontStyle = 'italic';
+    notice.style.color = '#888';
+    sceneParamsContainer.appendChild(notice);
 }
 
 // Helper functions to create controls
@@ -377,7 +636,9 @@ function createSelectControl(paramName, label, currentValue, options) {
     });
 
     select.addEventListener('change', (e) => {
+        console.log(`Setting ${paramName} to ${e.target.value}`);
         display.setSceneParameter(paramName, e.target.value);
+        console.log('Current scene params after change:', display.getCurrentSceneParams());
     });
 
     group.appendChild(select);
@@ -431,6 +692,33 @@ function createCheckboxControl(paramName, label, currentValue) {
     sceneParamsContainer.appendChild(group);
 }
 
+function createTextControl(paramName, label, currentValue) {
+    const group = document.createElement('div');
+    group.className = 'control-group';
+
+    const labelEl = document.createElement('label');
+    labelEl.textContent = label;
+    group.appendChild(labelEl);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = `scene-param-${paramName}`;
+    input.value = currentValue;
+    input.maxLength = 10;
+    input.style.width = '100%';
+    input.style.padding = '6px';
+    input.style.fontSize = '14px';
+    input.style.marginTop = '5px';
+
+    input.addEventListener('input', (e) => {
+        const val = e.target.value.toUpperCase();
+        display.setSceneParameter(paramName, val);
+    });
+
+    group.appendChild(input);
+    sceneParamsContainer.appendChild(group);
+}
+
 // Initialize scene controls
 console.log('Initializing scene controls for:', display.getCurrentSceneType());
 updateSceneControls(display.getCurrentSceneType());
@@ -439,6 +727,16 @@ console.log('Scene controls initialized');
 // ============================================================================
 // GLOBAL EFFECTS CONTROLS
 // ============================================================================
+
+// Animation speed control (display speed, not scene speed)
+const animationSpeedSlider = document.getElementById('animation-speed');
+const animationSpeedValue = document.getElementById('animation-speed-value');
+
+animationSpeedSlider.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    display.setDisplayParameter('speed', val);
+    animationSpeedValue.textContent = val.toFixed(1);
+});
 
 // Decay control
 const decaySlider = document.getElementById('decay');
@@ -488,7 +786,7 @@ function setupGlobalControl(id, param, formatter = (v) => v) {
 
     slider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
-        display.setGlobalParameter(param, val);
+        display.setDisplayParameter(param, val);
         valueDisplay.textContent = formatter(val);
     });
 }
@@ -657,6 +955,338 @@ function updateDebugStats() {
 
 // Update debug stats every frame
 setInterval(updateDebugStats, 100);
+
+// ============================================================================
+// PARAMETER AUTOMATION CONTROLS
+// ============================================================================
+
+let currentAutomationParam = null;
+
+// Modal controls
+const automationModal = document.getElementById('automation-modal');
+const automationModalClose = document.getElementById('automation-modal-close');
+const automationCancel = document.getElementById('automation-cancel');
+const automationApply = document.getElementById('automation-apply');
+const automationRemove = document.getElementById('automation-remove');
+const automationClearAll = document.getElementById('automation-clear-all');
+
+// Modal inputs
+const automationWaveType = document.getElementById('automation-wave-type');
+const automationFrequency = document.getElementById('automation-frequency');
+const automationAmplitude = document.getElementById('automation-amplitude');
+const automationPhase = document.getElementById('automation-phase');
+const automationFrequencyValue = document.getElementById('automation-frequency-value');
+const automationAmplitudeValue = document.getElementById('automation-amplitude-value');
+const automationPhaseValue = document.getElementById('automation-phase-value');
+
+// Update value displays
+automationFrequency.addEventListener('input', (e) => {
+    automationFrequencyValue.textContent = parseFloat(e.target.value).toFixed(1);
+});
+
+automationAmplitude.addEventListener('input', (e) => {
+    automationAmplitudeValue.textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+automationPhase.addEventListener('input', (e) => {
+    automationPhaseValue.textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+// Close modal
+automationModalClose.addEventListener('click', () => {
+    automationModal.style.display = 'none';
+});
+
+automationCancel.addEventListener('click', () => {
+    automationModal.style.display = 'none';
+});
+
+// Apply automation
+automationApply.addEventListener('click', () => {
+    if (!currentAutomationParam) return;
+
+    const config = {
+        waveType: automationWaveType.value,
+        frequency: parseFloat(automationFrequency.value),
+        amplitude: parseFloat(automationAmplitude.value),
+        phase: parseFloat(automationPhase.value),
+        min: parseFloat(currentAutomationParam.slider.min),
+        max: parseFloat(currentAutomationParam.slider.max),
+        baseValue: parseFloat(currentAutomationParam.slider.value),
+        enabled: true
+    };
+
+    display.parameterAutomation.setAutomation(currentAutomationParam.id, config);
+    currentAutomationParam.slider.classList.add('automated');
+    automationModal.style.display = 'none';
+    updateActiveAutomationsList();
+    console.log(`Automation applied to ${currentAutomationParam.id}`);
+});
+
+// Remove automation
+automationRemove.addEventListener('click', () => {
+    if (!currentAutomationParam) return;
+
+    display.parameterAutomation.removeAutomation(currentAutomationParam.id);
+    currentAutomationParam.slider.classList.remove('automated');
+    automationModal.style.display = 'none';
+    updateActiveAutomationsList();
+    console.log(`Automation removed from ${currentAutomationParam.id}`);
+});
+
+// Clear all automations
+automationClearAll.addEventListener('click', () => {
+    display.parameterAutomation.clear();
+    document.querySelectorAll('input[type="range"].automated').forEach(slider => {
+        slider.classList.remove('automated');
+    });
+    updateActiveAutomationsList();
+    console.log('All automations cleared');
+});
+
+// Add right-click handlers to all range sliders
+function setupAutomationForSliders() {
+    const sliders = document.querySelectorAll('input[type="range"]');
+    sliders.forEach(slider => {
+        slider.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            // Get parameter info
+            const paramId = slider.id;
+            const paramName = paramId.replace('scene-param-', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+            currentAutomationParam = {
+                id: paramId,
+                name: paramName,
+                slider: slider
+            };
+
+            // Check if already automated
+            const existing = display.parameterAutomation.getAutomation(paramId);
+            if (existing) {
+                automationWaveType.value = existing.waveType;
+                automationFrequency.value = existing.frequency;
+                automationAmplitude.value = existing.amplitude;
+                automationPhase.value = existing.phase;
+                automationFrequencyValue.textContent = existing.frequency.toFixed(1);
+                automationAmplitudeValue.textContent = existing.amplitude.toFixed(2);
+                automationPhaseValue.textContent = existing.phase.toFixed(2);
+            } else {
+                // Defaults
+                automationWaveType.value = 'sine';
+                automationFrequency.value = 1.0;
+                automationAmplitude.value = 0.5;
+                automationPhase.value = 0;
+                automationFrequencyValue.textContent = '1.0';
+                automationAmplitudeValue.textContent = '0.50';
+                automationPhaseValue.textContent = '0.00';
+            }
+
+            document.getElementById('automation-param-name').textContent = `Parameter: ${paramName}`;
+            automationModal.style.display = 'flex';
+        });
+    });
+}
+
+// Update active automations list
+function updateActiveAutomationsList() {
+    const listContainer = document.getElementById('active-automations-list');
+    const automations = display.parameterAutomation.getAllAutomations();
+
+    if (automations.length === 0) {
+        listContainer.innerHTML = '<div class="automation-item-empty">No active automations</div>';
+        return;
+    }
+
+    listContainer.innerHTML = automations.map(auto => {
+        const paramName = auto.id.replace('scene-param-', '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `
+            <div class="automation-item">
+                <span class="automation-param-name">${paramName}</span>
+                <span class="automation-wave-type">${auto.waveType}</span>
+                <span class="automation-frequency">${auto.frequency.toFixed(1)}Hz</span>
+                <button class="automation-toggle" data-id="${auto.id}">${auto.enabled ? '⏸' : '▶'}</button>
+            </div>
+        `;
+    }).join('');
+
+    // Add toggle handlers
+    listContainer.querySelectorAll('.automation-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const paramId = btn.dataset.id;
+            const enabled = display.parameterAutomation.toggleAutomation(paramId);
+            btn.textContent = enabled ? '⏸' : '▶';
+        });
+    });
+}
+
+// Initialize automation UI
+setupAutomationForSliders();
+updateActiveAutomationsList();
+
+// Collapsible automation section
+const automationHeader = document.getElementById('automation-header');
+const automationContent = document.getElementById('automation-content');
+
+if (automationHeader && automationContent) {
+    automationHeader.addEventListener('click', () => {
+        automationHeader.classList.toggle('active');
+        automationContent.classList.toggle('active');
+    });
+}
+
+// ============================================================================
+// 3D GRADIENT MAPPING CONTROLS
+// ============================================================================
+
+const gradient3dEnable = document.getElementById('gradient-3d-enable');
+const gradient3dControls = document.getElementById('gradient-3d-controls');
+const gradient3dType = document.getElementById('gradient-3d-type');
+const gradient3dOriginX = document.getElementById('gradient-3d-origin-x');
+const gradient3dOriginY = document.getElementById('gradient-3d-origin-y');
+const gradient3dOriginZ = document.getElementById('gradient-3d-origin-z');
+const gradient3dFalloff = document.getElementById('gradient-3d-falloff');
+const gradient3dInvert = document.getElementById('gradient-3d-invert');
+
+// Toggle 3D gradient mapping
+gradient3dEnable.addEventListener('change', (e) => {
+    const enabled = e.target.checked;
+    display.renderer.colorMapper3D.setEnabled(enabled);
+    gradient3dControls.style.display = enabled ? 'block' : 'none';
+    console.log(`3D Gradient Mapping: ${enabled ? 'ON' : 'OFF'}`);
+});
+
+// Gradient type
+gradient3dType.addEventListener('change', (e) => {
+    display.renderer.colorMapper3D.setGradientType(e.target.value);
+    console.log(`3D Gradient Type: ${e.target.value}`);
+});
+
+// Origin controls
+gradient3dOriginX.addEventListener('input', (e) => {
+    const x = parseFloat(e.target.value);
+    const y = parseFloat(gradient3dOriginY.value);
+    const z = parseFloat(gradient3dOriginZ.value);
+    display.renderer.colorMapper3D.setOrigin(x, y, z);
+    document.getElementById('gradient-3d-origin-x-value').textContent = x.toFixed(2);
+});
+
+gradient3dOriginY.addEventListener('input', (e) => {
+    const x = parseFloat(gradient3dOriginX.value);
+    const y = parseFloat(e.target.value);
+    const z = parseFloat(gradient3dOriginZ.value);
+    display.renderer.colorMapper3D.setOrigin(x, y, z);
+    document.getElementById('gradient-3d-origin-y-value').textContent = y.toFixed(2);
+});
+
+gradient3dOriginZ.addEventListener('input', (e) => {
+    const x = parseFloat(gradient3dOriginX.value);
+    const y = parseFloat(gradient3dOriginY.value);
+    const z = parseFloat(e.target.value);
+    display.renderer.colorMapper3D.setOrigin(x, y, z);
+    document.getElementById('gradient-3d-origin-z-value').textContent = z.toFixed(2);
+});
+
+// Falloff
+gradient3dFalloff.addEventListener('change', (e) => {
+    display.renderer.colorMapper3D.setFalloff(e.target.value);
+    console.log(`3D Gradient Falloff: ${e.target.value}`);
+});
+
+// Invert
+gradient3dInvert.addEventListener('change', (e) => {
+    display.renderer.colorMapper3D.setInvert(e.target.checked);
+});
+
+// Initialize 3D gradient with current gradient colors
+function sync3DGradientColors() {
+    const stops = display.renderer.gradientColors.map((color, index) => ({
+        position: index / (display.renderer.gradientColors.length - 1),
+        color: color
+    }));
+    display.renderer.colorMapper3D.setColorStops(stops);
+}
+
+// Sync on gradient change
+const applyGradientBtn = document.getElementById('apply-gradient');
+const originalApplyGradient = applyGradientBtn.onclick;
+applyGradientBtn.addEventListener('click', () => {
+    setTimeout(sync3DGradientColors, 10); // Sync after gradient is applied
+});
+
+// Sync preset gradients too
+document.querySelectorAll('.color-preset-btn[data-type="gradient"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        setTimeout(sync3DGradientColors, 10);
+    });
+});
+
+sync3DGradientColors(); // Initial sync
+
+// ============================================================================
+// ADVANCED COLOR EFFECTS CONTROLS
+// ============================================================================
+
+const advancedEffectBtns = document.querySelectorAll('.advanced-effect-btn');
+const advancedEffectIntensity = document.getElementById('advanced-effect-intensity');
+const advancedEffectIntensityValue = document.getElementById('advanced-effect-intensity-value');
+
+advancedEffectBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        advancedEffectBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const effect = btn.dataset.effect;
+        display.renderer.colorEffects.setEffect(effect);
+        console.log(`Advanced Color Effect: ${effect}`);
+    });
+});
+
+advancedEffectIntensity.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    display.renderer.colorEffects.setIntensity(val);
+    advancedEffectIntensityValue.textContent = val.toFixed(2);
+});
+
+// Advanced effect speed control
+const advancedEffectSpeed = document.getElementById('advanced-effect-speed');
+const advancedEffectSpeedValue = document.getElementById('advanced-effect-speed-value');
+
+if (advancedEffectSpeed) {
+    advancedEffectSpeed.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.renderer.colorEffects.setSpeed(val);
+        advancedEffectSpeedValue.textContent = val.toFixed(1);
+    });
+}
+
+// Scrolling effect parameters
+const scrollThickness = document.getElementById('scroll-thickness');
+const scrollThicknessValue = document.getElementById('scroll-thickness-value');
+const scrollDirection = document.getElementById('scroll-direction');
+
+if (scrollThickness) {
+    scrollThickness.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.renderer.colorEffects.setScrollThickness(val);
+        scrollThicknessValue.textContent = val.toFixed(0);
+    });
+}
+
+if (scrollDirection) {
+    scrollDirection.addEventListener('change', (e) => {
+        display.renderer.colorEffects.setScrollDirection(e.target.value);
+        console.log(`Scroll Direction: ${e.target.value}`);
+    });
+}
+
+const scrollInvert = document.getElementById('scroll-invert');
+if (scrollInvert) {
+    scrollInvert.addEventListener('change', (e) => {
+        display.renderer.colorEffects.setScrollInvert(e.target.checked);
+        console.log(`Scroll Invert: ${e.target.checked ? 'ON (pixels turn OFF)' : 'OFF (pixels turn ON)'}`);
+    });
+}
 
 // ============================================================================
 // START DISPLAY

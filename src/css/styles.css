@@ -33,13 +33,28 @@ canvas:active {
 }
 
 #controls {
-    width: 320px;
+    width: 640px;
     background: #0a0a0a;
     border-left: 1px solid #0ff;
+    overflow-y: auto;
+}
+
+#controls-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    height: 100%;
+}
+
+#controls-left-column {
     padding: 20px;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
+}
+
+#controls-right-column {
+    padding: 20px;
+    border-left: 1px solid #0ff;
+    overflow-y: auto;
 }
 
 h1 {
@@ -86,6 +101,16 @@ h1 {
     text-transform: uppercase;
     letter-spacing: 1px;
     opacity: 0.8;
+}
+
+.effect-category-title {
+    font-size: 9px;
+    color: #0ff;
+    margin: 12px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    font-weight: bold;
 }
 
 /* LED Colors Section */
@@ -473,7 +498,7 @@ input[type="range"]::-ms-thumb {
 }
 
 .collapsible-content.active {
-    max-height: 1000px;
+    max-height: none;
     padding: 10px;
 }
 
@@ -551,6 +576,41 @@ input[type="range"]::-ms-thumb {
 .param-select option {
     background: #001a1a;
     color: #0ff;
+}
+
+/* Global Parameter Controls */
+.global-param {
+    opacity: 0.4;
+    transition: opacity 0.3s ease, border-color 0.3s ease;
+    margin: 12px 0;
+    padding: 8px;
+    border-left: 3px solid transparent;
+}
+
+.global-param.active {
+    opacity: 1;
+    border-left-color: #ff00ff;
+    background: rgba(255, 0, 255, 0.05);
+}
+
+.global-param label {
+    font-size: 10px;
+    color: #0aa;
+}
+
+.global-param.active label {
+    color: #0ff;
+}
+
+.scene-notice {
+    padding: 10px;
+    font-style: italic;
+    color: #0aa;
+    font-size: 10px;
+    text-align: center;
+    border: 1px solid #0aa;
+    background: #001a1a;
+    margin: 10px 0;
 }
 
 /* Button Groups (for strobe/pulse controls) */
@@ -666,17 +726,18 @@ label:has(input[type="checkbox"]) {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 12px;
+    padding: 12px 16px;
     background: #001a1a;
     gap: 12px;
     width: 100%;
     overflow: hidden;
+    min-height: 48px;
 }
 
 .display-info-stats {
     display: flex;
     gap: 12px;
-    font-size: 9px;
+    font-size: 12px;
     color: #0aa;
     flex-wrap: wrap;
     flex: 1;
@@ -689,20 +750,38 @@ label:has(input[type="checkbox"]) {
     min-width: fit-content;
 }
 
+.display-info-title {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.display-info-title h1 {
+    font-size: 14px;
+    margin: 0;
+    color: #0ff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
 .display-info-actions {
     display: flex;
     gap: 4px;
     flex-shrink: 0;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .action-btn-inline {
-    padding: 4px 8px;
+    padding: 6px 12px;
     background: #001a1a;
     border: 1px solid #0aa;
     color: #0ff;
     cursor: pointer;
     font-family: 'Courier New', monospace;
-    font-size: 9px;
+    font-size: 11px;
     transition: all 0.2s;
     white-space: nowrap;
 }
@@ -983,4 +1062,272 @@ label:has(input[type="checkbox"]) {
     color: #0aa;
     display: block;
     margin-bottom: 4px;
+}
+
+/* ============================================================================
+   AUTOMATION SYSTEM STYLES
+   ============================================================================ */
+
+/* Automated slider indicator */
+input[type="range"].automated {
+    background: linear-gradient(90deg, #f0f 0%, #0ff 100%);
+    animation: automation-pulse 2s ease-in-out infinite;
+}
+
+input[type="range"].automated::-webkit-slider-runnable-track {
+    background: linear-gradient(90deg, #f0f 0%, #0ff 100%);
+}
+
+input[type="range"].automated::-moz-range-track {
+    background: linear-gradient(90deg, #f0f 0%, #0ff 100%);
+}
+
+@keyframes automation-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Automation modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #001a1a;
+    border: 2px solid #0ff;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.modal-header {
+    padding: 15px;
+    background: #002a2a;
+    border-bottom: 1px solid #0aa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    color: #0ff;
+    font-size: 13px;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: #0ff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    line-height: 24px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    color: #fff;
+    transform: scale(1.2);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body #automation-param-name {
+    color: #0ff;
+    font-size: 11px;
+    margin-bottom: 15px;
+    padding: 8px;
+    background: #002a2a;
+    border-left: 3px solid #0ff;
+}
+
+.modal-footer {
+    padding: 15px;
+    background: #002a2a;
+    border-top: 1px solid #0aa;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-footer .apply-btn {
+    flex: 0 0 auto;
+    min-width: 80px;
+}
+
+/* Automation list */
+#active-automations-list {
+    margin: 10px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.automation-item-empty {
+    color: #0aa;
+    font-size: 10px;
+    text-align: center;
+    padding: 15px;
+    opacity: 0.6;
+}
+
+.automation-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    background: #001a1a;
+    border: 1px solid #0aa;
+    border-left: 3px solid #f0f;
+}
+
+.automation-param-name {
+    color: #0ff;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.automation-wave-type {
+    color: #0aa;
+    font-size: 9px;
+    text-transform: uppercase;
+}
+
+.automation-frequency {
+    color: #0aa;
+    font-size: 9px;
+}
+
+.automation-toggle {
+    background: #002a2a;
+    border: 1px solid #0aa;
+    color: #0ff;
+    cursor: pointer;
+    font-size: 10px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.automation-toggle:hover {
+    background: #003a3a;
+    border-color: #0ff;
+}
+
+.automation-help {
+    color: #0aa;
+    font-size: 10px;
+    padding: 10px;
+    background: #001a1a;
+    border: 1px solid #0aa;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.automation-controls {
+    margin-top: 10px;
+}
+
+/* ============================================================================
+   ADVANCED COLOR EFFECTS STYLES
+   ============================================================================ */
+
+.advanced-effect-btn {
+    padding: 10px 6px;
+    background: #001a1a;
+    border: 1px solid #0aa;
+    color: #0ff;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.advanced-effect-btn:hover {
+    background: #002a2a;
+    border-color: #0ff;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+}
+
+.advanced-effect-btn.active {
+    background: #ff00ff;
+    color: #000;
+    font-weight: bold;
+    border-color: #ff00ff;
+}
+
+/* ============================================================================
+   3D GRADIENT MAPPING STYLES
+   ============================================================================ */
+
+#gradient-3d-controls {
+    padding-top: 10px;
+}
+
+#gradient-3d-controls .control-group:first-child {
+    margin-top: 5px;
+}
+
+/* ============================================================================
+   CONTROLS BOTTOM SECTION (for automation panel)
+   ============================================================================ */
+
+#controls-bottom-section {
+    grid-column: 1 / -1;
+    padding: 0 20px 20px 20px;
+    border-top: 1px solid #0aa;
+}
+
+.automation-section {
+    margin-top: 10px;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+
+#controls-left-column::-webkit-scrollbar,
+#controls-right-column::-webkit-scrollbar,
+#active-automations-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+#controls-left-column::-webkit-scrollbar-track,
+#controls-right-column::-webkit-scrollbar-track,
+#active-automations-list::-webkit-scrollbar-track {
+    background: #001a1a;
+}
+
+#controls-left-column::-webkit-scrollbar-thumb,
+#controls-right-column::-webkit-scrollbar-thumb,
+#active-automations-list::-webkit-scrollbar-thumb {
+    background: #0aa;
+    border-radius: 3px;
+}
+
+#controls-left-column::-webkit-scrollbar-thumb:hover,
+#controls-right-column::-webkit-scrollbar-thumb:hover,
+#active-automations-list::-webkit-scrollbar-thumb:hover {
+    background: #0ff;
 }
