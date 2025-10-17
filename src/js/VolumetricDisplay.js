@@ -4,6 +4,7 @@
  */
 import { VolumetricRenderer } from './VolumetricRenderer.js';
 import { SceneLibrary } from './effects/SceneLibrary.js';
+import { IllusionSceneLibrary } from './effects/IllusionSceneLibrary.js';
 import { GlobalEffects } from './effects/GlobalEffects.js';
 import { ParameterAutomation } from './automation/ParameterAutomation.js';
 import { GlobalParameterMapper } from './utils/GlobalParameterMapper.js';
@@ -22,8 +23,9 @@ export class VolumetricDisplay {
         const canvas = document.getElementById(canvasId);
         this.renderer = new VolumetricRenderer(canvas, gridX, gridY, gridZ);
 
-        // Initialize scene library and global effects
+        // Initialize scene libraries and global effects
         this.sceneLibrary = new SceneLibrary(gridX, gridY, gridZ);
+        this.illusionSceneLibrary = new IllusionSceneLibrary(gridX, gridY, gridZ);
         this.globalEffects = new GlobalEffects(gridX, gridY, gridZ);
 
         // Initialize parameter automation
@@ -65,7 +67,8 @@ export class VolumetricDisplay {
     }
 
     setScene(sceneType) {
-        if (this.sceneLibrary.getScene(sceneType)) {
+        const scene = this.getSceneFromLibrary(sceneType);
+        if (scene) {
             if (sceneType !== this.currentSceneType) {
                 // Start transition
                 this.oldVoxels = [...this.voxels];
@@ -75,9 +78,21 @@ export class VolumetricDisplay {
                 this.time = 0;
 
                 // Reset to default parameters for new scene
-                this.sceneParams = { ...this.sceneLibrary.getScene(sceneType).defaultParams };
+                this.sceneParams = { ...scene.defaultParams };
             }
         }
+    }
+
+    getSceneFromLibrary(sceneType) {
+        // Check main scene library first
+        let scene = this.sceneLibrary.getScene(sceneType);
+        if (scene) return scene;
+
+        // Then check illusion scene library
+        scene = this.illusionSceneLibrary.getScene(sceneType);
+        if (scene) return scene;
+
+        return null;
     }
 
     setSceneParameter(name, value) {
@@ -207,11 +222,13 @@ export class VolumetricDisplay {
             automatedSceneParams
         );
 
-        // Get current scene
-        const scene = this.sceneLibrary.getScene(this.currentSceneType);
+        // Get current scene from appropriate library
+        const scene = this.getSceneFromLibrary(this.currentSceneType);
 
         // Run scene to update voxel grid (use mapped params)
-        scene.fn(this.voxels, this.time, mappedParams);
+        if (scene) {
+            scene.fn(this.voxels, this.time, mappedParams);
+        }
 
         // Apply global effects (only if any are active)
         if (this.globalEffects.decay > 0 ||
@@ -308,6 +325,14 @@ export class VolumetricDisplay {
         return this.sceneLibrary.getSceneTypes();
     }
 
+    getIllusionSceneNames() {
+        return this.illusionSceneLibrary.getSceneNames();
+    }
+
+    getIllusionSceneTypes() {
+        return this.illusionSceneLibrary.getSceneTypes();
+    }
+
     getCurrentSceneType() {
         return this.currentSceneType;
     }
@@ -317,7 +342,7 @@ export class VolumetricDisplay {
     }
 
     getSceneDefaultParams(sceneType) {
-        const scene = this.sceneLibrary.getScene(sceneType);
+        const scene = this.getSceneFromLibrary(sceneType);
         return scene ? { ...scene.defaultParams } : {};
     }
 

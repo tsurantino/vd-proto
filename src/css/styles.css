@@ -508,6 +508,12 @@ input[type="range"]::-ms-thumb {
     overflow-y: auto;
 }
 
+/* Specific handling for illusion scenes section */
+#illusion-scenes-content.active {
+    max-height: 800px;
+    overflow-y: auto;
+}
+
 /* Scene Controls */
 .scenes-section {
     flex: 1;

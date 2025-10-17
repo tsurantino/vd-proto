@@ -725,6 +725,57 @@ updateSceneControls(display.getCurrentSceneType());
 console.log('Scene controls initialized');
 
 // ============================================================================
+// ILLUSION SCENE CONTROLS
+// ============================================================================
+
+// Generate illusion scene buttons
+const illusionSceneTypeContainer = document.getElementById('illusion-scene-type-container');
+console.log('Illusion scene type container:', illusionSceneTypeContainer);
+
+const illusionSceneTypes = display.getIllusionSceneTypes();
+console.log('Available illusion scene types:', illusionSceneTypes);
+
+const illusionSceneNames = {
+    'rotatingAmes': 'Ames Room',
+    'infiniteCorridor': 'Infinite Corridor',
+    'kineticDepth': 'Kinetic Depth',
+    'waterfallIllusion': 'Waterfall',
+    'penroseTriangle': 'Penrose Tri',
+    'neckerCube': 'Necker Cube',
+    'fraserSpiral': 'Fraser Spiral',
+    'cafeWall': 'Café Wall',
+    'pulfrich': 'Pulfrich',
+    'rotatingSnakes': 'Rotating Snakes',
+    'breathingSquare': 'Breathing Square',
+    'moirePattern': 'Moiré Pattern'
+};
+
+if (!illusionSceneTypeContainer) {
+    console.error('Illusion scene type container not found!');
+} else {
+    illusionSceneTypes.forEach((sceneType) => {
+        const btn = document.createElement('button');
+        btn.className = 'scene-type-btn';
+        btn.dataset.sceneType = sceneType;
+        btn.textContent = illusionSceneNames[sceneType] || sceneType;
+
+        btn.addEventListener('click', () => {
+            console.log('Illusion scene type clicked:', sceneType);
+            // Deactivate both regular and illusion scene buttons
+            document.querySelectorAll('.scene-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            display.setScene(sceneType);
+            updateSceneControls(sceneType);
+            updateActiveGlobalIndicators();
+        });
+
+        illusionSceneTypeContainer.appendChild(btn);
+        console.log('Added illusion scene button:', sceneType);
+    });
+    console.log('Illusion scene buttons created successfully');
+}
+
+// ============================================================================
 // GLOBAL EFFECTS CONTROLS
 // ============================================================================
 
@@ -861,6 +912,7 @@ console.log('Setting up collapsible sections...');
 const collapsibleSections = [
     { header: 'led-colors-header', content: 'led-colors-content' },
     { header: 'scenes-header', content: 'scenes-content' },
+    { header: 'illusion-scenes-header', content: 'illusion-scenes-content' },
     { header: 'controls-header', content: 'controls-content' }
 ];
 
@@ -1259,6 +1311,18 @@ if (advancedEffectSpeed) {
         advancedEffectSpeedValue.textContent = val.toFixed(1);
     });
 }
+
+// Color mode toggle
+const colorModeButtons = document.querySelectorAll('[id^="color-mode-"]');
+colorModeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        colorModeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mode = btn.dataset.mode;
+        display.renderer.colorEffects.setColorMode(mode);
+        console.log(`Color Mode: ${mode}`);
+    });
+});
 
 // Scrolling effect parameters
 const scrollThickness = document.getElementById('scroll-thickness');

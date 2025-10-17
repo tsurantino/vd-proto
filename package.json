@@ -4,8 +4,9 @@
   "description": "Volumetric LED display simulator for 40x40x20 cube",
   "type": "module",
   "scripts": {
-    "start": "python3 -m http.server 8000",
-    "dev": "python3 -m http.server 8000"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "old-server": "python3 -m http.server 8000"
   },
   "keywords": [
     "volumetric",
@@ -15,5 +16,9 @@
     "visualization"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "marked": "^11.0.0"
+  }
 }
