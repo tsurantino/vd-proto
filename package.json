@@ -1,0 +1,19 @@
+{
+  "name": "volumetric-display-simulator",
+  "version": "1.0.0",
+  "description": "Volumetric LED display simulator for 40x40x20 cube",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "volumetric",
+    "display",
+    "led",
+    "3d",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT"
+}
