@@ -17,6 +17,17 @@ export class VolumetricRenderer {
         this.autoRotate = false;
         this.rotationRate = { x: 0, y: 0.01, z: 0 }; // Default: rotate around Y at 0.01 rad/frame
 
+        // Color system
+        this.colorMode = 'single'; // 'single' or 'gradient'
+        this.singleColor = { r: 100, g: 200, b: 255 }; // Default blue
+        this.gradientColors = [
+            { r: 100, g: 200, b: 255 },
+            { r: 100, g: 200, b: 255 }
+        ];
+        this.colorEffect = 'none'; // 'none', 'cycle', 'pulse', 'wave'
+        this.colorEffectSpeed = 1.0;
+        this.colorEffectTime = 0;
+
         this.setupCanvas();
         this.setupMouseControls();
     }
@@ -198,6 +209,134 @@ export class VolumetricRenderer {
         return this.showAxes;
     }
 
+    setSingleColor(hexColor) {
+        this.colorMode = 'single';
+        const rgb = this.hexToRgb(hexColor);
+        this.singleColor = rgb;
+    }
+
+    setGradientColors(hexColors) {
+        this.colorMode = 'gradient';
+        this.gradientColors = hexColors.map(hex => this.hexToRgb(hex));
+    }
+
+    setColorEffect(effect) {
+        this.colorEffect = effect;
+        this.colorEffectTime = 0;
+    }
+
+    setColorEffectSpeed(speed) {
+        this.colorEffectSpeed = speed;
+    }
+
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 100, g: 200, b: 255 };
+    }
+
+    getColorForVoxel(x, y, z, val) {
+        let color;
+
+        if (this.colorMode === 'single') {
+            color = { ...this.singleColor };
+        } else {
+            // Gradient based on height (y position)
+            const t = y / this.gridY;
+            const numColors = this.gradientColors.length;
+            const scaledT = t * (numColors - 1);
+            const index = Math.floor(scaledT);
+            const localT = scaledT - index;
+
+            const c1 = this.gradientColors[Math.min(index, numColors - 1)];
+            const c2 = this.gradientColors[Math.min(index + 1, numColors - 1)];
+
+            color = {
+                r: c1.r + (c2.r - c1.r) * localT,
+                g: c1.g + (c2.g - c1.g) * localT,
+                b: c1.b + (c2.b - c1.b) * localT
+            };
+        }
+
+        // Apply color effects
+        if (this.colorEffect === 'cycle') {
+            const hueShift = (this.colorEffectTime * 50) % 360;
+            color = this.rotateHue(color, hueShift);
+        } else if (this.colorEffect === 'pulse') {
+            const pulse = (Math.sin(this.colorEffectTime * 2) + 1) / 2;
+            const factor = 0.5 + pulse * 0.5;
+            color = {
+                r: color.r * factor,
+                g: color.g * factor,
+                b: color.b * factor
+            };
+        } else if (this.colorEffect === 'wave') {
+            const wave = Math.sin(this.colorEffectTime * 2 + y * 0.5);
+            const hueShift = wave * 60;
+            color = this.rotateHue(color, hueShift);
+        }
+
+        return color;
+    }
+
+    rotateHue(rgb, degrees) {
+        // Convert RGB to HSL
+        const r = rgb.r / 255;
+        const g = rgb.g / 255;
+        const b = rgb.b / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) {
+            h = s = 0;
+        } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+            }
+        }
+
+        // Rotate hue
+        h = (h * 360 + degrees) % 360;
+        if (h < 0) h += 360;
+        h = h / 360;
+
+        // Convert back to RGB
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1;
+            if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+
+        let nr, ng, nb;
+        if (s === 0) {
+            nr = ng = nb = l;
+        } else {
+            const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+            const p = 2 * l - q;
+            nr = hue2rgb(p, q, h + 1/3);
+            ng = hue2rgb(p, q, h);
+            nb = hue2rgb(p, q, h - 1/3);
+        }
+
+        return {
+            r: Math.round(nr * 255),
+            g: Math.round(ng * 255),
+            b: Math.round(nb * 255)
+        };
+    }
+
     applyAutoRotation() {
         if (this.autoRotate) {
             this.rotation.x += this.rotationRate.x;
@@ -209,6 +348,9 @@ export class VolumetricRenderer {
     render(voxels, params) {
         // Apply auto rotation
         this.applyAutoRotation();
+
+        // Update color effect time
+        this.colorEffectTime += 0.016 * this.colorEffectSpeed;
 
         // Clear canvas
         this.ctx.fillStyle = '#000';
@@ -232,7 +374,7 @@ export class VolumetricRenderer {
                     const val = voxels[x + y * this.gridX + z * this.gridX * this.gridY];
                     if (val > 0) {
                         const p = this.project3D(x, y, z);
-                        points.push({ ...p, val });
+                        points.push({ ...p, val, gridX: x, gridY: y, gridZ: z });
                         activeLEDs++;
                     }
                 }
@@ -247,11 +389,14 @@ export class VolumetricRenderer {
             const size = params.ledSize * p.scale;
             const alpha = params.brightness * p.val;
 
+            // Get color for this voxel
+            const color = this.getColorForVoxel(p.gridX, p.gridY, p.gridZ, p.val);
+
             // Glow effect
             const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 2);
-            gradient.addColorStop(0, `rgba(100, 200, 255, ${alpha})`);
-            gradient.addColorStop(0.5, `rgba(0, 150, 255, ${alpha * 0.6})`);
-            gradient.addColorStop(1, `rgba(0, 100, 255, 0)`);
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
+            gradient.addColorStop(0.5, `rgba(${color.r * 0.7}, ${color.g * 0.7}, ${color.b * 0.7}, ${alpha * 0.6})`);
+            gradient.addColorStop(1, `rgba(${color.r * 0.5}, ${color.g * 0.5}, ${color.b * 0.5}, 0)`);
 
             this.ctx.fillStyle = gradient;
             this.ctx.beginPath();
@@ -259,7 +404,10 @@ export class VolumetricRenderer {
             this.ctx.fill();
 
             // Bright center
-            this.ctx.fillStyle = `rgba(200, 230, 255, ${alpha})`;
+            const brightR = Math.min(255, color.r + 55);
+            const brightG = Math.min(255, color.g + 30);
+            const brightB = Math.min(255, color.b);
+            this.ctx.fillStyle = `rgba(${brightR}, ${brightG}, ${brightB}, ${alpha})`;
             this.ctx.beginPath();
             this.ctx.arc(p.x, p.y, size * 0.6, 0, Math.PI * 2);
             this.ctx.fill();

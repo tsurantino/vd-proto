@@ -53,6 +53,16 @@
             color: #0ff;
             text-transform: uppercase;
             letter-spacing: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .fps-display {
+            font-size: 12px;
+            color: #0aa;
+            font-weight: normal;
+            letter-spacing: normal;
         }
 
         .section {
@@ -148,6 +158,44 @@
         .stats div {
             margin: 5px 0;
         }
+
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+            padding: 8px 0;
+            font-size: 11px;
+            color: #0aa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+
+        .collapsible:hover {
+            color: #0ff;
+        }
+
+        .collapsible::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.2s;
+            font-size: 10px;
+        }
+
+        .collapsible.expanded::before {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 1000px;
+        }
     </style>
 </head>
 <body>
@@ -156,15 +204,62 @@
             <canvas id="canvas"></canvas>
         </div>
         <div id="controls">
-            <h1>Volumetric Display</h1>
+            <h1>
+                <span>Volumetric Display</span>
+                <span class="fps-display" id="fps-header">0 FPS</span>
+            </h1>
 
             <div class="section">
-                <div class="section-title">Display Info</div>
-                <div class="stats">
-                    <div>Resolution: 40×40×20</div>
-                    <div>Total LEDs: 32,000</div>
-                    <div id="active-leds">Active LEDs: 0</div>
-                    <div id="fps">FPS: 0</div>
+                <div class="collapsible expanded" id="display-info-toggle">Display Info & Controls</div>
+                <div class="collapsible-content expanded" id="display-info-content">
+                    <div class="stats">
+                        <div>Resolution: 40×40×20</div>
+                        <div>Total LEDs: 32,000</div>
+                        <div id="active-leds">Active LEDs: 0</div>
+                    </div>
+
+                    <div class="collapsible" id="parameters-toggle">Parameters</div>
+                    <div class="collapsible-content" id="parameters-content">
+                        <div class="control-group">
+                            <label>
+                                Speed
+                                <span class="value-display" id="speed-value">1.0</span>
+                            </label>
+                            <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                Density
+                                <span class="value-display" id="density-value">0.5</span>
+                            </label>
+                            <input type="range" id="density" min="0.1" max="1" step="0.05" value="0.5">
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                LED Size
+                                <span class="value-display" id="led-size-value">2.5</span>
+                            </label>
+                            <input type="range" id="led-size" min="1" max="5" step="0.5" value="2.5">
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                Brightness
+                                <span class="value-display" id="brightness-value">0.8</span>
+                            </label>
+                            <input type="range" id="brightness" min="0.2" max="1" step="0.05" value="0.8">
+                        </div>
+
+                        <div class="control-group">
+                            <label>
+                                Grid Opacity
+                                <span class="value-display" id="grid-opacity-value">0.2</span>
+                            </label>
+                            <input type="range" id="grid-opacity" min="0" max="0.5" step="0.05" value="0.2">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -180,50 +275,6 @@
                 <button class="effect-btn" data-effect="7">8. Starfield Depth</button>
                 <button class="effect-btn" data-effect="8">9. Perlin Noise Clouds</button>
                 <button class="effect-btn" data-effect="9">10. Layer Sequence</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Parameters</div>
-
-                <div class="control-group">
-                    <label>
-                        Speed
-                        <span class="value-display" id="speed-value">1.0</span>
-                    </label>
-                    <input type="range" id="speed" min="0.1" max="3" step="0.1" value="1">
-                </div>
-
-                <div class="control-group">
-                    <label>
-                        Density
-                        <span class="value-display" id="density-value">0.5</span>
-                    </label>
-                    <input type="range" id="density" min="0.1" max="1" step="0.05" value="0.5">
-                </div>
-
-                <div class="control-group">
-                    <label>
-                        LED Size
-                        <span class="value-display" id="led-size-value">2.5</span>
-                    </label>
-                    <input type="range" id="led-size" min="1" max="5" step="0.5" value="2.5">
-                </div>
-
-                <div class="control-group">
-                    <label>
-                        Brightness
-                        <span class="value-display" id="brightness-value">0.8</span>
-                    </label>
-                    <input type="range" id="brightness" min="0.2" max="1" step="0.05" value="0.8">
-                </div>
-
-                <div class="control-group">
-                    <label>
-                        Grid Opacity
-                        <span class="value-display" id="grid-opacity-value">0.2</span>
-                    </label>
-                    <input type="range" id="grid-opacity" min="0" max="0.5" step="0.05" value="0.2">
-                </div>
             </div>
         </div>
     </div>
@@ -756,7 +807,7 @@
                 fps = frameCount;
                 frameCount = 0;
                 lastTime = now;
-                document.getElementById('fps').textContent = `FPS: ${fps}`;
+                document.getElementById('fps-header').textContent = `${fps} FPS`;
             }
 
             requestAnimationFrame(render);
@@ -819,6 +870,20 @@
         setupControl('led-size', 'ledSize', v => v.toFixed(1));
         setupControl('brightness', 'brightness', v => v.toFixed(2));
         setupControl('grid-opacity', 'gridOpacity', v => v.toFixed(2));
+
+        // Collapsible functionality
+        function setupCollapsible(toggleId, contentId) {
+            const toggle = document.getElementById(toggleId);
+            const content = document.getElementById(contentId);
+
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('expanded');
+                content.classList.toggle('expanded');
+            });
+        }
+
+        setupCollapsible('display-info-toggle', 'display-info-content');
+        setupCollapsible('parameters-toggle', 'parameters-content');
 
         // Start
         render();

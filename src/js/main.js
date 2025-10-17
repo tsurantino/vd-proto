@@ -30,6 +30,67 @@ function updateCameraView() {
 
 setInterval(updateCameraView, 100);
 
+// Set up LED color preset buttons
+const colorPresetBtns = document.querySelectorAll('.color-preset-btn');
+colorPresetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all color preset buttons
+        colorPresetBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const type = btn.dataset.type;
+        if (type === 'single') {
+            const color = btn.dataset.color;
+            display.renderer.setSingleColor(color);
+        } else if (type === 'gradient') {
+            const colors = btn.dataset.gradient.split(',');
+            display.renderer.setGradientColors(colors);
+        }
+    });
+});
+
+// Set up custom single color
+document.getElementById('apply-single-color').addEventListener('click', () => {
+    const color = document.getElementById('custom-single-color').value;
+    display.renderer.setSingleColor(color);
+
+    // Remove active class from preset buttons
+    colorPresetBtns.forEach(b => b.classList.remove('active'));
+});
+
+// Set up custom gradient
+document.getElementById('apply-gradient').addEventListener('click', () => {
+    const startColor = document.getElementById('custom-gradient-start').value;
+    const endColor = document.getElementById('custom-gradient-end').value;
+    display.renderer.setGradientColors([startColor, endColor]);
+
+    // Remove active class from preset buttons
+    colorPresetBtns.forEach(b => b.classList.remove('active'));
+});
+
+// Set up color effect buttons
+const colorEffectBtns = document.querySelectorAll('.color-effect-btn');
+colorEffectBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all color effect buttons
+        colorEffectBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const effect = btn.dataset.effect;
+        display.renderer.setColorEffect(effect);
+    });
+});
+
+// Set up color effect speed control
+const colorEffectSpeedSlider = document.getElementById('color-effect-speed');
+const colorEffectSpeedValue = document.getElementById('color-effect-speed-value');
+
+colorEffectSpeedSlider.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    display.renderer.setColorEffectSpeed(val);
+    colorEffectSpeedValue.textContent = val.toFixed(1);
+});
+
 // Generate effect buttons
 const effectsContainer = document.getElementById('effects-container');
 const effectNames = display.getEffectNames();
@@ -124,6 +185,30 @@ document.getElementById('reset-y').addEventListener('change', (e) => {
 });
 
 // Set up collapsible sections
+const ledColorsHeader = document.getElementById('led-colors-header');
+const ledColorsContent = document.getElementById('led-colors-content');
+
+ledColorsHeader.addEventListener('click', () => {
+    ledColorsHeader.classList.toggle('active');
+    ledColorsContent.classList.toggle('active');
+});
+
+const effectsHeader = document.getElementById('effects-header');
+const effectsContent = document.getElementById('effects-content');
+
+effectsHeader.addEventListener('click', () => {
+    effectsHeader.classList.toggle('active');
+    effectsContent.classList.toggle('active');
+});
+
+const controlsHeader = document.getElementById('controls-header');
+const controlsContent = document.getElementById('controls-content');
+
+controlsHeader.addEventListener('click', () => {
+    controlsHeader.classList.toggle('active');
+    controlsContent.classList.toggle('active');
+});
+
 const paramsHeader = document.getElementById('params-header');
 const paramsContent = document.getElementById('params-content');
 
