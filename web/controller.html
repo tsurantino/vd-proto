@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volumetric Display Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0ff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-shadow: 0 0 10px #0ff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #001a1a;
+            border: 2px solid #0aa;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+
+        .panel h3 {
+            color: #0ff;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 1px solid #0aa;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            margin: 10px 0;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #0aa;
+        }
+
+        .value-display {
+            color: #0ff;
+            font-weight: bold;
+            float: right;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #003;
+            border: 1px solid #0aa;
+            outline: none;
+            border-radius: 4px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #0ff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #0ff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #003;
+            color: #0ff;
+            border: 1px solid #0aa;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button {
+            background: #0aa;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #0ff;
+            transform: translateY(-2px);
+        }
+
+        button.active {
+            background: #0ff;
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        #status {
+            padding: 15px;
+            background: #003;
+            border: 2px solid #00f;
+            text-align: center;
+        }
+
+        .status-item {
+            display: inline-block;
+            margin: 0 15px;
+        }
+
+        .status-label {
+            color: #0aa;
+        }
+
+        .status-value {
+            color: #0ff;
+            font-weight: bold;
+        }
+
+        .connected {
+            color: #0f0 !important;
+        }
+
+        .disconnected {
+            color: #f00 !important;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 VOLUMETRIC DISPLAY CONTROLLER</h1>
+
+        <div id="status" class="panel">
+            <div class="status-item">
+                <span class="status-label">Status:</span>
+                <span id="connection-status" class="status-value disconnected">Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">FPS:</span>
+                <span id="fps" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Active LEDs:</span>
+                <span id="active-leds" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Grid:</span>
+                <span id="grid-size" class="status-value">0×0×0</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Scene Selection</h3>
+            <div class="button-group">
+                <button class="scene-btn active" data-scene="shapeMorph">Shape Morph</button>
+                <button class="scene-btn" data-scene="waveField">Wave Field</button>
+                <button class="scene-btn" data-scene="procedural">Procedural</button>
+                <button class="scene-btn" data-scene="particleFlow">Particle Flow</button>
+                <button class="scene-btn" data-scene="rainbow">Rainbow</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h3>Global Parameters</h3>
+
+                <div class="control-group">
+                    <label>Size <span id="size-value" class="value-display">1.00</span></label>
+                    <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Density <span id="density-value" class="value-display">0.50</span></label>
+                    <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
+                    <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Frequency <span id="frequency-value" class="value-display">1.00</span></label>
+                    <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Amplitude <span id="amplitude-value" class="value-display">0.50</span></label>
+                    <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>Object Count <span id="objectCount-value" class="value-display">1</span></label>
+                    <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Movement Parameters</h3>
+
+                <div class="control-group">
+                    <label>Rotation X <span id="rotationX-value" class="value-display">0.00</span></label>
+                    <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Rotation Y <span id="rotationY-value" class="value-display">0.00</span></label>
+                    <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Rotation Z <span id="rotationZ-value" class="value-display">0.00</span></label>
+                    <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="scene-params-panel">
+            <h3>Scene-Specific Parameters</h3>
+            <div id="scene-params">
+                <!-- Shape selector for shapeMorph -->
+                <div class="control-group" id="shape-control">
+                    <label>Shape</label>
+                    <select id="shape">
+                        <option value="sphere">Sphere</option>
+                        <option value="helix">Helix</option>
+                        <option value="cube">Cube</option>
+                        <option value="torus">Torus</option>
+                        <option value="pyramid">Pyramid</option>
+                    </select>
+                </div>
+
+                <!-- Wave type selector for waveField -->
+                <div class="control-group" id="waveType-control" style="display: none;">
+                    <label>Wave Type</label>
+                    <select id="waveType">
+                        <option value="ripple">Ripple</option>
+                        <option value="plane">Plane</option>
+                        <option value="standing">Standing</option>
+                        <option value="interference">Interference</option>
+                    </select>
+                </div>
+
+                <!-- Pattern selector for particleFlow -->
+                <div class="control-group" id="pattern-control" style="display: none;">
+                    <label>Pattern</label>
+                    <select id="pattern">
+                        <option value="particles">Particles</option>
+                        <option value="spiral">Spiral</option>
+                        <option value="explode">Explode</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h3>Global Effects</h3>
+
+                <div class="control-group">
+                    <label>Decay <span id="decay-value" class="value-display">0.00</span></label>
+                    <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
+                </div>
+
+                <div class="control-group">
+                    <label>Strobe</label>
+                    <div class="button-group">
+                        <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
+                        <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
+                        <button class="effect-btn" data-param="strobe" data-value="medium">Medium</button>
+                        <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Pulse</label>
+                    <div class="button-group">
+                        <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
+                        <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
+                        <button class="effect-btn" data-param="pulse" data-value="medium">Medium</button>
+                        <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>Scrolling Effect</h3>
+
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="scrolling_enabled">
+                        Enable Scrolling
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label>Mode</label>
+                    <select id="scrolling_mode">
+                        <option value="strobe">Strobe</option>
+                        <option value="pulse">Pulse</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Direction</label>
+                    <select id="scrolling_direction">
+                        <option value="x">X</option>
+                        <option value="y" selected>Y</option>
+                        <option value="z">Z</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
+                    <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
+                </div>
+
+                <div class="control-group">
+                    <label>Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
+                    <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Connect to Python server
+        const socket = io(window.location.origin);
+
+        // Current parameters
+        const params = {
+            scene_type: 'shapeMorph',
+            size: 1.0,
+            density: 0.5,
+            animationSpeed: 1.0,
+            frequency: 1.0,
+            amplitude: 0.5,
+            objectCount: 1,
+            rotationX: 0.0,
+            rotationY: 0.0,
+            rotationZ: 0.0,
+            decay: 0.0,
+            strobe: 'off',
+            pulse: 'off',
+            invert: false,
+            scrolling_enabled: false,
+            scrolling_mode: 'strobe',
+            scrolling_direction: 'y',
+            scrolling_thickness: 5,
+            scrolling_speed: 1.0,
+            scrolling_invert: false,
+            // Scene-specific params
+            scene_params: {
+                shape: 'sphere',
+                waveType: 'ripple',
+                pattern: 'particles'
+            }
+        };
+
+        // Connection status
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            document.getElementById('connection-status').textContent = 'Connected ✅';
+            document.getElementById('connection-status').className = 'status-value connected';
+            // Send initial params
+            sendParams();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            document.getElementById('connection-status').textContent = 'Disconnected ❌';
+            document.getElementById('connection-status').className = 'status-value disconnected';
+        });
+
+        socket.on('status', (data) => {
+            console.log('Status:', data);
+            if (data.config) {
+                document.getElementById('grid-size').textContent =
+                    `${data.config.gridX}×${data.config.gridY}×${data.config.gridZ}`;
+            }
+        });
+
+        // Stats updates
+        socket.on('stats', (data) => {
+            document.getElementById('fps').textContent = data.fps;
+            document.getElementById('active-leds').textContent = data.active_leds.toLocaleString();
+        });
+
+        function sendParams() {
+            // Flatten scene_params into main params object
+            const flatParams = {...params, ...params.scene_params};
+            socket.emit('update_params', flatParams);
+        }
+
+        // Scene selection
+        document.querySelectorAll('.scene-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                params.scene_type = btn.dataset.scene;
+                updateSceneParams(params.scene_type);
+                sendParams();
+            });
+        });
+
+        // Update visible scene-specific parameters
+        function updateSceneParams(sceneType) {
+            document.getElementById('shape-control').style.display =
+                sceneType === 'shapeMorph' ? 'block' : 'none';
+            document.getElementById('waveType-control').style.display =
+                sceneType === 'waveField' ? 'block' : 'none';
+            document.getElementById('pattern-control').style.display =
+                sceneType === 'particleFlow' ? 'block' : 'none';
+        }
+
+        // Parameter sliders
+        function setupSlider(id, param, decimals = 2) {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(`${id}-value`);
+
+            slider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                valueDisplay.textContent = value.toFixed(decimals);
+                params[param] = value;
+                sendParams();
+            });
+        }
+
+        setupSlider('size', 'size', 2);
+        setupSlider('density', 'density', 2);
+        setupSlider('animationSpeed', 'animationSpeed', 2);
+        setupSlider('frequency', 'frequency', 2);
+        setupSlider('amplitude', 'amplitude', 2);
+        setupSlider('objectCount', 'objectCount', 0);
+        setupSlider('rotationX', 'rotationX', 2);
+        setupSlider('rotationY', 'rotationY', 2);
+        setupSlider('rotationZ', 'rotationZ', 2);
+        setupSlider('decay', 'decay', 2);
+        setupSlider('scrolling_thickness', 'scrolling_thickness', 0);
+        setupSlider('scrolling_speed', 'scrolling_speed', 2);
+
+        // Effect buttons
+        document.querySelectorAll('.effect-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const param = btn.dataset.param;
+                const value = btn.dataset.value;
+
+                // Remove active from siblings
+                document.querySelectorAll(`.effect-btn[data-param="${param}"]`)
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                params[param] = value;
+                sendParams();
+            });
+        });
+
+        // Scene-specific selects
+        document.getElementById('shape').addEventListener('change', (e) => {
+            params.scene_params.shape = e.target.value;
+            sendParams();
+        });
+
+        document.getElementById('waveType').addEventListener('change', (e) => {
+            params.scene_params.waveType = e.target.value;
+            sendParams();
+        });
+
+        document.getElementById('pattern').addEventListener('change', (e) => {
+            params.scene_params.pattern = e.target.value;
+            sendParams();
+        });
+
+        // Scrolling controls
+        document.getElementById('scrolling_enabled').addEventListener('change', (e) => {
+            params.scrolling_enabled = e.target.checked;
+            sendParams();
+        });
+
+        document.getElementById('scrolling_mode').addEventListener('change', (e) => {
+            params.scrolling_mode = e.target.value;
+            sendParams();
+        });
+
+        document.getElementById('scrolling_direction').addEventListener('change', (e) => {
+            params.scrolling_direction = e.target.value;
+            sendParams();
+        });
+
+        console.log('Controller UI loaded');
+    </script>
+</body>
+</html>

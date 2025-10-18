@@ -1599,3 +1599,209 @@ console.log('Application initialization complete!');
 setTimeout(() => {
     console.log('Performance baseline established');
 }, 2000);
+
+// ============================================================================
+// ARTNET BRIDGE INTEGRATION
+// ============================================================================
+
+import { ArtNetBridge } from './ArtNetBridge.js';
+
+let artnetBridge = null;
+let artnetMode = false;
+
+// Create ArtNet mode toggle button
+const displayInfoActions = document.querySelector('.display-info-actions');
+const artnetToggleBtn = document.createElement('button');
+artnetToggleBtn.className = 'action-btn-inline';
+artnetToggleBtn.id = 'toggle-artnet';
+artnetToggleBtn.textContent = 'ArtNet';
+artnetToggleBtn.title = 'Toggle ArtNet Output Mode';
+displayInfoActions.appendChild(artnetToggleBtn);
+
+// Create ArtNet status indicator
+const canvasContainer = document.getElementById('canvas-container');
+const artnetStatusDiv = document.createElement('div');
+artnetStatusDiv.id = 'artnet-status';
+artnetStatusDiv.style.cssText = `
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 26, 26, 0.95);
+    border: 2px solid #0aa;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    color: #0ff;
+    font-family: 'Courier New', monospace;
+    display: none;
+    z-index: 100;
+    min-width: 400px;
+`;
+artnetStatusDiv.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 20px;">📡</div>
+    <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">ArtNet Mode</div>
+    <div id="artnet-connection-status" style="font-size: 14px; margin-bottom: 20px;">Connecting...</div>
+    <div id="artnet-config-info" style="font-size: 12px; margin-bottom: 15px; opacity: 0.7;"></div>
+    <div id="artnet-stats" style="font-size: 12px; opacity: 0.7;"></div>
+`;
+canvasContainer.appendChild(artnetStatusDiv);
+
+// ArtNet mode toggle handler
+artnetToggleBtn.addEventListener('click', async () => {
+    if (!artnetMode) {
+        // Enable ArtNet mode
+        console.log('Enabling ArtNet mode...');
+
+        // Create bridge if it doesn't exist
+        if (!artnetBridge) {
+            artnetBridge = new ArtNetBridge('http://localhost:5000');
+
+            // Set up callbacks
+            artnetBridge.onConnect = () => {
+                console.log('ArtNet bridge connected');
+                document.getElementById('artnet-connection-status').textContent = 'Connected to ArtNet Bridge';
+                document.getElementById('artnet-connection-status').style.color = '#0f0';
+
+                const config = artnetBridge.getConfig();
+                document.getElementById('artnet-config-info').innerHTML = `
+                    Grid: ${config.gridX}×${config.gridY}×${config.gridZ}<br>
+                    Cubes: ${config.cubes}
+                `;
+
+                // Give the display time to initialize grid, then start sending frames
+                setTimeout(() => {
+                    // Force an update to ensure grid is populated
+                    display.update(performance.now());
+                    startArtNetFrameLoop();
+                }, 100);
+            };
+
+            artnetBridge.onDisconnect = () => {
+                console.log('ArtNet bridge disconnected');
+                document.getElementById('artnet-connection-status').textContent = 'Disconnected';
+                document.getElementById('artnet-connection-status').style.color = '#f00';
+            };
+
+            artnetBridge.onStats = (stats) => {
+                document.getElementById('artnet-stats').innerHTML = `
+                    FPS: ${stats.fps} | Frame Time: ${stats.frame_time_ms}ms<br>
+                    Active LEDs: ${stats.active_leds.toLocaleString()}
+                `;
+            };
+        }
+
+        // Try to connect
+        const connected = await artnetBridge.connect();
+
+        if (connected) {
+            artnetMode = true;
+            artnetToggleBtn.classList.add('active');
+
+            // Hide canvas, show ArtNet status
+            document.getElementById('canvas').style.display = 'none';
+            artnetStatusDiv.style.display = 'block';
+
+            // Keep display running in background to populate grid
+            // (don't call display.stop())
+
+            console.log('ArtNet mode enabled');
+        } else {
+            console.error('Failed to connect to ArtNet bridge. Make sure the Python server is running.');
+            alert('Could not connect to ArtNet bridge.\n\nMake sure to start the Python server:\n\npython3 artnet/artnet_bridge_server.py --config artnet/sim_config_4.json');
+        }
+    } else {
+        // Disable ArtNet mode
+        console.log('Disabling ArtNet mode...');
+        artnetMode = false;
+        artnetToggleBtn.classList.remove('active');
+
+        // Stop sending frames
+        stopArtNetFrameLoop();
+
+        // Show canvas, hide ArtNet status
+        document.getElementById('canvas').style.display = 'block';
+        artnetStatusDiv.style.display = 'none';
+
+        // Disconnect bridge
+        if (artnetBridge) {
+            artnetBridge.disconnect();
+        }
+
+        // Resume local rendering
+        display.start();
+
+        console.log('ArtNet mode disabled');
+    }
+});
+
+// Function to send rendered frame to ArtNet
+let artnetFrameIntervalId = null;
+let gridInitWarningShown = false;
+
+function sendFrameToArtNet() {
+    if (!artnetBridge || !artnetMode) return;
+
+    // Get the rendered pixel data from the display
+    // The display.grid contains the actual voxel data
+    const gridInfo = display.getGridInfo();
+    const grid = display.grid;
+
+    // Safety check
+    if (!grid || !grid[0] || !grid[0][0]) {
+        if (!gridInitWarningShown) {
+            console.warn('Grid not initialized yet, waiting...');
+            gridInitWarningShown = true;
+        }
+        return;
+    }
+    gridInitWarningShown = false;
+
+    // Convert grid data to flat Uint8Array (Z, Y, X, RGB format expected by bridge)
+    const pixelCount = gridInfo.x * gridInfo.y * gridInfo.z;
+    const pixels = new Uint8Array(pixelCount * 3);
+
+    let idx = 0;
+    // Iterate in Z, Y, X order to match expected format
+    for (let z = 0; z < gridInfo.z; z++) {
+        for (let y = 0; y < gridInfo.y; y++) {
+            for (let x = 0; x < gridInfo.x; x++) {
+                const voxel = grid[x] && grid[x][y] ? grid[x][y][z] || 0 : 0;
+                // Convert hex color to RGB
+                const r = (voxel >> 16) & 0xFF;
+                const g = (voxel >> 8) & 0xFF;
+                const b = voxel & 0xFF;
+
+                pixels[idx++] = r;
+                pixels[idx++] = g;
+                pixels[idx++] = b;
+            }
+        }
+    }
+
+    // Send frame to bridge
+    artnetBridge.sendFrame(pixels, gridInfo.x, gridInfo.y, gridInfo.z);
+}
+
+function startArtNetFrameLoop() {
+    if (artnetFrameIntervalId) {
+        clearInterval(artnetFrameIntervalId);
+    }
+
+    // Send frames at 60 FPS
+    artnetFrameIntervalId = setInterval(() => {
+        // Update the display's internal state (run scene generation)
+        display.update(performance.now());
+        // Send the frame to ArtNet
+        sendFrameToArtNet();
+    }, 1000 / 60);
+}
+
+function stopArtNetFrameLoop() {
+    if (artnetFrameIntervalId) {
+        clearInterval(artnetFrameIntervalId);
+        artnetFrameIntervalId = null;
+    }
+}
+
+console.log('ArtNet bridge integration initialized');

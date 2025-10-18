@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "old-server": "python3 -m http.server 8000"
+    "old-server": "python3 -m http.server 8000",
+    "artnet": "python3 artnet/artnet_bridge_server.py --config artnet/sim_config_4.json",
+    "artnet-sim": "cd artnet && ./volumetric_display sim_config_4.json"
   },
   "keywords": [
     "volumetric",
