@@ -131,38 +131,23 @@ def render_loop():
     last_stats_time = time.time()
     last_frame_count = 0
 
-    # Timing instrumentation
-    timing_samples = []
-
     while state.is_running:
         loop_start = time.time()
         current_time = time.time() - state.start_time
 
-        timings = {}
-
         # Render scene
-        t0 = time.perf_counter()
         with state.lock:
             if state.scene and state.world_raster:
                 try:
                     state.scene.render(state.world_raster, current_time)
                 except Exception as e:
                     logger.error(f"Error rendering scene: {e}", exc_info=True)
-        timings['render'] = (time.perf_counter() - t0) * 1000
 
         # Send to ArtNet
-        t0 = time.perf_counter()
         try:
-            artnet_timings = send_to_artnet()
-            timings['artnet'] = (time.perf_counter() - t0) * 1000
-            # Merge detailed ArtNet timings
-            if artnet_timings:
-                timings.update(artnet_timings)
+            send_to_artnet()
         except Exception as e:
             logger.error(f"Error sending to ArtNet: {e}", exc_info=True)
-            timings['artnet'] = (time.perf_counter() - t0) * 1000
-
-        timing_samples.append(timings)
 
         # Update stats every second
         state.frame_count += 1
@@ -172,17 +157,6 @@ def render_loop():
             fps = frames_delta / (now - last_stats_time)
             avg_frame_time = (now - last_stats_time) / frames_delta * 1000 if frames_delta > 0 else 0
 
-            # Calculate average timings
-            if timing_samples:
-                avg_render = sum(t.get('render', 0) for t in timing_samples) / len(timing_samples)
-                avg_artnet = sum(t.get('artnet', 0) for t in timing_samples) / len(timing_samples)
-                avg_slice = sum(t.get('slice_transform', 0) for t in timing_samples) / len(timing_samples)
-                avg_udp = sum(t.get('udp_send', 0) for t in timing_samples) / len(timing_samples)
-                avg_udp_dmx = sum(t.get('udp_job_dmx', 0) for t in timing_samples) / len(timing_samples)
-                timing_samples.clear()
-            else:
-                avg_render = avg_artnet = avg_slice = avg_udp = avg_udp_dmx = 0
-
             with state.lock:
                 state.fps_stats = {
                     'fps': round(fps, 1),
@@ -191,7 +165,7 @@ def render_loop():
                 }
 
             socketio.emit('stats', state.fps_stats)
-            logger.info(f"📊 FPS: {fps:.1f} | Frame: {avg_frame_time:.2f}ms | Render: {avg_render:.2f}ms | ArtNet: {avg_artnet:.2f}ms (Slice: {avg_slice:.2f}ms, UDP: {avg_udp:.2f}ms [DMX={avg_udp_dmx:.2f}ms/job]) | LEDs: {state.fps_stats['active_leds']:,}")
+            logger.info(f"📊 FPS: {fps:.1f} | Frame: {avg_frame_time:.2f}ms | LEDs: {state.fps_stats['active_leds']:,}")
 
             last_stats_time = now
             last_frame_count = state.frame_count
@@ -234,9 +208,8 @@ def convert_cube_to_rgb_tuples(data_bytes, num_pixels):
 def send_to_artnet():
     """Send world raster to ArtNet (using send_dmx_bytes - no RGB object conversion!)"""
     if not state.artnet_manager or not state.world_raster:
-        return {}
+        return
 
-    timings = {}
     world_data = state.world_raster.data
     min_coord = (0, 0, 0)
 
@@ -244,7 +217,6 @@ def send_to_artnet():
     processed_cubes = set()
 
     # First pass: slice and transform cube data
-    t0 = time.perf_counter()
     for job in state.artnet_manager.send_jobs:
         cube_pos_tuple = tuple(job["cube_position"])
 
@@ -268,16 +240,9 @@ def send_to_artnet():
 
             cube_raster.data[:] = transformed_slice
             processed_cubes.add(cube_pos_tuple)
-    timings['slice_transform'] = (time.perf_counter() - t0) * 1000
 
     # Second pass: send to ArtNet controllers directly with raw bytes
-    # NO RGB CONVERSION NEEDED! This is the key optimization.
-    t0_total = time.perf_counter()
-
-    job_timings = []
     for job in state.artnet_manager.send_jobs:
-        t_job_start = time.perf_counter()
-
         cube_raster = job["cube_raster"]
         controller = job["controller"]
         z_indices = job["z_indices"]
@@ -287,7 +252,6 @@ def send_to_artnet():
         # Get raw bytes directly from NumPy array (C-contiguous, zero-copy)
         pixel_bytes = cube_raster.data.tobytes()
 
-        t_dmx = time.perf_counter()
         try:
             # Use new send_dmx_bytes method - passes bytes directly to Rust!
             controller.send_dmx_bytes(
@@ -304,27 +268,6 @@ def send_to_artnet():
             )
         except Exception as e:
             logger.error(f"Error sending DMX bytes: {e}", exc_info=True)
-        dmx_time = (time.perf_counter() - t_dmx) * 1000
-
-        job_time = (time.perf_counter() - t_job_start) * 1000
-        job_timings.append({'dmx': dmx_time, 'total': job_time})
-
-    # Calculate averages
-    if job_timings:
-        avg_dmx = sum(r['dmx'] for r in job_timings) / len(job_timings)
-        avg_job = sum(r['total'] for r in job_timings) / len(job_timings)
-    else:
-        avg_dmx = avg_job = 0
-
-    total_udp_time = (time.perf_counter() - t0_total) * 1000
-
-    timings['udp_send'] = total_udp_time
-    timings['udp_job_dmx'] = avg_dmx
-    timings['udp_job_total'] = avg_job
-    # Note: RGB conversion time is now zero (eliminated entirely!)
-    timings['rgb_conversion'] = 0.0
-
-    return timings
 
 
 def count_active_leds(raster):
