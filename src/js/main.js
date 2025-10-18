@@ -706,7 +706,6 @@ const sceneNames = {
     'particleFlow': 'Particle Flow',
     'waveField': 'Wave Field',
     'procedural': 'Procedural',
-    'vortex': 'Vortex',
     'grid': 'Grid',
     'text3D': 'Text 3D'
 };
@@ -757,9 +756,6 @@ function updateSceneControls(sceneType) {
     } else if (sceneType === 'procedural') {
         console.log('Creating Procedural controls');
         createProceduralControls(params);
-    } else if (sceneType === 'vortex') {
-        console.log('Creating Vortex controls');
-        createVortexControls(params);
     } else if (sceneType === 'grid') {
         console.log('Creating Grid controls');
         createGridControls(params);
@@ -791,11 +787,15 @@ function createParticleFlowControls(params) {
         { value: 'stars', label: 'Stars' },
         { value: 'fountain', label: 'Fountain' },
         { value: 'spiral', label: 'Spiral' },
-        { value: 'explode', label: 'Explode' }
+        { value: 'explode', label: 'Explode' },
+        { value: 'tornado', label: 'Tornado' },
+        { value: 'whirlpool', label: 'Whirlpool' },
+        { value: 'galaxy', label: 'Galaxy' }
     ]);
 
     // Note: particle size controlled by global "Size / Scale" parameter
-    // Note: density, velocity (animationSpeed), and movement all moved to global parameters
+    // Note: density, velocity (animationSpeed), radius (amplitude), height (depth), and movement all moved to global parameters
+    // Note: vortex patterns (tornado, whirlpool, galaxy) support per-particle time offsets via Object Time Offset parameter
 }
 
 function createWaveFieldControls(params) {
@@ -819,18 +819,6 @@ function createProceduralControls(params) {
     ]);
 
     // Note: scale (size), threshold (amplitude), octaves (detailLevel), animationType, inversion moved to global parameters
-}
-
-function createVortexControls(params) {
-    // Type select (scene-specific)
-    createSelectControl('type', 'Type', params.type || 'tornado', [
-        { value: 'tornado', label: 'Tornado' },
-        { value: 'whirlpool', label: 'Whirlpool' },
-        { value: 'galaxy', label: 'Galaxy' }
-        // Note: 'double' removed - use objectCount=2 in global params instead
-    ]);
-
-    // Note: radius (amplitude), twist (animationSpeed), density, height (depth), objectCount moved to global parameters
 }
 
 function createGridControls(params) {

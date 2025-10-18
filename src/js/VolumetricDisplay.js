@@ -88,18 +88,6 @@ export class VolumetricDisplay {
     setSceneParameter(name, value) {
         this.sceneParams[name] = value;
 
-        // Parameters that should NOT reset time (need continuous time for smooth animation)
-        const timePreservingParams = ['scrollSpeed', 'scrollDirection'];
-
-        // Only reset time if this parameter requires it (not scroll-related)
-        if (!timePreservingParams.includes(name)) {
-            // Clear voxels to prevent lingering from previous parameter state
-            this.voxels.fill(0);
-
-            // Reset time for clean animation restart
-            this.time = 0;
-        }
-
         // Update particle systems if density changed (via global params)
         const mappedParams = GlobalParameterMapper.mapToScene(
             this.currentSceneType,
@@ -113,18 +101,6 @@ export class VolumetricDisplay {
 
     setGlobalSceneParameter(name, value) {
         this.globalSceneParams[name] = value;
-
-        // Parameters that should NOT reset time (need continuous time for smooth animation)
-        const timePreservingParams = ['scrollSpeed', 'scrollDirection'];
-
-        // Only reset time if this parameter requires it (not scroll-related)
-        if (!timePreservingParams.includes(name)) {
-            // Clear voxels to prevent lingering from previous parameter state
-            this.voxels.fill(0);
-
-            // Reset time for clean animation restart
-            this.time = 0;
-        }
 
         // Update particle systems if density changed
         if (name === 'density') {
@@ -211,6 +187,9 @@ export class VolumetricDisplay {
             automatedGlobalParams,
             automatedSceneParams
         );
+
+        // Add decay state to params so scenes can skip clearing when decay is active
+        mappedParams.shouldClear = this.globalEffects.decay === 0;
 
         // Get current scene from appropriate library
         const scene = this.getSceneFromLibrary(this.currentSceneType);

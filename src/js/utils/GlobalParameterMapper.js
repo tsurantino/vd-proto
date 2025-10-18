@@ -152,7 +152,16 @@ export class GlobalParameterMapper {
         if (globalParams.amplitude !== undefined) {
             switch (sceneType) {
                 case 'waveField':
-                    mapped.amplitude = 0.5 + globalParams.amplitude * 2.5;
+                    // Special handling for plasma wave type
+                    if (sceneParams.waveType === 'plasma') {
+                        // For plasma, amplitude controls threshold (inverse relationship)
+                        // Higher amplitude = lower threshold = more visible voxels
+                        // Map amplitude (0.0-1.0) to threshold (0.8-0.3)
+                        mapped.amplitude = 0.8 - globalParams.amplitude * 0.5;
+                    } else {
+                        // For other wave types, amplitude controls wave height
+                        mapped.amplitude = 0.5 + globalParams.amplitude * 2.5;
+                    }
                     break;
                 case 'procedural':
                 case 'plasma':
@@ -160,6 +169,10 @@ export class GlobalParameterMapper {
                     mapped.threshold = 0.8 - globalParams.amplitude * 0.5;
                     break;
                 case 'vortex':
+                    mapped.radius = 0.5 + globalParams.amplitude * 1.5;
+                    break;
+                case 'particleFlow':
+                    // For vortex patterns in particleFlow, map amplitude to radius
                     mapped.radius = 0.5 + globalParams.amplitude * 1.5;
                     break;
             }
@@ -204,6 +217,10 @@ export class GlobalParameterMapper {
                     mapped.depth = 0.2 + globalParams.depth * 0.8;
                     break;
                 case 'vortex':
+                    mapped.height = 0.3 + globalParams.depth * 1.2;
+                    break;
+                case 'particleFlow':
+                    // For vortex patterns in particleFlow, map depth to height
                     mapped.height = 0.3 + globalParams.depth * 1.2;
                     break;
             }
@@ -293,7 +310,7 @@ export class GlobalParameterMapper {
 
         const paramMap = {
             'shapeMorph': ['size', 'density', 'objectCount', ...movementParams],
-            'particleFlow': ['size', 'density', 'animationSpeed', ...movementParams],
+            'particleFlow': ['size', 'density', 'animationSpeed', 'amplitude', 'depth', ...movementParams],
             'waveField': ['frequency', 'amplitude', 'direction', ...movementParams],
             'procedural': ['size', 'amplitude', 'detailLevel', 'animationType', 'inversion', ...movementParams],
             'vortex': ['density', 'animationSpeed', 'amplitude', 'depth', 'objectCount', ...movementParams],
@@ -336,7 +353,8 @@ export class GlobalParameterMapper {
             'amplitude': {
                 'waveField': 'Maps to wave amplitude',
                 'procedural': 'Maps to noise threshold (inverse)',
-                'vortex': 'Maps to vortex radius'
+                'vortex': 'Maps to vortex radius',
+                'particleFlow': 'Maps to vortex radius (for tornado/whirlpool/galaxy patterns)'
             },
             'detailLevel': {
                 'procedural': 'Maps to noise octaves',
@@ -350,7 +368,8 @@ export class GlobalParameterMapper {
             },
             'depth': {
                 'text3D': 'Maps to text depth/extrusion',
-                'vortex': 'Maps to vortex height'
+                'vortex': 'Maps to vortex height',
+                'particleFlow': 'Maps to vortex height (for tornado/whirlpool/galaxy patterns)'
             },
             'inversion': {
                 'procedural': 'Maps to noise inversion'

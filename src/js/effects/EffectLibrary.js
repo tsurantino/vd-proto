@@ -78,7 +78,7 @@ export class EffectLibrary {
             {
                 name: 'Rain/Waterfall',
                 fn: (voxels, time, params) => {
-                    voxels.fill(0);
+                    if (params.shouldClear !== false) voxels.fill(0);
                     this.rainSystem.update(params.speed);
 
                     this.rainSystem.getParticles().forEach(p => {
@@ -113,7 +113,7 @@ export class EffectLibrary {
             {
                 name: 'Helix Spiral',
                 fn: (voxels, time, params) => {
-                    voxels.fill(0);
+                    if (params.shouldClear !== false) voxels.fill(0);
                     const numStrands = Math.ceil(2 + params.density * 2);
                     const radius = 12 + params.density * 5;
                     const thickness = 2;
@@ -182,7 +182,7 @@ export class EffectLibrary {
             {
                 name: 'Starfield Depth',
                 fn: (voxels, time, params) => {
-                    voxels.fill(0);
+                    if (params.shouldClear !== false) voxels.fill(0);
                     this.starSystem.update(params.speed);
 
                     this.starSystem.getParticles().forEach(p => {
@@ -218,7 +218,7 @@ export class EffectLibrary {
             {
                 name: 'Layer Sequence',
                 fn: (voxels, time, params) => {
-                    voxels.fill(0);
+                    if (params.shouldClear !== false) voxels.fill(0);
                     const activeLayer = Math.floor((time * params.speed * 0.5) % this.gridZ);
                     const pattern = Math.floor((time * params.speed * 0.3) % 4);
 
