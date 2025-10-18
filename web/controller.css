@@ -42,7 +42,7 @@ body {
     font-size: 11px;
     margin: 15px 0 8px 0;
     padding-bottom: 4px;
-    border-bottom: 1px solid #0aa;
+    border-bottom: none;
     font-weight: bold;
 }
 
@@ -403,25 +403,7 @@ button.active {
     font-weight: bold;
 }
 
-/* Scrollable color panel */
+/* Colors panel - no height restriction, let it expand naturally */
 .colors-panel {
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.colors-panel::-webkit-scrollbar {
-    width: 8px;
-}
-
-.colors-panel::-webkit-scrollbar-track {
-    background: #000;
-}
-
-.colors-panel::-webkit-scrollbar-thumb {
-    background: #0aa;
-}
-
-.colors-panel::-webkit-scrollbar-thumb:hover {
-    background: #0ff;
+    /* Removed max-height and overflow - panel expands to fit content */
 }

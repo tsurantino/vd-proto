@@ -342,11 +342,14 @@ class InteractiveScene(Scene):
     def _apply_colors(self, raster, mask, time):
         """Apply colors to geometry mask"""
         if not np.any(mask):
+            print(f"⚠️  COLOR: No geometry to color (mask is empty)")
             return
 
         if self.params.color_mode == 'rainbow':
+            print(f"🌈 COLOR MODE: rainbow")
             self._apply_rainbow_colors(raster, mask, time)
         else:
+            print(f"🎨 COLOR MODE: base (type={self.params.color_type})")
             self._apply_base_colors(raster, mask, time)
 
         # Apply color effect
@@ -376,12 +379,30 @@ class InteractiveScene(Scene):
             gradient_colors = parse_gradient(self.params.color_gradient)
             z_coords, y_coords, x_coords = self.coords_cache
 
-            # Interpolate along Y axis
-            t = y_coords[mask] / raster.height
+            # Broadcast sparse coordinates to full grid before indexing
+            # This converts (1, H, 1) to (L, H, W) by adding zeros
+            y_coords_full = y_coords + z_coords * 0 + x_coords * 0
+
+            # Now index with the boolean mask
+            masked_y = y_coords_full[mask]
+
+            # Debug logging
+            mask_count = np.sum(mask)
+            print(f"🎨 GRADIENT: mask_count={mask_count}, gradient={self.params.color_gradient}")
+
+            y_min, y_max = masked_y.min(), masked_y.max()
+
+            # Avoid division by zero if all pixels are at same Y
+            if y_max > y_min:
+                t = (masked_y - y_min) / (y_max - y_min)
+            else:
+                t = np.zeros_like(masked_y, dtype=np.float32)
+
             from .colors.utils import interpolate_colors
             positions = np.linspace(0, 1, len(gradient_colors))
             colors = interpolate_colors(gradient_colors, positions, t)
             raster.data[mask] = colors
+            print(f"  → Applied gradient to {len(colors)} voxels")
 
     def _apply_color_effect(self, raster, mask, time):
         """Apply color effect to existing colors using comprehensive effects module"""

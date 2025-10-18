@@ -172,8 +172,9 @@ def effect_cycle(colors, time):
 
 
 def effect_pulse(colors, time):
-    """Brightness pulsing"""
-    factor = 0.5 + 0.5 * np.sin(time * 3)
+    """Brightness pulsing (highlighting)"""
+    # Range: 0.7-1.0 (stays bright, adds highlight)
+    factor = 0.85 + 0.15 * np.sin(time * 3)
     return (colors.astype(np.float32) * factor).astype(np.uint8)
 
 
@@ -267,7 +268,7 @@ def effect_cycle_triadic(colors, time):
 # ===================================================================
 
 def effect_pulse_radial(colors, mask, coords, time):
-    """Radial pulse from center"""
+    """Radial pulse from center (highlighting)"""
     z_coords, y_coords, x_coords = coords
     z, y, x = z_coords[mask], y_coords[mask], x_coords[mask]
 
@@ -275,29 +276,29 @@ def effect_pulse_radial(colors, mask, coords, time):
     cz, cy, cx = grid_shape[0] / 2, grid_shape[1] / 2, grid_shape[2] / 2
 
     distance = np.sqrt((x - cx)**2 + (y - cy)**2 + (z - cz)**2)
-    pulse = 0.5 + 0.5 * np.sin(distance * 0.5 - time * 5)
+    pulse = 0.85 + 0.15 * np.sin(distance * 0.5 - time * 5)
     return (colors.astype(np.float32) * pulse[..., np.newaxis]).astype(np.uint8)
 
 
 def effect_pulse_alternating(colors, mask, coords, time):
-    """Alternating brightness pulses"""
+    """Alternating brightness pulses (highlighting)"""
     z_coords, y_coords, x_coords = coords
     pattern = ((x_coords[mask] + y_coords[mask] + z_coords[mask]) % 2).astype(np.float32)
-    pulse = 0.5 + 0.5 * np.sin(time * 4 + pattern * np.pi)
+    pulse = 0.85 + 0.15 * np.sin(time * 4 + pattern * np.pi)
     return (colors.astype(np.float32) * pulse[..., np.newaxis]).astype(np.uint8)
 
 
 def effect_pulse_layered(colors, mask, coords, time):
-    """Layered pulses by height"""
+    """Layered pulses by height (highlighting)"""
     z_coords, y_coords, x_coords = coords
     layer = y_coords[mask] / 20.0
-    pulse = 0.5 + 0.5 * np.sin(time * 3 + layer * 2 * np.pi)
+    pulse = 0.85 + 0.15 * np.sin(time * 3 + layer * 2 * np.pi)
     return (colors.astype(np.float32) * pulse[..., np.newaxis]).astype(np.uint8)
 
 
 def effect_pulse_beat(colors, time):
-    """Beat-style pulsing"""
-    beat = np.abs(np.sin(time * 2))
+    """Beat-style pulsing (highlighting)"""
+    beat = 0.85 + 0.15 * np.abs(np.sin(time * 2))
     return (colors.astype(np.float32) * beat).astype(np.uint8)
 
 
@@ -333,19 +334,19 @@ def effect_static_wave(colors, mask, coords, time):
 # ===================================================================
 
 def effect_pulse_wave(colors, mask, coords, time):
-    """Combined pulse and wave"""
+    """Combined pulse and wave (highlighting)"""
     z_coords, y_coords, x_coords = coords
-    pulse = 0.6 + 0.4 * np.sin(time * 3)
+    pulse = 0.85 + 0.15 * np.sin(time * 3)
     wave = np.sin(y_coords[mask] * 0.3 + time * 2) * 64
     colors_shifted = hue_shift(colors, wave.astype(np.int32))
     return (colors_shifted.astype(np.float32) * pulse).astype(np.uint8)
 
 
 def effect_cycle_pulse(colors, mask, coords, time):
-    """Cycling hue with pulsing brightness"""
+    """Cycling hue with pulsing brightness (highlighting)"""
     shift = int(time * 40) % 256
     colors_shifted = hue_shift(colors, shift)
-    pulse = 0.5 + 0.5 * np.sin(time * 4)
+    pulse = 0.85 + 0.15 * np.sin(time * 4)
     return (colors_shifted.astype(np.float32) * pulse).astype(np.uint8)
 
 
@@ -366,10 +367,10 @@ def effect_static_cycle(colors, mask, coords, time):
 
 
 def effect_pulse_trail(colors, mask, coords, time):
-    """Pulsing trailing effect"""
+    """Pulsing trailing effect (highlighting)"""
     z_coords, y_coords, x_coords = coords
     trail = np.sin(y_coords[mask] * 0.2 - time * 5)
-    brightness = np.clip((trail + 1) * 0.5, 0.2, 1.0)
+    brightness = np.clip((trail + 1) * 0.075 + 0.85, 0.85, 1.0)
     return (colors.astype(np.float32) * brightness[..., np.newaxis]).astype(np.uint8)
 
 

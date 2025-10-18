@@ -63,6 +63,16 @@
                         </div>
                     </div>
 
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>CLR INT</label>
+                            <span class="value-display" id="color-effect-intensity-value">1.0</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
+                        </div>
+                    </div>
+
                     <div class="control-group">
                         <div class="button-group">
                             <button class="effect-btn active" data-param="strobe" data-value="off">Strobe Off</button>
@@ -270,49 +280,29 @@
                 <div class="panel colors-panel">
                     <h3>Colors & Effects</h3>
 
-                    <!-- Solid Colors -->
-                    <div class="subsection-title">Solid Colors</div>
+                    <!-- Row 1: Solid Colors -->
                     <div class="color-presets-grid">
-                        <button class="color-preset-btn active" data-type="single" data-color="#64C8FF" style="background: #64C8FF;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#FF6464" style="background: #FF6464;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#64FF64" style="background: #64FF64;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#FFD700" style="background: #FFD700;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#FF64FF" style="background: #FF64FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF0000" style="background: #FF0000;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF8800" style="background: #FF8800;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFFF00" style="background: #FFFF00;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#00FF00" style="background: #00FF00;"></button>
                         <button class="color-preset-btn" data-type="single" data-color="#00FFFF" style="background: #00FFFF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#0000FF" style="background: #0000FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF00FF" style="background: #FF00FF;"></button>
                         <button class="color-preset-btn" data-type="single" data-color="#FFFFFF" style="background: #FFFFFF;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#FFA500" style="background: #FFA500;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#9B59B6" style="background: #9B59B6;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#E74C3C" style="background: #E74C3C;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#2ECC71" style="background: #2ECC71;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#3498DB" style="background: #3498DB;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#F39C12" style="background: #F39C12;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#1ABC9C" style="background: #1ABC9C;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#E67E22" style="background: #E67E22;"></button>
-                        <button class="color-preset-btn" data-type="single" data-color="#95A5A6" style="background: #95A5A6;"></button>
                     </div>
 
-                    <!-- Preset Gradients -->
-                    <div class="subsection-title">Gradients</div>
+                    <!-- Row 2: Gradients + Rainbow -->
                     <div class="color-presets-grid">
                         <button class="color-preset-btn" data-type="gradient" data-gradient="#FF0000,#FF00FF,#0000FF" style="background: linear-gradient(135deg, #FF0000 0%, #FF00FF 50%, #0000FF 100%);"></button>
                         <button class="color-preset-btn" data-type="gradient" data-gradient="#00FFFF,#00FF00,#FFFF00" style="background: linear-gradient(135deg, #00FFFF 0%, #00FF00 50%, #FFFF00 100%);"></button>
                         <button class="color-preset-btn" data-type="gradient" data-gradient="#FF00FF,#FF0080,#FF00FF" style="background: linear-gradient(135deg, #FF00FF 0%, #FF0080 50%, #FF00FF 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FFD700,#FFA500,#FF4500" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF4500 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#1E3A8A,#3B82F6,#BFDBFE" style="background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #BFDBFE 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#7C3AED,#A78BFA,#DDD6FE" style="background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 50%, #DDD6FE 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#059669,#10B981,#86EFAC" style="background: linear-gradient(135deg, #059669 0%, #10B981 50%, #86EFAC 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#DC2626,#F87171,#FECACA" style="background: linear-gradient(135deg, #DC2626 0%, #F87171 50%, #FECACA 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#0891B2,#06B6D4,#A5F3FC" style="background: linear-gradient(135deg, #0891B2 0%, #06B6D4 50%, #A5F3FC 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#EA580C,#FB923C,#FED7AA" style="background: linear-gradient(135deg, #EA580C 0%, #FB923C 50%, #FED7AA 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#BE185D,#EC4899,#FBCFE8" style="background: linear-gradient(135deg, #BE185D 0%, #EC4899 50%, #FBCFE8 100%);"></button>
-                        <button class="color-preset-btn" data-type="gradient" data-gradient="#CA8A04,#EAB308,#FEF08A" style="background: linear-gradient(135deg, #CA8A04 0%, #EAB308 50%, #FEF08A 100%);"></button>
-                    </div>
-
-                    <!-- Color Mode -->
-                    <div class="subsection-title">Color Mode</div>
-                    <div class="button-group">
-                        <button class="toggle-btn active" data-mode="rainbow" id="color-mode-rainbow">Rainbow</button>
-                        <button class="toggle-btn" data-mode="base" id="color-mode-base">Base Color</button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF4500,#FF8C00,#FFD700" style="background: linear-gradient(135deg, #FF4500 0%, #FF8C00 50%, #FFD700 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#004B87,#0088CC,#00D9FF" style="background: linear-gradient(135deg, #004B87 0%, #0088CC 50%, #00D9FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#6A0DAD,#9D4EDD,#E0B0FF" style="background: linear-gradient(135deg, #6A0DAD 0%, #9D4EDD 50%, #E0B0FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#0B6623,#228B22,#90EE90" style="background: linear-gradient(135deg, #0B6623 0%, #228B22 50%, #90EE90 100%);"></button>
+                        <!-- Rainbow as last gradient option -->
+                        <button class="color-preset-btn active" data-type="rainbow" style="background: linear-gradient(90deg, #FF0000 0%, #FF7F00 16%, #FFFF00 33%, #00FF00 50%, #0000FF 66%, #4B0082 83%, #9400D3 100%);"></button>
                     </div>
 
                     <!-- Basic Color Effects -->
@@ -362,16 +352,6 @@
                         <button class="advanced-effect-btn" data-effect="staticWave">Wave</button>
                     </div>
 
-                    <!-- Combination Effects -->
-                    <div class="effect-category-title">Combos</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="pulseWave">PulseWave</button>
-                        <button class="advanced-effect-btn" data-effect="cyclePulse">CyclePulse</button>
-                        <button class="advanced-effect-btn" data-effect="waveChase">WaveChase</button>
-                        <button class="advanced-effect-btn" data-effect="staticCycle">StaticCycle</button>
-                        <button class="advanced-effect-btn" data-effect="pulseTrail">PulseTrail</button>
-                    </div>
-
                     <!-- 3D Spatial Effects -->
                     <div class="effect-category-title">3D Spatial</div>
                     <div class="color-effect-buttons">
@@ -412,6 +392,16 @@
                         <button class="advanced-effect-btn" data-effect="directionalSweep">DirSweep</button>
                     </div>
 
+                    <!-- Combination Effects -->
+                    <div class="effect-category-title">Combos</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="pulseWave">PulseWave</button>
+                        <button class="advanced-effect-btn" data-effect="cyclePulse">CyclePulse</button>
+                        <button class="advanced-effect-btn" data-effect="waveChase">WaveChase</button>
+                        <button class="advanced-effect-btn" data-effect="staticCycle">StaticCycle</button>
+                        <button class="advanced-effect-btn" data-effect="pulseTrail">PulseTrail</button>
+                    </div>
+
                     <!-- Classic Effects -->
                     <div class="effect-category-title">Classic</div>
                     <div class="color-effect-buttons">
@@ -422,17 +412,6 @@
                         <button class="advanced-effect-btn" data-effect="kaleidoscope">Kaleid</button>
                         <button class="advanced-effect-btn" data-effect="breath">Breath</button>
                         <button class="advanced-effect-btn" data-effect="colorChase">Chase</button>
-                    </div>
-
-                    <!-- Effect Controls -->
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>FX INT</label>
-                            <span class="value-display" id="color-effect-intensity-value">1.0</span>
-                        </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
-                        </div>
                     </div>
                 </div>
             </div>
@@ -458,8 +437,8 @@
             rotationZ: 0.0,
             // Color system
             color_type: 'single',
-            color_single: '#64C8FF',
-            color_gradient: '#FF0000,#0000FF',
+            color_single: '#FF0000',
+            color_gradient: '#FF0000,#FF00FF,#0000FF',
             color_effect: 'none',
             color_effect_intensity: 1.0,
             color_mode: 'rainbow',
@@ -572,33 +551,30 @@
         // Handler for scrolling speed
         setupSlider('scrolling_speed', 'scrolling_speed', 1);
 
-        // Color preset buttons
+        // Color preset buttons - unified handling for solid, gradient, and rainbow
         document.querySelectorAll('.color-preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const type = btn.dataset.type;
+
+                // Remove active from all color buttons
+                document.querySelectorAll('.color-preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
                 if (type === 'single') {
-                    document.querySelectorAll('.color-preset-btn[data-type="single"]')
-                        .forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                    // Solid color selected
+                    params.color_mode = 'base';
                     params.color_type = 'single';
                     params.color_single = btn.dataset.color;
                 } else if (type === 'gradient') {
-                    document.querySelectorAll('.color-preset-btn[data-type="gradient"]')
-                        .forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
+                    // Gradient selected
+                    params.color_mode = 'base';
                     params.color_type = 'gradient';
                     params.color_gradient = btn.dataset.gradient;
+                } else if (type === 'rainbow') {
+                    // Rainbow selected
+                    params.color_mode = 'rainbow';
                 }
-                sendParams();
-            });
-        });
 
-        // Color mode toggle
-        document.querySelectorAll('.toggle-btn[data-mode]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.toggle-btn[data-mode]').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                params.color_mode = btn.dataset.mode;
                 sendParams();
             });
         });
