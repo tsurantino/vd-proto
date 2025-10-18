@@ -22,22 +22,16 @@ export class ColorEffects {
                                      // pulseRadial, pulseAlternating, pulseLayered, pulseBeat,
                                      // staticColor, staticDynamic, staticWave,
                                      // pulseWave, cyclePulse, waveChase, staticCycle, pulseTrail,
-                                     // scrollingStrobe, scrollingPulse,
-                                     // NEW EFFECTS:
-                                     // diagonalWaves, helix, vortex, perlinNoise, checkerboard3D,
-                                     // voronoi, sineInterferenceXZ, depthLayers, sphericalShellsMoving,
-                                     // directionalSweep, tunnel, cubeInCube, xzMirror, cornerExplosion,
-                                     // manhattanDistance
+                                     // diagonalWaves, helix, vortex, tunnel,
+                                     // perlinNoise, voronoi, checkerboard3D,
+                                     // sineInterferenceXZ, sphericalShellsMoving, cornerExplosion,
+                                     // depthLayers, cubeInCube, manhattanDistance,
+                                     // xzMirror, directionalSweep
         this.intensity = 1.0; // 0-1
         this.speed = 1.0; // Speed multiplier for time-based effects
 
         // Color mode: 'rainbow' uses generated colors, 'base' modulates the base color
         this.colorMode = 'rainbow'; // rainbow or base
-
-        // Scrolling effect parameters
-        this.scrollThickness = 5; // Thickness of the scrolling band (in voxels)
-        this.scrollDirection = 'y'; // x, y, z, diagonal-xz, diagonal-yz, diagonal-xy, radial
-        this.scrollInvert = false; // If true, turns pixels OFF instead of ON in the scroll band
 
         // Effect-specific state
         this.sparkleMap = new Map(); // Track sparkle state per voxel
@@ -93,26 +87,6 @@ export class ColorEffects {
         this.colorMode = mode;
     }
 
-    /**
-     * Set scrolling effect thickness
-     */
-    setScrollThickness(thickness) {
-        this.scrollThickness = Math.max(1, Math.min(20, thickness));
-    }
-
-    /**
-     * Set scrolling effect direction
-     */
-    setScrollDirection(direction) {
-        this.scrollDirection = direction;
-    }
-
-    /**
-     * Set scrolling effect invert mode
-     */
-    setScrollInvert(invert) {
-        this.scrollInvert = invert;
-    }
 
     /**
      * Update time
@@ -259,15 +233,6 @@ export class ColorEffects {
 
             case 'pulseTrail':
                 effectColor = this.applyPulseTrail(effectColor, x, y, z);
-                break;
-
-            // Scrolling effects
-            case 'scrollingStrobe':
-                effectColor = this.applyScrollingStrobe(effectColor, x, y, z);
-                break;
-
-            case 'scrollingPulse':
-                effectColor = this.applyScrollingPulse(effectColor, x, y, z);
                 break;
 
             // New 3D Spatial effects
@@ -873,145 +838,6 @@ export class ColorEffects {
 
         const hsl = this.rgbToHsl(color.r, color.g, color.b);
         return this.hslToRgb(hsl.h, hsl.s, brightness);
-    }
-
-    // ========================================
-    // SCROLLING EFFECTS
-    // ========================================
-
-    /**
-     * Calculate scroll position based on direction
-     */
-    calculateScrollPosition(x, y, z) {
-        switch (this.scrollDirection) {
-            case 'x':
-                return x;
-            case 'y':
-                return y;
-            case 'z':
-                return z;
-            case 'diagonal-xz':
-                return (x + z) / 2;
-            case 'diagonal-yz':
-                return (y + z) / 2;
-            case 'diagonal-xy':
-                return (x + y) / 2;
-            case 'radial': {
-                const dx = x - this.gridX / 2;
-                const dz = z - this.gridZ / 2;
-                return Math.sqrt(dx * dx + dz * dz);
-            }
-            default:
-                return y; // default to Y
-        }
-    }
-
-    /**
-     * Get max dimension for scroll direction
-     */
-    getScrollMaxDimension() {
-        switch (this.scrollDirection) {
-            case 'x':
-                return this.gridX;
-            case 'y':
-                return this.gridY;
-            case 'z':
-                return this.gridZ;
-            case 'diagonal-xz':
-                return (this.gridX + this.gridZ) / 2;
-            case 'diagonal-yz':
-                return (this.gridY + this.gridZ) / 2;
-            case 'diagonal-xy':
-                return (this.gridX + this.gridY) / 2;
-            case 'radial': {
-                const maxX = this.gridX / 2;
-                const maxZ = this.gridZ / 2;
-                return Math.sqrt(maxX * maxX + maxZ * maxZ);
-            }
-            default:
-                return this.gridY;
-        }
-    }
-
-    /**
-     * SCROLLING STROBE: Band of full brightness that scrolls through the volume
-     */
-    applyScrollingStrobe(color, x, y, z) {
-        const maxDim = this.getScrollMaxDimension();
-        const scrollPos = (this.time * this.speed * 10) % maxDim;
-        const voxelPos = this.calculateScrollPosition(x, y, z);
-
-        // Check if voxel is within the strobe band
-        const distFromBand = Math.abs(voxelPos - scrollPos);
-
-        if (this.scrollInvert) {
-            // INVERTED MODE: Turn pixels OFF in the band
-            if (distFromBand < this.scrollThickness) {
-                // Inside the band - turn off (black)
-                return {
-                    r: 0,
-                    g: 0,
-                    b: 0
-                };
-            } else {
-                // Outside the band - return original color
-                return color;
-            }
-        } else {
-            // NORMAL MODE: Turn pixels ON in the band
-            if (distFromBand < this.scrollThickness) {
-                // Inside the band - full bright white
-                return {
-                    r: 255,
-                    g: 255,
-                    b: 255
-                };
-            } else {
-                // Outside the band - return original color (will be blended by intensity)
-                return color;
-            }
-        }
-    }
-
-    /**
-     * SCROLLING PULSE: Band of pulsing brightness that scrolls through the volume
-     */
-    applyScrollingPulse(color, x, y, z) {
-        const maxDim = this.getScrollMaxDimension();
-        const scrollPos = (this.time * this.speed * 10) % maxDim;
-        const voxelPos = this.calculateScrollPosition(x, y, z);
-
-        // Check if voxel is within the pulse band
-        const distFromBand = Math.abs(voxelPos - scrollPos);
-
-        if (distFromBand < this.scrollThickness) {
-            // Inside the band
-            const bandProgress = distFromBand / this.scrollThickness; // 0 at center, 1 at edges
-
-            // Smooth falloff from center
-            const falloff = 1 - bandProgress;
-
-            // Pulse oscillation
-            const pulse = Math.sin(this.time * this.speed * 5);
-            const brightness = 0.5 + (pulse + 1) * 0.25; // 0.5 to 1.0
-
-            // Combine falloff and pulse
-            const finalBrightness = brightness * falloff;
-
-            if (this.scrollInvert) {
-                // INVERTED MODE: Reduce brightness in the band (darken towards black)
-                const hsl = this.rgbToHsl(color.r, color.g, color.b);
-                const darkenFactor = 1 - finalBrightness; // Invert the brightness
-                return this.hslToRgb(hsl.h, hsl.s, Math.max(0, hsl.l * darkenFactor));
-            } else {
-                // NORMAL MODE: Increase brightness in the band
-                const hsl = this.rgbToHsl(color.r, color.g, color.b);
-                return this.hslToRgb(hsl.h, hsl.s, Math.max(0.2, hsl.l * (1 + finalBrightness)));
-            }
-        } else {
-            // Outside the band - return original color
-            return color;
-        }
     }
 
     /**

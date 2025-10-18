@@ -4,6 +4,7 @@
  */
 import { VolumetricRenderer } from './VolumetricRenderer.js';
 import { SceneLibrary } from './effects/SceneLibrary.js';
+import { ScrollingEffect } from './effects/ScrollingEffect.js';
 import { GlobalEffects } from './effects/GlobalEffects.js';
 import { ParameterAutomation } from './automation/ParameterAutomation.js';
 import { GlobalParameterMapper } from './utils/GlobalParameterMapper.js';
@@ -22,8 +23,9 @@ export class VolumetricDisplay {
         const canvas = document.getElementById(canvasId);
         this.renderer = new VolumetricRenderer(canvas, gridX, gridY, gridZ);
 
-        // Initialize scene library and global effects
+        // Initialize scene library and effects
         this.sceneLibrary = new SceneLibrary(gridX, gridY, gridZ);
+        this.scrollingEffect = new ScrollingEffect(gridX, gridY, gridZ);
         this.globalEffects = new GlobalEffects(gridX, gridY, gridZ);
 
         // Initialize parameter automation
@@ -149,6 +151,31 @@ export class VolumetricDisplay {
         this.globalEffects.setInvert(enabled);
     }
 
+    // Scrolling effect controls
+    setScrollingEnabled(enabled) {
+        this.scrollingEffect.setEnabled(enabled);
+    }
+
+    setScrollingMode(mode) {
+        this.scrollingEffect.setMode(mode);
+    }
+
+    setScrollingThickness(thickness) {
+        this.scrollingEffect.setThickness(thickness);
+    }
+
+    setScrollingDirection(direction) {
+        this.scrollingEffect.setDirection(direction);
+    }
+
+    setScrollingInvert(invert) {
+        this.scrollingEffect.setInvert(invert);
+    }
+
+    setScrollingSpeed(speed) {
+        this.scrollingEffect.setSpeed(speed);
+    }
+
     setFPSCallback(callback) {
         this.fpsCallback = callback;
     }
@@ -220,6 +247,7 @@ export class VolumetricDisplay {
 
         // Update time
         this.time += deltaTime;
+        this.scrollingEffect.update(deltaTime);
         this.globalEffects.update(deltaTime);
     }
 
@@ -239,8 +267,8 @@ export class VolumetricDisplay {
             renderVoxels = blendedVoxels;
         }
 
-        // Render the voxel grid
-        const activeLEDs = this.renderer.render(renderVoxels, this.displayParams);
+        // Render the voxel grid (pass scrolling effect for application in renderer)
+        const activeLEDs = this.renderer.render(renderVoxels, this.displayParams, this.scrollingEffect);
 
         // Update stats
         if (this.activeLEDsCallback) {

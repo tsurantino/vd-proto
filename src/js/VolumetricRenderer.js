@@ -245,7 +245,7 @@ export class VolumetricRenderer {
         } : { r: 100, g: 200, b: 255 };
     }
 
-    getColorForVoxel(x, y, z, val) {
+    getColorForVoxel(x, y, z, val, scrollingEffect = null) {
         let color;
 
         // Check if 3D color mapping is enabled
@@ -292,6 +292,11 @@ export class VolumetricRenderer {
 
         // Apply advanced color effects
         color = this.colorEffects.applyEffect(color, x, y, z, val);
+
+        // Apply scrolling effect if enabled (stackable effect)
+        if (scrollingEffect && scrollingEffect.enabled) {
+            color = scrollingEffect.applyToVoxel(color, x, y, z);
+        }
 
         return color;
     }
@@ -359,7 +364,7 @@ export class VolumetricRenderer {
         }
     }
 
-    render(voxels, params) {
+    render(voxels, params, scrollingEffect = null) {
         // Apply auto rotation
         this.applyAutoRotation();
 
@@ -410,7 +415,7 @@ export class VolumetricRenderer {
             const p = points[i];
             const size = params.ledSize * p.scale;
             const alpha = params.brightness * p.val;
-            const color = this.getColorForVoxel(p.gridX, p.gridY, p.gridZ, p.val);
+            const color = this.getColorForVoxel(p.gridX, p.gridY, p.gridZ, p.val, scrollingEffect);
 
             renderData[i] = {
                 x: p.x,
@@ -426,6 +431,8 @@ export class VolumetricRenderer {
         // Draw glow layer
         for (let i = 0; i < len; i++) {
             const d = renderData[i];
+            // Skip glow for intentionally off (black) pixels
+            if (d.r === 0 && d.g === 0 && d.b === 0) continue;
             this.ctx.fillStyle = `rgba(${d.r}, ${d.g}, ${d.b}, ${d.alpha * 0.3})`;
             this.ctx.beginPath();
             this.ctx.arc(d.x, d.y, d.size * 2, 0, Math.PI * 2);
@@ -435,9 +442,11 @@ export class VolumetricRenderer {
         // Draw center dots (brighter, smaller)
         for (let i = 0; i < len; i++) {
             const d = renderData[i];
-            const brightR = Math.min(255, d.r + 55);
-            const brightG = Math.min(255, d.g + 30);
-            const brightB = d.b;
+            // Only add brightness boost if pixel is not intentionally off (black)
+            const isOff = d.r === 0 && d.g === 0 && d.b === 0;
+            const brightR = isOff ? 0 : Math.min(255, d.r + 55);
+            const brightG = isOff ? 0 : Math.min(255, d.g + 30);
+            const brightB = isOff ? 0 : d.b;
             this.ctx.fillStyle = `rgba(${brightR}, ${brightG}, ${brightB}, ${d.alpha})`;
             this.ctx.beginPath();
             this.ctx.arc(d.x, d.y, d.size * 0.8, 0, Math.PI * 2);

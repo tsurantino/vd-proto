@@ -347,17 +347,6 @@
                         </button>
                     </div>
 
-                    <!-- Scrolling Effects -->
-                    <div class="effect-category-title">Scrolling</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="scrollingStrobe">
-                            <span>Strobe</span>
-                        </button>
-                        <button class="advanced-effect-btn" data-effect="scrollingPulse">
-                            <span>Pulse</span>
-                        </button>
-                    </div>
-
                     <!-- 3D Spatial Effects -->
                     <div class="effect-category-title">3D Spatial</div>
                     <div class="color-effect-buttons">
@@ -463,40 +452,11 @@
                         <input type="range" id="advanced-effect-intensity" min="0" max="1" step="0.05" value="1.0">
                     </div>
                     <div class="control-group">
-                        <label>Effect Speed <span class="value-display" id="advanced-effect-speed-value">1.0</span></label>
-                        <input type="range" id="advanced-effect-speed" min="0.1" max="5" step="0.1" value="1.0">
-                    </div>
-                    <div class="control-group">
                         <label>Color Mode</label>
                         <div class="button-group">
                             <button class="toggle-btn active" data-mode="rainbow" id="color-mode-rainbow">Rainbow</button>
                             <button class="toggle-btn" data-mode="base" id="color-mode-base">Base Color</button>
                         </div>
-                    </div>
-
-                    <!-- Scrolling Effect Parameters -->
-                    <div class="subsection-title">Scrolling Parameters</div>
-                    <div class="control-group">
-                        <label>Scroll Thickness <span class="value-display" id="scroll-thickness-value">5</span></label>
-                        <input type="range" id="scroll-thickness" min="1" max="20" step="1" value="5">
-                    </div>
-                    <div class="control-group">
-                        <label>Scroll Direction</label>
-                        <select id="scroll-direction" class="param-select">
-                            <option value="y">Y (Vertical)</option>
-                            <option value="x">X (Horizontal)</option>
-                            <option value="z">Z (Depth)</option>
-                            <option value="diagonal-xz">Diagonal XZ</option>
-                            <option value="diagonal-yz">Diagonal YZ</option>
-                            <option value="diagonal-xy">Diagonal XY</option>
-                            <option value="radial">Radial (Center Out)</option>
-                        </select>
-                    </div>
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="scroll-invert">
-                            Invert (Turn Pixels Off)
-                        </label>
                     </div>
                     </div>
                 </div>
@@ -558,6 +518,53 @@
                                     <input type="checkbox" id="invert-checkbox">
                                     Invert
                                 </label>
+                            </div>
+
+                            <div class="subsection-title">Scrolling</div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="scrolling-enable">
+                                    Enable Scrolling
+                                </label>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Mode</label>
+                                <div class="button-group">
+                                    <button class="toggle-btn active" data-mode="strobe" id="scrolling-mode-strobe">Strobe</button>
+                                    <button class="toggle-btn" data-mode="pulse" id="scrolling-mode-pulse">Pulse</button>
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Thickness <span class="value-display" id="scrolling-thickness-value">5</span></label>
+                                <input type="range" id="scrolling-thickness" min="1" max="20" step="1" value="5">
+                            </div>
+
+                            <div class="control-group">
+                                <label>Direction</label>
+                                <select id="scrolling-direction" class="param-select">
+                                    <option value="y">Y (Vertical)</option>
+                                    <option value="x">X (Horizontal)</option>
+                                    <option value="z">Z (Depth)</option>
+                                    <option value="diagonal-xz">Diagonal XZ</option>
+                                    <option value="diagonal-yz">Diagonal YZ</option>
+                                    <option value="diagonal-xy">Diagonal XY</option>
+                                    <option value="radial">Radial (Center Out)</option>
+                                </select>
+                            </div>
+
+                            <div class="control-group">
+                                <label>
+                                    <input type="checkbox" id="scrolling-invert">
+                                    Invert (Turn Pixels Off)
+                                </label>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Scroll Speed <span class="value-display" id="scrolling-speed-value">1.0</span></label>
+                                <input type="range" id="scrolling-speed" min="0.1" max="5" step="0.1" value="1.0">
                             </div>
                         </div>
                     </div>

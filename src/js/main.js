@@ -1520,18 +1520,6 @@ advancedEffectIntensity.addEventListener('input', (e) => {
     advancedEffectIntensityValue.textContent = val.toFixed(2);
 });
 
-// Advanced effect speed control
-const advancedEffectSpeed = document.getElementById('advanced-effect-speed');
-const advancedEffectSpeedValue = document.getElementById('advanced-effect-speed-value');
-
-if (advancedEffectSpeed) {
-    advancedEffectSpeed.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        display.renderer.colorEffects.setSpeed(val);
-        advancedEffectSpeedValue.textContent = val.toFixed(1);
-    });
-}
-
 // Color mode toggle
 const colorModeButtons = document.querySelectorAll('[id^="color-mode-"]');
 colorModeButtons.forEach(btn => {
@@ -1544,33 +1532,60 @@ colorModeButtons.forEach(btn => {
     });
 });
 
-// Scrolling effect parameters
-const scrollThickness = document.getElementById('scroll-thickness');
-const scrollThicknessValue = document.getElementById('scroll-thickness-value');
-const scrollDirection = document.getElementById('scroll-direction');
+// ============================================================================
+// SCROLLING EFFECT CONTROLS (Stackable)
+// ============================================================================
 
-if (scrollThickness) {
-    scrollThickness.addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        display.renderer.colorEffects.setScrollThickness(val);
-        scrollThicknessValue.textContent = val.toFixed(0);
-    });
-}
+// Scrolling enable checkbox
+const scrollingEnable = document.getElementById('scrolling-enable');
+scrollingEnable.addEventListener('change', (e) => {
+    display.setScrollingEnabled(e.target.checked);
+    console.log(`Scrolling Effect: ${e.target.checked ? 'ENABLED' : 'DISABLED'}`);
+});
 
-if (scrollDirection) {
-    scrollDirection.addEventListener('change', (e) => {
-        display.renderer.colorEffects.setScrollDirection(e.target.value);
-        console.log(`Scroll Direction: ${e.target.value}`);
+// Scrolling mode buttons
+const scrollingModeButtons = document.querySelectorAll('[id^="scrolling-mode-"]');
+scrollingModeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        scrollingModeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mode = btn.dataset.mode;
+        display.setScrollingMode(mode);
+        console.log(`Scrolling Mode: ${mode}`);
     });
-}
+});
 
-const scrollInvert = document.getElementById('scroll-invert');
-if (scrollInvert) {
-    scrollInvert.addEventListener('change', (e) => {
-        display.renderer.colorEffects.setScrollInvert(e.target.checked);
-        console.log(`Scroll Invert: ${e.target.checked ? 'ON (pixels turn OFF)' : 'OFF (pixels turn ON)'}`);
-    });
-}
+// Scrolling thickness
+const scrollingThickness = document.getElementById('scrolling-thickness');
+const scrollingThicknessValue = document.getElementById('scrolling-thickness-value');
+scrollingThickness.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    display.setScrollingThickness(val);
+    scrollingThicknessValue.textContent = val.toFixed(0);
+});
+
+// Scrolling direction
+const scrollingDirection = document.getElementById('scrolling-direction');
+scrollingDirection.addEventListener('change', (e) => {
+    display.setScrollingDirection(e.target.value);
+    console.log(`Scrolling Direction: ${e.target.value}`);
+});
+
+// Scrolling invert
+const scrollingInvert = document.getElementById('scrolling-invert');
+scrollingInvert.addEventListener('change', (e) => {
+    display.setScrollingInvert(e.target.checked);
+    console.log(`Scrolling Invert: ${e.target.checked ? 'ON (pixels turn OFF)' : 'OFF (pixels turn ON)'}`);
+});
+
+// Scrolling speed
+const scrollingSpeed = document.getElementById('scrolling-speed');
+const scrollingSpeedValue = document.getElementById('scrolling-speed-value');
+scrollingSpeed.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    display.setScrollingSpeed(val);
+    scrollingSpeedValue.textContent = val.toFixed(1);
+});
 
 // ============================================================================
 // START DISPLAY
