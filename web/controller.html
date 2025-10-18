@@ -19,40 +19,33 @@
             line-height: 1.6;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 24px;
-            text-shadow: 0 0 10px #0ff;
-        }
-
         .container {
-            max-width: 1600px;
+            max-width: 1800px;
             margin: 0 auto;
         }
 
         .panel {
-            background: #001a1a;
+            background: #000;
             border: 2px solid #0aa;
             padding: 15px;
             margin-bottom: 15px;
-            border-radius: 5px;
         }
 
         .panel h3 {
             color: #0ff;
-            margin-bottom: 10px;
-            font-size: 16px;
-            border-bottom: 1px solid #0aa;
-            padding-bottom: 5px;
+            margin-bottom: 12px;
+            font-size: 14px;
+            letter-spacing: 1px;
+            font-weight: bold;
         }
 
         .subsection-title {
             color: #0aa;
-            font-size: 13px;
+            font-size: 11px;
             margin: 15px 0 8px 0;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #044;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #0aa;
+            font-weight: bold;
         }
 
         .control-group {
@@ -61,8 +54,10 @@
 
         .control-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             color: #0aa;
+            font-size: 12px;
+            font-weight: bold;
         }
 
         .value-display {
@@ -72,29 +67,81 @@
         }
 
         input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
             width: 100%;
-            height: 8px;
-            background: #003;
-            border: 1px solid #0aa;
+            height: 4px;
+            background: #0aa;
             outline: none;
-            border-radius: 4px;
+            border-radius: 0;
+            border: none;
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #0aa;
+            border-radius: 0;
+            border: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #0ff;
+            width: 18px;
+            height: 18px;
+            background: #0aa;
             cursor: pointer;
             border-radius: 50%;
+            box-shadow: none;
+            margin-top: -7px;
         }
 
         input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #0ff;
+            width: 18px;
+            height: 18px;
+            background: #0aa;
             cursor: pointer;
             border-radius: 50%;
+            border: none;
+            box-shadow: none;
+        }
+
+        input[type="range"]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            background: #0aa;
+            border: none;
+            border-radius: 0;
+        }
+
+        input[type="range"]::-ms-track {
+            width: 100%;
+            height: 4px;
+            background: transparent;
+            border-color: transparent;
+            color: transparent;
+        }
+
+        input[type="range"]::-ms-fill-lower {
+            background: #0aa;
+            border-radius: 0;
+        }
+
+        input[type="range"]::-ms-fill-upper {
+            background: #0aa;
+            border-radius: 0;
+        }
+
+        input[type="range"]::-ms-thumb {
+            width: 18px;
+            height: 18px;
+            background: #0aa;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: none;
+            border: none;
         }
 
         input[type="checkbox"] {
@@ -105,42 +152,49 @@
         select {
             width: 100%;
             padding: 8px;
-            background: #003;
+            background: #000;
             color: #0ff;
             border: 1px solid #0aa;
-            border-radius: 4px;
             cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #0ff;
         }
 
         button {
-            background: #0aa;
-            color: #000;
-            border: none;
+            background: #000;
+            color: #0ff;
+            border: 1px solid #0aa;
             padding: 8px 16px;
             margin: 5px 5px 5px 0;
             cursor: pointer;
-            border-radius: 4px;
             font-family: 'Courier New', monospace;
-            font-weight: bold;
+            font-weight: normal;
             transition: all 0.2s;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         button:hover {
-            background: #0ff;
-            transform: translateY(-2px);
+            background: #002a2a;
+            border-color: #0ff;
         }
 
         button.active {
             background: #0ff;
-            box-shadow: 0 0 10px #0ff;
+            color: #000;
+            font-weight: bold;
         }
 
         #status {
             padding: 15px;
-            background: #003;
-            border: 2px solid #00f;
+            background: #000;
+            border: 2px solid #0aa;
             text-align: center;
+            margin-bottom: 15px;
         }
 
         .status-item {
@@ -153,16 +207,23 @@
         }
 
         .status-value {
-            color: #0ff;
-            font-weight: bold;
+            color: #0aa;
+            display: inline-block;
+            min-width: 80px;
+            text-align: left;
+        }
+
+        #active-leds {
+            min-width: 60px;
         }
 
         .connected {
-            color: #0f0 !important;
+            color: #0ff !important;
         }
 
         .disconnected {
-            color: #f00 !important;
+            color: #0aa !important;
+            opacity: 0.5;
         }
 
         .button-group {
@@ -171,18 +232,31 @@
             gap: 5px;
         }
 
-        .grid {
+        /* Three column layout */
+        .controls-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
         }
 
-        /* Color preset grids */
+        @media (max-width: 1400px) {
+            .controls-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Color preset grids - smaller to fit */
         .color-presets-grid {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
-            gap: 8px;
-            margin: 10px 0;
+            gap: 6px;
+            margin: 8px 0;
         }
 
         .color-preset-btn {
@@ -190,9 +264,9 @@
             aspect-ratio: 1;
             padding: 0;
             border: 2px solid #0aa;
-            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 0;
         }
 
         .color-preset-btn:hover {
@@ -207,65 +281,98 @@
             transform: scale(1.05);
         }
 
-        /* Color effect buttons */
+        /* Color effect buttons - compact */
         .color-effect-buttons {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            margin: 8px 0;
+            gap: 4px;
+            margin: 6px 0;
         }
 
-        .color-effect-btn,
-        .advanced-effect-btn {
-            padding: 6px 12px;
-            font-size: 11px;
-            background: #044;
-            color: #0aa;
-            border: 1px solid #0aa;
-        }
-
-        .color-effect-btn:hover,
-        .advanced-effect-btn:hover {
-            background: #066;
+        .color-effect-btn {
+            padding: 10px 6px;
+            font-size: 10px;
+            background: #000;
             color: #0ff;
+            border: 1px solid #0aa;
+            margin: 0;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            text-align: center;
         }
 
-        .color-effect-btn.active,
-        .advanced-effect-btn.active {
-            background: #0aa;
+        .color-effect-btn:hover {
+            background: #002a2a;
+            border-color: #0ff;
+        }
+
+        .color-effect-btn.active {
+            background: #0ff;
             color: #000;
-            box-shadow: 0 0 8px #0aa;
+            font-weight: bold;
+        }
+
+        .advanced-effect-btn {
+            padding: 10px 6px;
+            font-size: 10px;
+            background: #000;
+            color: #0ff;
+            border: 1px solid #0aa;
+            margin: 0;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .advanced-effect-btn:hover {
+            background: #002a2a;
+            border-color: #0ff;
+            box-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+
+        .advanced-effect-btn.active {
+            background: #ff00ff;
+            color: #000;
+            font-weight: bold;
+            border-color: #ff00ff;
         }
 
         .effect-category-title {
-            font-size: 11px;
-            color: #088;
-            margin: 12px 0 5px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 9px;
+            color: #0ff;
+            margin: 12px 0 6px 0;
+            opacity: 0.6;
+            font-weight: bold;
         }
 
-        /* Layout columns */
-        .controls-columns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        /* Scrollable color panel */
+        .colors-panel {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
-        @media (max-width: 1200px) {
-            .controls-columns {
-                grid-template-columns: 1fr;
-            }
-            .color-presets-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
+        .colors-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .colors-panel::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        .colors-panel::-webkit-scrollbar-thumb {
+            background: #0aa;
+        }
+
+        .colors-panel::-webkit-scrollbar-thumb:hover {
+            background: #0ff;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 VOLUMETRIC DISPLAY CONTROLLER</h1>
-
         <div id="status" class="panel">
             <div class="status-item">
                 <span class="status-label">Status:</span>
@@ -285,8 +392,102 @@
             </div>
         </div>
 
-        <div class="controls-columns">
-            <!-- LEFT COLUMN: Scenes -->
+        <div class="controls-grid">
+            <!-- COLUMN 1: Global Controls -->
+            <div>
+                <div class="panel">
+                    <h3>Global Controls</h3>
+
+                    <div class="control-group">
+                        <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Color Speed <span id="color-speed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="color-speed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="subsection-title">Global Effects</div>
+
+                    <div class="control-group">
+                        <label>Decay / Blur <span id="decay-value" class="value-display">0.00</span></label>
+                        <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Strobe</label>
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
+                            <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="strobe" data-value="medium">Med</button>
+                            <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Pulse</label>
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
+                            <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="pulse" data-value="medium">Med</button>
+                            <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="invert">
+                            Invert
+                        </label>
+                    </div>
+
+                    <div class="subsection-title">Scrolling</div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="scrolling_enabled">
+                            Enable Scrolling
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Mode</label>
+                        <select id="scrolling_mode">
+                            <option value="strobe">Strobe</option>
+                            <option value="pulse">Pulse</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
+                        <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Direction</label>
+                        <select id="scrolling_direction">
+                            <option value="y">Y (Vertical)</option>
+                            <option value="x">X (Horizontal)</option>
+                            <option value="z">Z (Depth)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="scrolling_invert">
+                            Invert (Turn Pixels Off)
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Scroll Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: Scenes -->
             <div>
                 <div class="panel">
                     <h3>Scene Selection</h3>
@@ -299,41 +500,40 @@
                     </div>
                 </div>
 
-                <div class="panel" id="scene-params-panel">
+                <div class="panel">
                     <h3>Scene-Specific Parameters</h3>
-                    <div id="scene-params">
-                        <!-- Shape selector for shapeMorph -->
-                        <div class="control-group" id="shape-control">
-                            <label>Shape</label>
-                            <select id="shape">
-                                <option value="sphere">Sphere</option>
-                                <option value="helix">Helix</option>
-                                <option value="cube">Cube</option>
-                                <option value="torus">Torus</option>
-                                <option value="pyramid">Pyramid</option>
-                            </select>
-                        </div>
 
-                        <!-- Wave type selector for waveField -->
-                        <div class="control-group" id="waveType-control" style="display: none;">
-                            <label>Wave Type</label>
-                            <select id="waveType">
-                                <option value="ripple">Ripple</option>
-                                <option value="plane">Plane</option>
-                                <option value="standing">Standing</option>
-                                <option value="interference">Interference</option>
-                            </select>
-                        </div>
+                    <!-- Shape selector for shapeMorph -->
+                    <div class="control-group" id="shape-control">
+                        <label>Shape</label>
+                        <select id="shape">
+                            <option value="sphere">Sphere</option>
+                            <option value="helix">Helix</option>
+                            <option value="cube">Cube</option>
+                            <option value="torus">Torus</option>
+                            <option value="pyramid">Pyramid</option>
+                        </select>
+                    </div>
 
-                        <!-- Pattern selector for particleFlow -->
-                        <div class="control-group" id="pattern-control" style="display: none;">
-                            <label>Pattern</label>
-                            <select id="pattern">
-                                <option value="particles">Particles</option>
-                                <option value="spiral">Spiral</option>
-                                <option value="explode">Explode</option>
-                            </select>
-                        </div>
+                    <!-- Wave type selector for waveField -->
+                    <div class="control-group" id="waveType-control" style="display: none;">
+                        <label>Wave Type</label>
+                        <select id="waveType">
+                            <option value="ripple">Ripple</option>
+                            <option value="plane">Plane</option>
+                            <option value="standing">Standing</option>
+                            <option value="interference">Interference</option>
+                        </select>
+                    </div>
+
+                    <!-- Pattern selector for particleFlow -->
+                    <div class="control-group" id="pattern-control" style="display: none;">
+                        <label>Pattern</label>
+                        <select id="pattern">
+                            <option value="particles">Particles</option>
+                            <option value="spiral">Spiral</option>
+                            <option value="explode">Explode</option>
+                        </select>
                     </div>
                 </div>
 
@@ -384,10 +584,10 @@
                 </div>
             </div>
 
-            <!-- RIGHT COLUMN: Colors & Effects -->
+            <!-- COLUMN 3: Colors & Effects -->
             <div>
-                <div class="panel">
-                    <h3>Colors</h3>
+                <div class="panel colors-panel">
+                    <h3>Colors & Effects</h3>
 
                     <!-- Solid Colors -->
                     <div class="subsection-title">Solid Colors</div>
@@ -484,11 +684,11 @@
                     <!-- Combination Effects -->
                     <div class="effect-category-title">Combos</div>
                     <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="pulseWave">Pulse Wave</button>
-                        <button class="advanced-effect-btn" data-effect="cyclePulse">Cycle Pulse</button>
-                        <button class="advanced-effect-btn" data-effect="waveChase">Wave Chase</button>
-                        <button class="advanced-effect-btn" data-effect="staticCycle">Static Cycle</button>
-                        <button class="advanced-effect-btn" data-effect="pulseTrail">Pulse Trail</button>
+                        <button class="advanced-effect-btn" data-effect="pulseWave">PulseWave</button>
+                        <button class="advanced-effect-btn" data-effect="cyclePulse">CyclePulse</button>
+                        <button class="advanced-effect-btn" data-effect="waveChase">WaveChase</button>
+                        <button class="advanced-effect-btn" data-effect="staticCycle">StaticCycle</button>
+                        <button class="advanced-effect-btn" data-effect="pulseTrail">PulseTrail</button>
                     </div>
 
                     <!-- 3D Spatial Effects -->
@@ -511,7 +711,7 @@
                     <!-- Interference Effects -->
                     <div class="effect-category-title">Interference</div>
                     <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="sineInterferenceXZ">Sine XZ</button>
+                        <button class="advanced-effect-btn" data-effect="sineInterferenceXZ">SineXZ</button>
                         <button class="advanced-effect-btn" data-effect="sphericalShellsMoving">Bubbles</button>
                         <button class="advanced-effect-btn" data-effect="cornerExplosion">Corners</button>
                     </div>
@@ -528,7 +728,7 @@
                     <div class="effect-category-title">Symmetry</div>
                     <div class="color-effect-buttons">
                         <button class="advanced-effect-btn" data-effect="xzMirror">XZ Mirror</button>
-                        <button class="advanced-effect-btn" data-effect="directionalSweep">Dir Sweep</button>
+                        <button class="advanced-effect-btn" data-effect="directionalSweep">DirSweep</button>
                     </div>
 
                     <!-- Classic Effects -->
@@ -547,97 +747,6 @@
                     <div class="control-group">
                         <label>Effect Intensity <span class="value-display" id="color-effect-intensity-value">1.0</span></label>
                         <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <h3>Global Controls</h3>
-
-                    <div class="control-group">
-                        <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
-                    </div>
-
-                    <div class="control-group">
-                        <label>Color Speed <span id="color-speed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="color-speed" min="0.1" max="5" step="0.1" value="1.0">
-                    </div>
-
-                    <div class="subsection-title">Global Effects</div>
-
-                    <div class="control-group">
-                        <label>Decay / Blur <span id="decay-value" class="value-display">0.00</span></label>
-                        <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
-                    </div>
-
-                    <div class="control-group">
-                        <label>Strobe</label>
-                        <div class="button-group">
-                            <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
-                            <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
-                            <button class="effect-btn" data-param="strobe" data-value="medium">Medium</button>
-                            <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Pulse</label>
-                        <div class="button-group">
-                            <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
-                            <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
-                            <button class="effect-btn" data-param="pulse" data-value="medium">Medium</button>
-                            <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="invert">
-                            Invert
-                        </label>
-                    </div>
-
-                    <div class="subsection-title">Scrolling</div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="scrolling_enabled">
-                            Enable Scrolling
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Mode</label>
-                        <select id="scrolling_mode">
-                            <option value="strobe">Strobe</option>
-                            <option value="pulse">Pulse</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
-                        <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
-                    </div>
-
-                    <div class="control-group">
-                        <label>Direction</label>
-                        <select id="scrolling_direction">
-                            <option value="y">Y (Vertical)</option>
-                            <option value="x">X (Horizontal)</option>
-                            <option value="z">Z (Depth)</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="scrolling_invert">
-                            Invert (Turn Pixels Off)
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Scroll Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
                     </div>
                 </div>
             </div>
@@ -691,34 +800,30 @@
         // Connection status
         socket.on('connect', () => {
             console.log('Connected to server');
-            document.getElementById('connection-status').textContent = 'Connected ✅';
+            document.getElementById('connection-status').textContent = 'Connected';
             document.getElementById('connection-status').className = 'status-value connected';
-            // Send initial params
             sendParams();
         });
 
         socket.on('disconnect', () => {
             console.log('Disconnected from server');
-            document.getElementById('connection-status').textContent = 'Disconnected ❌';
+            document.getElementById('connection-status').textContent = 'Disconnected';
             document.getElementById('connection-status').className = 'status-value disconnected';
         });
 
         socket.on('status', (data) => {
-            console.log('Status:', data);
             if (data.config) {
                 document.getElementById('grid-size').textContent =
                     `${data.config.gridX}×${data.config.gridY}×${data.config.gridZ}`;
             }
         });
 
-        // Stats updates
         socket.on('stats', (data) => {
             document.getElementById('fps').textContent = data.fps;
             document.getElementById('active-leds').textContent = data.active_leds.toLocaleString();
         });
 
         function sendParams() {
-            // Flatten scene_params into main params object
             const flatParams = {...params, ...params.scene_params};
             socket.emit('update_params', flatParams);
         }
@@ -728,14 +833,12 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
                 params.scene_type = btn.dataset.scene;
                 updateSceneParams(params.scene_type);
                 sendParams();
             });
         });
 
-        // Update visible scene-specific parameters
         function updateSceneParams(sceneType) {
             document.getElementById('shape-control').style.display =
                 sceneType === 'shapeMorph' ? 'block' : 'none';
@@ -749,7 +852,6 @@
         function setupSlider(id, param, decimals = 2) {
             const slider = document.getElementById(id);
             const valueDisplay = document.getElementById(`${id}-value`);
-
             slider.addEventListener('input', (e) => {
                 const value = parseFloat(e.target.value);
                 valueDisplay.textContent = value.toFixed(decimals);
@@ -777,25 +879,19 @@
         document.querySelectorAll('.color-preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const type = btn.dataset.type;
-
                 if (type === 'single') {
-                    // Remove active from all single color buttons
                     document.querySelectorAll('.color-preset-btn[data-type="single"]')
                         .forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-
                     params.color_type = 'single';
                     params.color_single = btn.dataset.color;
                 } else if (type === 'gradient') {
-                    // Remove active from all gradient buttons
                     document.querySelectorAll('.color-preset-btn[data-type="gradient"]')
                         .forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-
                     params.color_type = 'gradient';
                     params.color_gradient = btn.dataset.gradient;
                 }
-
                 sendParams();
             });
         });
@@ -803,37 +899,19 @@
         // Color mode toggle
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                const mode = btn.dataset.mode;
-
                 document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                params.color_mode = mode;
+                params.color_mode = btn.dataset.mode;
                 sendParams();
             });
         });
 
-        // Basic color effect buttons
-        document.querySelectorAll('.color-effect-btn').forEach(btn => {
+        // Color effect buttons
+        document.querySelectorAll('.color-effect-btn, .advanced-effect-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active from all color effect buttons
                 document.querySelectorAll('.color-effect-btn, .advanced-effect-btn')
                     .forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                params.color_effect = btn.dataset.effect;
-                sendParams();
-            });
-        });
-
-        // Advanced color effect buttons
-        document.querySelectorAll('.advanced-effect-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active from all color effect buttons
-                document.querySelectorAll('.color-effect-btn, .advanced-effect-btn')
-                    .forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
                 params.color_effect = btn.dataset.effect;
                 sendParams();
             });
@@ -843,14 +921,10 @@
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const param = btn.dataset.param;
-                const value = btn.dataset.value;
-
-                // Remove active from siblings
                 document.querySelectorAll(`.effect-btn[data-param="${param}"]`)
                     .forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                params[param] = value;
+                params[param] = btn.dataset.value;
                 sendParams();
             });
         });
@@ -887,7 +961,6 @@
             sendParams();
         });
 
-        // Scrolling selects
         document.getElementById('scrolling_mode').addEventListener('change', (e) => {
             params.scrolling_mode = e.target.value;
             sendParams();
