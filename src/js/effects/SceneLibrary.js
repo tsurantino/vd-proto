@@ -34,7 +34,7 @@ export class SceneLibrary {
                 category: 'core',
                 defaultParams: {
                     pattern: 'particles', // 'particles', 'spiral', 'explode', 'tornado', 'whirlpool', 'galaxy'
-                    particleSize: 1, // Size of each particle (1-5) - mapped from global size parameter
+                    particleSize: 1 // Size of each particle (1-5) - mapped from global size parameter
                     // Global params used: size (particleSize), density, velocity (animationSpeed), amplitude (radius), depth (height), objectOffset, movement params
                     // For directional flow (rain, fountain, stars), use movement presets with scrollSpeed/scrollDirection
                     // Vortex patterns (tornado, whirlpool, galaxy) also use: amplitude->radius, depth->height, animationSpeed->velocity/twist
@@ -111,14 +111,6 @@ export class SceneLibrary {
                 },
                 fn: (voxels, time, params) => this.illusionScenes.renderWaterfallIllusion(voxels, time, params)
             },
-            'penroseTriangle': {
-                name: 'Penrose Triangle',
-                category: 'illusion',
-                defaultParams: {
-                    // Global params used: size, animationSpeed
-                },
-                fn: (voxels, time, params) => this.illusionScenes.renderPenroseTriangle(voxels, time, params)
-            },
             'neckerCube': {
                 name: 'Necker Cube',
                 category: 'illusion',
@@ -126,14 +118,6 @@ export class SceneLibrary {
                     // Global params used: size, thickness
                 },
                 fn: (voxels, time, params) => this.illusionScenes.renderNeckerCube(voxels, time, params)
-            },
-            'fraserSpiral': {
-                name: 'Fraser Spiral',
-                category: 'illusion',
-                defaultParams: {
-                    // Global params used: size, frequency, animationSpeed
-                },
-                fn: (voxels, time, params) => this.illusionScenes.renderFraserSpiral(voxels, time, params)
             },
             'cafeWall': {
                 name: 'Café Wall Illusion',
@@ -150,22 +134,6 @@ export class SceneLibrary {
                     // Global params used: size, animationSpeed
                 },
                 fn: (voxels, time, params) => this.illusionScenes.renderPulfrich(voxels, time, params)
-            },
-            'rotatingSnakes': {
-                name: 'Rotating Snakes',
-                category: 'illusion',
-                defaultParams: {
-                    // Global params used: size, animationSpeed
-                },
-                fn: (voxels, time, params) => this.illusionScenes.renderRotatingSnakes(voxels, time, params)
-            },
-            'breathingSquare': {
-                name: 'Breathing Square',
-                category: 'illusion',
-                defaultParams: {
-                    // Global params used: size, frequency
-                },
-                fn: (voxels, time, params) => this.illusionScenes.renderBreathingSquare(voxels, time, params)
             },
             'moirePattern': {
                 name: 'Moiré Pattern',

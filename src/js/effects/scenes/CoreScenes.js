@@ -218,6 +218,7 @@ export class CoreScenes {
 
                 // Wrap object center to keep it within reasonable bounds for continuous scrolling
                 // This prevents the center from drifting infinitely far from the grid
+                // Only wrap if actually scrolling (scrollOffset is non-zero)
                 if (params.scrollSpeed !== 0) {
                     // Define wrap boundaries (with margin for smooth transitions)
                     const wrapMargin = radius * 2;
@@ -232,15 +233,14 @@ export class CoreScenes {
                     const rangeY = maxY - minY;
                     const rangeZ = maxZ - minZ;
 
-                    // Wrap each axis using proper modulo that handles any offset
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        // Normalize to range [0, rangeX), then shift to [minX, maxX)
+                    // Only wrap axes that have actual scroll offset applied
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         objCenterX = minX + ((objCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'y') {
+                    if (params.scrollDirection === 'y' && scrollOffsetY !== 0) {
                         objCenterY = minY + ((objCenterY - minY) % rangeY + rangeY) % rangeY;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         objCenterZ = minZ + ((objCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }
@@ -485,10 +485,10 @@ export class CoreScenes {
                     const rangeX = maxX - minX;
                     const rangeZ = maxZ - minZ;
 
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         helixCenterX = minX + ((helixCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         helixCenterZ = minZ + ((helixCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }
@@ -753,13 +753,13 @@ export class CoreScenes {
                     const rangeY = maxY - minY;
                     const rangeZ = maxZ - minZ;
 
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         planeCenterX = minX + ((planeCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'y') {
+                    if (params.scrollDirection === 'y' && scrollOffsetY !== 0) {
                         planeCenterY = minY + ((planeCenterY - minY) % rangeY + rangeY) % rangeY;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         planeCenterZ = minZ + ((planeCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }
@@ -986,13 +986,13 @@ export class CoreScenes {
                     const rangeY = maxY - minY;
                     const rangeZ = maxZ - minZ;
 
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         torusCenterX = minX + ((torusCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'y') {
+                    if (params.scrollDirection === 'y' && scrollOffsetY !== 0) {
                         torusCenterY = minY + ((torusCenterY - minY) % rangeY + rangeY) % rangeY;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         torusCenterZ = minZ + ((torusCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }
@@ -1241,13 +1241,13 @@ export class CoreScenes {
                     const rangeY = maxY - minY;
                     const rangeZ = maxZ - minZ;
 
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         cubeCenterX = minX + ((cubeCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'y') {
+                    if (params.scrollDirection === 'y' && scrollOffsetY !== 0) {
                         cubeCenterY = minY + ((cubeCenterY - minY) % rangeY + rangeY) % rangeY;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         cubeCenterZ = minZ + ((cubeCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }
@@ -1497,13 +1497,13 @@ export class CoreScenes {
                     const rangeY = maxY - minY;
                     const rangeZ = maxZ - minZ;
 
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') && scrollOffsetX !== 0) {
                         pyrCenterX = minX + ((pyrCenterX - minX) % rangeX + rangeX) % rangeX;
                     }
-                    if (params.scrollDirection === 'y') {
+                    if (params.scrollDirection === 'y' && scrollOffsetY !== 0) {
                         pyrCenterY = minY + ((pyrCenterY - minY) % rangeY + rangeY) % rangeY;
                     }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                    if ((params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') && scrollOffsetZ !== 0) {
                         pyrCenterZ = minZ + ((pyrCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
                     }
                 }

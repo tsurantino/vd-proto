@@ -339,9 +339,6 @@ function createGlobalParameterControls() {
     // Object Offset (time stagger between objects)
     createGlobalSliderControl('objectOffset', 'Object Time Offset', display.getGlobalSceneParameter('objectOffset'), 0, 1, 0.05);
 
-    // Animation Speed
-    createGlobalSliderControl('animationSpeed', 'Animation Speed', display.getGlobalSceneParameter('animationSpeed'), 0.1, 3, 0.1);
-
     // MOVEMENT PRESETS (moved above Movement Controls)
     const presetsHeader = document.createElement('div');
     presetsHeader.className = 'subsection-title';
@@ -981,13 +978,14 @@ console.log('Scene controls initialized');
 // GLOBAL EFFECTS CONTROLS
 // ============================================================================
 
-// Animation speed control (display speed, not scene speed)
+// Animation speed control (controls both display speed AND scene animation speed)
 const animationSpeedSlider = document.getElementById('animation-speed');
 const animationSpeedValue = document.getElementById('animation-speed-value');
 
 animationSpeedSlider.addEventListener('input', (e) => {
     const val = parseFloat(e.target.value);
     display.setDisplayParameter('speed', val);
+    display.setGlobalSceneParameter('animationSpeed', val); // Also set scene animation speed for particle flow
     animationSpeedValue.textContent = val.toFixed(1);
 });
 

@@ -150,47 +150,6 @@ export class IllusionScenes {
         }
     }
 
-    // PENROSE TRIANGLE
-    renderPenroseTriangle(voxels, time, params) {
-        if (params.shouldClear !== false) voxels.fill(0);
-
-        const size = params.size || 1.0;
-        const speed = params.animationSpeed || 1.0;
-        const angle = time * speed * 0.3;
-
-        const scale = 8 * size;
-        const thickness = 2;
-
-        const bars = [
-            { start: [0, 0, 0], end: [1, 0, 0], offset: [0, 0, 0.5] },
-            { start: [1, 0, 0], end: [0.5, 1, 0], offset: [0, 0, 0] },
-            { start: [0.5, 1, 0], end: [0, 0, 0], offset: [0.5, 0, 0] }
-        ];
-
-        bars.forEach(bar => {
-            for (let t = 0; t <= 1; t += 0.05) {
-                const x = (bar.start[0] + (bar.end[0] - bar.start[0]) * t - 0.5) * scale;
-                const y = (bar.start[1] + (bar.end[1] - bar.start[1]) * t - 0.5) * scale;
-                const z = (bar.start[2] + (bar.end[2] - bar.start[2]) * t + bar.offset[2] * t) * scale;
-
-                const xRot = x * Math.cos(angle) - z * Math.sin(angle);
-                const zRot = x * Math.sin(angle) + z * Math.cos(angle);
-
-                for (let dx = -thickness; dx <= thickness; dx++) {
-                    for (let dy = -thickness; dy <= thickness; dy++) {
-                        const wx = Math.floor(this.gridX / 2 + xRot + dx);
-                        const wy = Math.floor(this.gridY / 2 + y + dy);
-                        const wz = Math.floor(this.gridZ / 2 + zRot);
-
-                        if (wx >= 0 && wx < this.gridX && wy >= 0 && wy < this.gridY && wz >= 0 && wz < this.gridZ) {
-                            voxels[wx + wy * this.gridX + wz * this.gridX * this.gridY] = 1;
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     // NECKER CUBE
     renderNeckerCube(voxels, time, params) {
         if (params.shouldClear !== false) voxels.fill(0);
@@ -235,44 +194,6 @@ export class IllusionScenes {
                 }
             }
         });
-    }
-
-    // FRASER SPIRAL
-    renderFraserSpiral(voxels, time, params) {
-        if (params.shouldClear !== false) voxels.fill(0);
-
-        const size = params.size || 1.0;
-        const frequency = params.frequency || 1.0;
-        const speed = params.animationSpeed || 1.0;
-
-        const numCircles = Math.floor(8 * size);
-        const rotation = time * speed * 0.2;
-
-        for (let circle = 1; circle <= numCircles; circle++) {
-            const radius = (circle / numCircles) * (this.gridX / 2 - 2);
-            const numSegments = Math.floor(circle * 8 * frequency);
-
-            for (let seg = 0; seg < numSegments; seg++) {
-                const angle = (seg / numSegments) * Math.PI * 2 + rotation;
-                const nextAngle = ((seg + 1) / numSegments) * Math.PI * 2 + rotation;
-
-                const brightness = seg % 2 === 0 ? 1 : 0.3;
-
-                for (let t = 0; t <= 1; t += 0.1) {
-                    const a = angle + (nextAngle - angle) * t;
-                    const x = Math.floor(this.gridX / 2 + Math.cos(a) * radius);
-                    const z = Math.floor(this.gridZ / 2 + Math.sin(a) * radius);
-
-                    for (let y = 0; y < this.gridY; y++) {
-                        const yOffset = Math.floor((Math.sin(a * 4) * 3 + y / 2) % this.gridY);
-
-                        if (x >= 0 && x < this.gridX && z >= 0 && z < this.gridZ) {
-                            voxels[x + yOffset * this.gridX + z * this.gridX * this.gridY] = brightness;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     // CAFÉ WALL ILLUSION
@@ -347,91 +268,6 @@ export class IllusionScenes {
 
                             if (wx >= 0 && wx < this.gridX && wy >= 0 && wy < this.gridY && wz >= 0 && wz < this.gridZ) {
                                 voxels[wx + wy * this.gridX + wz * this.gridX * this.gridY] = brightness;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ROTATING SNAKES
-    renderRotatingSnakes(voxels, time, params) {
-        if (params.shouldClear !== false) voxels.fill(0);
-
-        const size = params.size || 1.0;
-        const speed = params.animationSpeed || 1.0;
-
-        const numRings = Math.floor(4 * size);
-        const rotation = time * speed * 0.1;
-        const halfX = this.gridX / 2;
-        const halfZ = this.gridZ / 2;
-
-        const patternBrightness = [1, 0.7, 0.3, 0.7];
-
-        for (let ring = 0; ring < numRings; ring++) {
-            const radius = 5 + ring * 5;
-            const numSegments = 16;
-            const ringRotation = rotation + ring * 0.5;
-            const angleStep = (Math.PI * 2) / numSegments;
-
-            for (let seg = 0; seg < numSegments; seg++) {
-                const angle = seg * angleStep + ringRotation;
-
-                const pattern = Math.floor(seg / 4) % 4;
-                const brightness = patternBrightness[pattern];
-
-                for (let t = 0; t <= 1; t += 0.5) {
-                    const a = angle + t * angleStep;
-                    const x = Math.floor(halfX + Math.cos(a) * radius);
-                    const z = Math.floor(halfZ + Math.sin(a) * radius);
-
-                    if (x >= 0 && x < this.gridX && z >= 0 && z < this.gridZ) {
-                        const baseIdx = x + z * this.gridX * this.gridY;
-                        for (let y = 0; y < this.gridY; y++) {
-                            const yPattern = (y + seg) % 4;
-                            const yBrightness = yPattern < 2 ? brightness : brightness * 0.5;
-                            voxels[baseIdx + y * this.gridX] = yBrightness;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // BREATHING SQUARE
-    renderBreathingSquare(voxels, time, params) {
-        if (params.shouldClear !== false) voxels.fill(0);
-
-        const size = params.size || 1.0;
-        const frequency = params.frequency || 1.0;
-
-        const checkSize = Math.max(2, Math.floor(4 * size));
-        const pulse = Math.sin(time * frequency * 2) * 0.2 + 1;
-
-        const step = 2;
-        for (let x = 0; x < this.gridX; x += step) {
-            for (let y = 0; y < this.gridY; y += step) {
-                for (let z = 0; z < this.gridZ; z += step) {
-                    const checkX = Math.floor((x + time * 2) / checkSize);
-                    const checkY = Math.floor(y / checkSize);
-                    const checkZ = Math.floor(z / checkSize);
-
-                    const isLight = (checkX + checkY + checkZ) % 2 === 0;
-
-                    const dx = x - this.gridX / 2;
-                    const dy = y - this.gridY / 2;
-                    const dz = z - this.gridZ / 2;
-                    const distSq = dx * dx + dy * dy + dz * dz;
-                    const distNorm = distSq / ((this.gridX / 2) * (this.gridX / 2));
-
-                    const brightness = isLight ? pulse : (1 - distNorm * 0.1);
-                    const value = brightness * (isLight ? 1 : 0.3);
-
-                    for (let dx = 0; dx < step && x + dx < this.gridX; dx++) {
-                        for (let dy = 0; dy < step && y + dy < this.gridY; dy++) {
-                            for (let dz = 0; dz < step && z + dz < this.gridZ; dz++) {
-                                voxels[(x + dx) + (y + dy) * this.gridX + (z + dz) * this.gridX * this.gridY] = value;
                             }
                         }
                     }
