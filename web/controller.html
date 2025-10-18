@@ -218,7 +218,7 @@
         }
 
         .connected {
-            color: #0ff !important;
+            color: #0aa !important;
         }
 
         .disconnected {
@@ -227,9 +227,17 @@
         }
 
         .button-group {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 5px;
+        }
+
+        .button-group button {
+            width: 100%;
+            aspect-ratio: 2.5 / 1;
+            padding: 12px 4px;
+            margin: 0;
+            min-width: 0;
         }
 
         /* Three column layout */
@@ -408,17 +416,14 @@
                         <input type="range" id="color-speed" min="0.1" max="5" step="0.1" value="1.0">
                     </div>
 
-                    <div class="subsection-title">Global Effects</div>
-
                     <div class="control-group">
                         <label>Decay / Blur <span id="decay-value" class="value-display">0.00</span></label>
                         <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
                     </div>
 
                     <div class="control-group">
-                        <label>Strobe</label>
                         <div class="button-group">
-                            <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
+                            <button class="effect-btn active" data-param="strobe" data-value="off">Strobe Off</button>
                             <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
                             <button class="effect-btn" data-param="strobe" data-value="medium">Med</button>
                             <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
@@ -426,9 +431,8 @@
                     </div>
 
                     <div class="control-group">
-                        <label>Pulse</label>
                         <div class="button-group">
-                            <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
+                            <button class="effect-btn active" data-param="pulse" data-value="off">Pulse Off</button>
                             <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
                             <button class="effect-btn" data-param="pulse" data-value="medium">Med</button>
                             <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
@@ -436,53 +440,28 @@
                     </div>
 
                     <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="invert">
-                            Invert
-                        </label>
-                    </div>
-
-                    <div class="subsection-title">Scrolling</div>
-
-                    <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="scrolling_enabled">
-                            Enable Scrolling
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Mode</label>
-                        <select id="scrolling_mode">
-                            <option value="strobe">Strobe</option>
-                            <option value="pulse">Pulse</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
-                        <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
+                        <label>Scrolling Thickness <span id="scrolling_thickness-value" class="value-display">0</span></label>
+                        <input type="range" id="scrolling_thickness" min="0" max="20" step="1" value="0">
                     </div>
 
                     <div class="control-group">
                         <label>Direction</label>
-                        <select id="scrolling_direction">
-                            <option value="y">Y (Vertical)</option>
-                            <option value="x">X (Horizontal)</option>
-                            <option value="z">Z (Depth)</option>
-                        </select>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="toggle-btn active" data-param="scrolling_direction" data-value="y">Y</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="x">X</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="z">Z</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xz">Diag XZ</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-yz">Diag YZ</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xy">Diag XY</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="radial">Radial</button>
+                        </div>
                     </div>
 
                     <div class="control-group">
-                        <label>
-                            <input type="checkbox" id="scrolling_invert">
-                            Invert (Turn Pixels Off)
-                        </label>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Scroll Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
+                        <div class="button-group" style="grid-template-columns: 1fr 1fr;">
+                            <button class="toggle-btn" id="scrolling_invert" data-param="scrolling_invert">Invert Scrolling</button>
+                            <button class="toggle-btn" id="invert" data-param="invert">Invert Colors</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -783,11 +762,8 @@
             strobe: 'off',
             pulse: 'off',
             invert: false,
-            scrolling_enabled: false,
-            scrolling_mode: 'strobe',
             scrolling_direction: 'y',
-            scrolling_thickness: 5,
-            scrolling_speed: 1.0,
+            scrolling_thickness: 0,
             scrolling_invert: false,
             // Scene-specific params
             scene_params: {
@@ -873,7 +849,6 @@
         setupSlider('color-speed', 'color_speed', 2);
         setupSlider('color-effect-intensity', 'color_effect_intensity', 2);
         setupSlider('scrolling_thickness', 'scrolling_thickness', 0);
-        setupSlider('scrolling_speed', 'scrolling_speed', 2);
 
         // Color preset buttons
         document.querySelectorAll('.color-preset-btn').forEach(btn => {
@@ -897,9 +872,9 @@
         });
 
         // Color mode toggle
-        document.querySelectorAll('.toggle-btn').forEach(btn => {
+        document.querySelectorAll('.toggle-btn[data-mode]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.toggle-btn[data-mode]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 params.color_mode = btn.dataset.mode;
                 sendParams();
@@ -921,10 +896,32 @@
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const param = btn.dataset.param;
+                const value = btn.dataset.value;
+
+                // Remove active from current param buttons
                 document.querySelectorAll(`.effect-btn[data-param="${param}"]`)
                     .forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                params[param] = btn.dataset.value;
+                params[param] = value;
+
+                // If activating strobe (not off), deactivate pulse
+                if (param === 'strobe' && value !== 'off') {
+                    params.pulse = 'off';
+                    document.querySelectorAll('.effect-btn[data-param="pulse"]')
+                        .forEach(b => b.classList.remove('active'));
+                    document.querySelector('.effect-btn[data-param="pulse"][data-value="off"]')
+                        .classList.add('active');
+                }
+
+                // If activating pulse (not off), deactivate strobe
+                if (param === 'pulse' && value !== 'off') {
+                    params.strobe = 'off';
+                    document.querySelectorAll('.effect-btn[data-param="strobe"]')
+                        .forEach(b => b.classList.remove('active'));
+                    document.querySelector('.effect-btn[data-param="strobe"][data-value="off"]')
+                        .classList.add('active');
+                }
+
                 sendParams();
             });
         });
@@ -945,30 +942,27 @@
             sendParams();
         });
 
-        // Checkboxes
-        document.getElementById('invert').addEventListener('change', (e) => {
-            params.invert = e.target.checked;
+        // Invert toggle buttons
+        document.getElementById('invert').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.invert = e.target.classList.contains('active');
             sendParams();
         });
 
-        document.getElementById('scrolling_enabled').addEventListener('change', (e) => {
-            params.scrolling_enabled = e.target.checked;
+        document.getElementById('scrolling_invert').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.scrolling_invert = e.target.classList.contains('active');
             sendParams();
         });
 
-        document.getElementById('scrolling_invert').addEventListener('change', (e) => {
-            params.scrolling_invert = e.target.checked;
-            sendParams();
-        });
-
-        document.getElementById('scrolling_mode').addEventListener('change', (e) => {
-            params.scrolling_mode = e.target.value;
-            sendParams();
-        });
-
-        document.getElementById('scrolling_direction').addEventListener('change', (e) => {
-            params.scrolling_direction = e.target.value;
-            sendParams();
+        // Scrolling direction buttons
+        document.querySelectorAll('[data-param="scrolling_direction"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="scrolling_direction"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scrolling_direction = btn.dataset.value;
+                sendParams();
+            });
         });
 
         console.log('Controller UI loaded');
