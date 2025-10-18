@@ -33,9 +33,10 @@ export class SceneLibrary {
                 name: 'Particle Flow',
                 category: 'core',
                 defaultParams: {
-                    pattern: 'rain', // 'rain', 'stars', 'fountain', 'spiral', 'explode', 'tornado', 'whirlpool', 'galaxy'
+                    pattern: 'particles', // 'particles', 'spiral', 'explode', 'tornado', 'whirlpool', 'galaxy'
                     particleSize: 1, // Size of each particle (1-5) - mapped from global size parameter
                     // Global params used: size (particleSize), density, velocity (animationSpeed), amplitude (radius), depth (height), objectOffset, movement params
+                    // For directional flow (rain, fountain, stars), use movement presets with scrollSpeed/scrollDirection
                     // Vortex patterns (tornado, whirlpool, galaxy) also use: amplitude->radius, depth->height, animationSpeed->velocity/twist
                 },
                 fn: (voxels, time, params) => this.coreScenes.renderParticleFlow(voxels, time, params)

@@ -362,14 +362,36 @@ function createGlobalParameterControls() {
             // Apply preset
             MovementPresets.apply(display, key);
 
-            // Update all slider UIs
+            // First, update ALL sliders to their reset values (0)
+            const resetPreset = MovementPresets.getPreset('reset');
+            if (key !== 'reset') {
+                Object.entries(resetPreset.params).forEach(([param, value]) => {
+                    const valueDisplay = document.getElementById(`global-param-${param}-value`);
+                    const slider = document.getElementById(`global-param-${param}`);
+                    const select = document.getElementById(`global-param-${param}`);
+
+                    if (slider && valueDisplay) {
+                        const step = parseFloat(slider.step) || 0.05;
+                        valueDisplay.textContent = value.toFixed(step >= 1 ? 0 : 2);
+                        slider.value = value;
+                    } else if (select) {
+                        select.value = value;
+                    }
+                });
+            }
+
+            // Then update sliders for the specific preset parameters
             Object.entries(preset.params).forEach(([param, value]) => {
                 const valueDisplay = document.getElementById(`global-param-${param}-value`);
                 const slider = document.getElementById(`global-param-${param}`);
-                if (valueDisplay && slider) {
+                const select = document.getElementById(`global-param-${param}`);
+
+                if (slider && valueDisplay) {
                     const step = parseFloat(slider.step) || 0.05;
                     valueDisplay.textContent = value.toFixed(step >= 1 ? 0 : 2);
                     slider.value = value;
+                } else if (select) {
+                    select.value = value;
                 }
             });
 
@@ -782,10 +804,8 @@ function createShapeMorphControls(params) {
 
 function createParticleFlowControls(params) {
     // Pattern select (scene-specific)
-    createSelectControl('pattern', 'Pattern', params.pattern || 'rain', [
-        { value: 'rain', label: 'Rain' },
-        { value: 'stars', label: 'Stars' },
-        { value: 'fountain', label: 'Fountain' },
+    createSelectControl('pattern', 'Pattern', params.pattern || 'particles', [
+        { value: 'particles', label: 'Particles' },
         { value: 'spiral', label: 'Spiral' },
         { value: 'explode', label: 'Explode' },
         { value: 'tornado', label: 'Tornado' },
@@ -795,6 +815,7 @@ function createParticleFlowControls(params) {
 
     // Note: particle size controlled by global "Size / Scale" parameter
     // Note: density, velocity (animationSpeed), radius (amplitude), height (depth), and movement all moved to global parameters
+    // Note: For directional flow (rain, fountain, stars), use Movement Presets like "Rain (Scroll Down)", "Scroll Up", or "Starfield (Scroll Back)"
     // Note: vortex patterns (tornado, whirlpool, galaxy) support per-particle time offsets via Object Time Offset parameter
 }
 

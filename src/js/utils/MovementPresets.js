@@ -32,7 +32,8 @@ export class MovementPresets {
                 ellipseSpeed: 0,
                 ellipseRadiusX: 0,
                 ellipseRadiusZ: 0,
-                scrollSpeed: 0
+                scrollSpeed: 0,
+                scrollDirection: 'x'
             }
         },
         'gentleFloat': {
@@ -126,6 +127,54 @@ export class MovementPresets {
             params: {
                 scrollSpeed: 1.5,
                 scrollDirection: 'x'
+            }
+        },
+        'scrollRight': {
+            name: 'Scroll Right',
+            description: 'Continuous scroll to the right (positive X)',
+            params: {
+                scrollSpeed: 1.0,
+                scrollDirection: 'x'
+            }
+        },
+        'scrollUp': {
+            name: 'Scroll Up',
+            description: 'Continuous upward scroll (fountain effect)',
+            params: {
+                scrollSpeed: 1.0,
+                scrollDirection: 'y'
+            }
+        },
+        'scrollForward': {
+            name: 'Scroll Forward',
+            description: 'Continuous scroll forward (positive Z)',
+            params: {
+                scrollSpeed: 1.0,
+                scrollDirection: 'z'
+            }
+        },
+        'scrollDiagonal': {
+            name: 'Scroll Diagonal',
+            description: 'Continuous diagonal scroll (X and Z)',
+            params: {
+                scrollSpeed: 1.0,
+                scrollDirection: 'diagonal'
+            }
+        },
+        'rain': {
+            name: 'Rain (Scroll Down)',
+            description: 'Downward falling motion like rain',
+            params: {
+                scrollSpeed: -1.0,
+                scrollDirection: 'y'
+            }
+        },
+        'starfield': {
+            name: 'Starfield (Scroll Back)',
+            description: 'Stars coming toward viewer',
+            params: {
+                scrollSpeed: -1.0,
+                scrollDirection: 'z'
             }
         }
     };

@@ -24,16 +24,22 @@ export class RainParticleSystem {
         }
     }
 
-    update(speed) {
-        this.particles.forEach(p => {
-            // Rain falls along Y axis (downward)
-            p.y -= p.speed * speed * 0.3;
-            if (p.y < 0) {
-                p.y = this.gridY;
-                p.x = Math.random() * this.gridX;
-                p.z = Math.random() * this.gridZ;
-            }
-        });
+    update(speed, scrollDirection = null, scrollSpeed = 0) {
+        // If scrolling is enabled, particles don't move on their own
+        // Movement is handled by the scroll transform
+        if (scrollSpeed === 0 || !scrollDirection) {
+            // Default behavior: rain falls along Y axis (downward)
+            this.particles.forEach(p => {
+                p.y -= p.speed * speed * 0.3;
+                if (p.y < 0) {
+                    p.y = this.gridY;
+                    p.x = Math.random() * this.gridX;
+                    p.z = Math.random() * this.gridZ;
+                }
+            });
+        }
+        // When scrolling is active, particles stay at their random positions
+        // and the scroll transform creates the motion effect
     }
 
     getParticles() {

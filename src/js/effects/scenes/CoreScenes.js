@@ -125,7 +125,7 @@ export class CoreScenes {
             let scrollOffsetY = 0;
             let scrollOffsetZ = 0;
 
-            if (params.scrollSpeed > 0) {
+            if (params.scrollSpeed !== 0) {
                 const scrollAmount = offsetTime * params.scrollSpeed * 2;
                 switch (params.scrollDirection) {
                     case 'x':
@@ -167,7 +167,7 @@ export class CoreScenes {
         const thickness = 1 + params.thickness * 3;
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
 
         // Draw multiple objects distributed around center (not nested)
         for (let copyIdx = 0; copyIdx < renderCopies; copyIdx++) {
@@ -216,6 +216,35 @@ export class CoreScenes {
                 objCenterY += scrollOffsetY;
                 objCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                // This prevents the center from drifting infinitely far from the grid
+                if (params.scrollSpeed !== 0) {
+                    // Define wrap boundaries (with margin for smooth transitions)
+                    const wrapMargin = radius * 2;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minY = -wrapMargin;
+                    const maxY = this.gridY + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const rangeZ = maxZ - minZ;
+
+                    // Wrap each axis using proper modulo that handles any offset
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        // Normalize to range [0, rangeX), then shift to [minX, maxX)
+                        objCenterX = minX + ((objCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'y') {
+                        objCenterY = minY + ((objCenterY - minY) % rangeY + rangeY) % rangeY;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        objCenterZ = minZ + ((objCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = (radius * 3) * numSpheres;
@@ -238,28 +267,30 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numSpheres > 1) {
-                    const totalWrapDistance = (radius * 3) * numSpheres;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        objCenterX = centerX + ((objCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'y') {
-                        objCenterY = centerY + ((objCenterY - centerY) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        objCenterZ = centerZ + ((objCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
-            // Draw each sphere
+            // Draw each sphere with wrapping support
             for (let x = 0; x < this.gridX; x++) {
                 for (let y = 0; y < this.gridY; y++) {
                     for (let z = 0; z < this.gridZ; z++) {
                         // Get position relative to object center
+                        // Apply wrapping to handle objects outside grid bounds
                         let dx = x - objCenterX;
                         let dy = (y - objCenterY) * 2; // Y is half size
                         let dz = z - objCenterZ;
+
+                        // Wrap dx, dy, dz to handle scrolling objects
+                        // This creates seamless edge-to-edge wrapping
+                        if (Math.abs(dx) > this.gridX / 2) {
+                            dx = dx > 0 ? dx - this.gridX : dx + this.gridX;
+                        }
+                        if (Math.abs(dy) > this.gridY) {
+                            dy = dy > 0 ? dy - this.gridY * 2 : dy + this.gridY * 2;
+                        }
+                        if (Math.abs(dz) > this.gridZ / 2) {
+                            dz = dz > 0 ? dz - this.gridZ : dz + this.gridZ;
+                        }
 
                         // Apply 3D rotations around the LOCAL object center
                         // Rotation around X axis
@@ -371,7 +402,7 @@ export class CoreScenes {
         let scrollOffsetY = 0;
         let scrollOffsetZ = 0;
 
-        if (params.scrollSpeed > 0) {
+        if (params.scrollSpeed !== 0) {
             const scrollAmount = time * params.scrollSpeed * 2;
             switch (params.scrollDirection) {
                 case 'x':
@@ -404,7 +435,7 @@ export class CoreScenes {
         }
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
 
         // Draw multiple helixes distributed around center
         for (let copyIdx = 0; copyIdx < renderCopies; copyIdx++) {
@@ -443,6 +474,25 @@ export class CoreScenes {
                 helixCenterX += scrollOffsetX;
                 helixCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                if (params.scrollSpeed !== 0) {
+                    const wrapMargin = radius * 2;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeZ = maxZ - minZ;
+
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        helixCenterX = minX + ((helixCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        helixCenterZ = minZ + ((helixCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = (radius * 3) * numHelixes;
@@ -462,16 +512,8 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numHelixes > 1) {
-                    const totalWrapDistance = (radius * 3) * numHelixes;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        helixCenterX = centerX + ((helixCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        helixCenterZ = centerZ + ((helixCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
             const strandOffset = (helixIdx / numHelixes) * Math.PI * 2;
 
@@ -517,9 +559,14 @@ export class CoreScenes {
                         // Use distance check for smooth thickness
                         const dist = Math.sqrt(dx * dx + dz * dz);
                         if (dist <= thicknessRadius) {
-                            const nx = Math.floor(x + dx);
-                            const nz = Math.floor(z + dz);
+                            let nx = Math.floor(x + dx);
+                            let nz = Math.floor(z + dz);
                             const ny = Math.floor(finalY);
+
+                            // Wrap coordinates for seamless scrolling
+                            nx = ((nx % this.gridX) + this.gridX) % this.gridX;
+                            nz = ((nz % this.gridZ) + this.gridZ) % this.gridZ;
+
                             if (nx >= 0 && nx < this.gridX && ny >= 0 && ny < this.gridY && nz >= 0 && nz < this.gridZ) {
                                 voxels[nx + ny * this.gridX + nz * this.gridX * this.gridY] = 1;
                             }
@@ -595,7 +642,7 @@ export class CoreScenes {
         let scrollOffsetY = 0;
         let scrollOffsetZ = 0;
 
-        if (params.scrollSpeed > 0) {
+        if (params.scrollSpeed !== 0) {
             const scrollAmount = time * params.scrollSpeed * 2;
             switch (params.scrollDirection) {
                 case 'x':
@@ -653,7 +700,7 @@ export class CoreScenes {
         }
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
         const maxDimension = Math.max(this.gridX, this.gridY, this.gridZ);
         const spacing = maxDimension / (numPlanes + 1);
 
@@ -692,6 +739,31 @@ export class CoreScenes {
                 planeCenterY += scrollOffsetY;
                 planeCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                if (params.scrollSpeed !== 0) {
+                    const wrapMargin = spacing;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minY = -wrapMargin;
+                    const maxY = this.gridY + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const rangeZ = maxZ - minZ;
+
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        planeCenterX = minX + ((planeCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'y') {
+                        planeCenterY = minY + ((planeCenterY - minY) % rangeY + rangeY) % rangeY;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        planeCenterZ = minZ + ((planeCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = spacing * numPlanes;
@@ -712,28 +784,29 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numPlanes > 1) {
-                    const totalWrapDistance = spacing * numPlanes;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        planeCenterX = centerX + ((planeCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'y') {
-                        planeCenterY = centerY + ((planeCenterY - centerY) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        planeCenterZ = centerZ + ((planeCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
                 const planeOffset = (params.objectArrangement === 'linear') ? 0 : (planeIdx - (numPlanes - 1) / 2) * spacing;
 
                 for (let x = 0; x < this.gridX; x++) {
                     for (let y = 0; y < this.gridY; y++) {
                         for (let z = 0; z < this.gridZ; z++) {
-                            const cx = x - planeCenterX;
-                            const cy = y - planeCenterY;
-                            const cz = z - planeCenterZ;
+                            let cx = x - planeCenterX;
+                            let cy = y - planeCenterY;
+                            let cz = z - planeCenterZ;
+
+                            // Wrap offsets for seamless scrolling
+                            if (Math.abs(cx) > this.gridX / 2) {
+                                cx = cx > 0 ? cx - this.gridX : cx + this.gridX;
+                            }
+                            if (Math.abs(cy) > this.gridY / 2) {
+                                cy = cy > 0 ? cy - this.gridY : cy + this.gridY;
+                            }
+                            if (Math.abs(cz) > this.gridZ / 2) {
+                                cz = cz > 0 ? cz - this.gridZ : cz + this.gridZ;
+                            }
+
                             const dist = Math.abs(cx * normalX + cy * normalY + cz * normalZ - planeOffset);
 
                             if (dist < thickness) {
@@ -822,7 +895,7 @@ export class CoreScenes {
         let scrollOffsetY = 0;
         let scrollOffsetZ = 0;
 
-        if (params.scrollSpeed > 0) {
+        if (params.scrollSpeed !== 0) {
             const scrollAmount = time * params.scrollSpeed * 2;
             switch (params.scrollDirection) {
                 case 'x':
@@ -855,7 +928,7 @@ export class CoreScenes {
         }
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
 
         // Draw multiple toruses distributed around center
         for (let copyIdx = 0; copyIdx < renderCopies; copyIdx++) {
@@ -899,6 +972,31 @@ export class CoreScenes {
                 torusCenterY += scrollOffsetY;
                 torusCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                if (params.scrollSpeed !== 0) {
+                    const wrapMargin = baseMajorRadius * 2;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minY = -wrapMargin;
+                    const maxY = this.gridY + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const rangeZ = maxZ - minZ;
+
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        torusCenterX = minX + ((torusCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'y') {
+                        torusCenterY = minY + ((torusCenterY - minY) % rangeY + rangeY) % rangeY;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        torusCenterZ = minZ + ((torusCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = (baseMajorRadius * 3) * numToruses;
@@ -919,27 +1017,27 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numToruses > 1) {
-                    const totalWrapDistance = (baseMajorRadius * 3) * numToruses;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        torusCenterX = centerX + ((torusCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'y') {
-                        torusCenterY = centerY + ((torusCenterY - centerY) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        torusCenterZ = centerZ + ((torusCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
                 for (let x = 0; x < this.gridX; x++) {
                     for (let y = 0; y < this.gridY; y++) {
                         for (let z = 0; z < this.gridZ; z++) {
-                            // Get position relative to torus center
+                            // Get position relative to torus center with wrapping
                             let dx = x - torusCenterX;
                             let dy = (y - torusCenterY) * 2;
                             let dz = z - torusCenterZ;
+
+                            // Wrap offsets for seamless scrolling
+                            if (Math.abs(dx) > this.gridX / 2) {
+                                dx = dx > 0 ? dx - this.gridX : dx + this.gridX;
+                            }
+                            if (Math.abs(dy) > this.gridY) {
+                                dy = dy > 0 ? dy - this.gridY * 2 : dy + this.gridY * 2;
+                            }
+                            if (Math.abs(dz) > this.gridZ / 2) {
+                                dz = dz > 0 ? dz - this.gridZ : dz + this.gridZ;
+                            }
 
                             // Apply 3D rotations around the LOCAL torus center
                             if (rotX !== 0) {
@@ -1052,7 +1150,7 @@ export class CoreScenes {
         let scrollOffsetY = 0;
         let scrollOffsetZ = 0;
 
-        if (params.scrollSpeed > 0) {
+        if (params.scrollSpeed !== 0) {
             const scrollAmount = time * params.scrollSpeed * 2;
             switch (params.scrollDirection) {
                 case 'x':
@@ -1085,7 +1183,7 @@ export class CoreScenes {
         }
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
 
         // Draw multiple cubes distributed around center
         for (let copyIdx = 0; copyIdx < renderCopies; copyIdx++) {
@@ -1129,6 +1227,31 @@ export class CoreScenes {
                 cubeCenterY += scrollOffsetY;
                 cubeCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                if (params.scrollSpeed !== 0) {
+                    const wrapMargin = baseSize * 2;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minY = -wrapMargin;
+                    const maxY = this.gridY + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const rangeZ = maxZ - minZ;
+
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        cubeCenterX = minX + ((cubeCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'y') {
+                        cubeCenterY = minY + ((cubeCenterY - minY) % rangeY + rangeY) % rangeY;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        cubeCenterZ = minZ + ((cubeCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = (baseSize * 3) * numCubes;
@@ -1149,27 +1272,27 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numCubes > 1) {
-                    const totalWrapDistance = (baseSize * 3) * numCubes;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        cubeCenterX = centerX + ((cubeCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'y') {
-                        cubeCenterY = centerY + ((cubeCenterY - centerY) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        cubeCenterZ = centerZ + ((cubeCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
                 for (let x = 0; x < this.gridX; x++) {
                     for (let y = 0; y < this.gridY; y++) {
                         for (let z = 0; z < this.gridZ; z++) {
-                            // Get position relative to cube center
+                            // Get position relative to cube center with wrapping
                             let dx = x - cubeCenterX;
                             let dy = (y - cubeCenterY) * 2;
                             let dz = z - cubeCenterZ;
+
+                            // Wrap offsets for seamless scrolling
+                            if (Math.abs(dx) > this.gridX / 2) {
+                                dx = dx > 0 ? dx - this.gridX : dx + this.gridX;
+                            }
+                            if (Math.abs(dy) > this.gridY) {
+                                dy = dy > 0 ? dy - this.gridY * 2 : dy + this.gridY * 2;
+                            }
+                            if (Math.abs(dz) > this.gridZ / 2) {
+                                dz = dz > 0 ? dz - this.gridZ : dz + this.gridZ;
+                            }
 
                             // Apply 3D rotations around the LOCAL cube center
                             if (rotX !== 0) {
@@ -1283,7 +1406,7 @@ export class CoreScenes {
         let scrollOffsetY = 0;
         let scrollOffsetZ = 0;
 
-        if (params.scrollSpeed > 0) {
+        if (params.scrollSpeed !== 0) {
             const scrollAmount = time * params.scrollSpeed * 2;
             switch (params.scrollDirection) {
                 case 'x':
@@ -1316,7 +1439,7 @@ export class CoreScenes {
         }
 
         // For linear arrangement with scrolling, render multiple copies to create seamless loop
-        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed > 0) ? 2 : 1;
+        const renderCopies = (params.objectArrangement === 'linear' && params.scrollSpeed !== 0) ? 2 : 1;
 
         // Draw multiple pyramids distributed around center
         for (let copyIdx = 0; copyIdx < renderCopies; copyIdx++) {
@@ -1360,6 +1483,31 @@ export class CoreScenes {
                 pyrCenterY += scrollOffsetY;
                 pyrCenterZ += scrollOffsetZ;
 
+                // Wrap object center to keep it within reasonable bounds for continuous scrolling
+                if (params.scrollSpeed !== 0) {
+                    const wrapMargin = baseBaseSize * 2;
+                    const minX = -wrapMargin;
+                    const maxX = this.gridX + wrapMargin;
+                    const minY = -wrapMargin;
+                    const maxY = this.gridY + wrapMargin;
+                    const minZ = -wrapMargin;
+                    const maxZ = this.gridZ + wrapMargin;
+
+                    const rangeX = maxX - minX;
+                    const rangeY = maxY - minY;
+                    const rangeZ = maxZ - minZ;
+
+                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
+                        pyrCenterX = minX + ((pyrCenterX - minX) % rangeX + rangeX) % rangeX;
+                    }
+                    if (params.scrollDirection === 'y') {
+                        pyrCenterY = minY + ((pyrCenterY - minY) % rangeY + rangeY) % rangeY;
+                    }
+                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
+                        pyrCenterZ = minZ + ((pyrCenterZ - minZ) % rangeZ + rangeZ) % rangeZ;
+                    }
+                }
+
                 // For seamless looping, add offset for duplicate copy
                 if (params.objectArrangement === 'linear' && renderCopies > 1 && copyIdx > 0) {
                     const totalWrapDistance = (baseBaseSize * 3) * numPyramids;
@@ -1380,27 +1528,27 @@ export class CoreScenes {
                     }
                 }
 
-                // Modulo wrap to keep values in reasonable range
-                if (params.objectArrangement === 'linear' && numPyramids > 1) {
-                    const totalWrapDistance = (baseBaseSize * 3) * numPyramids;
-                    if (params.scrollDirection === 'x' || params.scrollDirection === 'diagonal') {
-                        pyrCenterX = centerX + ((pyrCenterX - centerX) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'y') {
-                        pyrCenterY = centerY + ((pyrCenterY - centerY) % totalWrapDistance);
-                    }
-                    if (params.scrollDirection === 'z' || params.scrollDirection === 'diagonal') {
-                        pyrCenterZ = centerZ + ((pyrCenterZ - centerZ) % totalWrapDistance);
-                    }
-                }
+                // NO modulo wrap - let objects scroll continuously
+                // Wrapping is handled at the voxel level below
 
                 for (let x = 0; x < this.gridX; x++) {
                     for (let y = 0; y < this.gridY; y++) {
                         for (let z = 0; z < this.gridZ; z++) {
-                            // Get position relative to pyramid base center
+                            // Get position relative to pyramid base center with wrapping
                             let dx = x - pyrCenterX;
                             let dy = y - (pyrCenterY - height / 2);
                             let dz = z - pyrCenterZ;
+
+                            // Wrap offsets for seamless scrolling
+                            if (Math.abs(dx) > this.gridX / 2) {
+                                dx = dx > 0 ? dx - this.gridX : dx + this.gridX;
+                            }
+                            if (Math.abs(dy) > this.gridY / 2) {
+                                dy = dy > 0 ? dy - this.gridY : dy + this.gridY;
+                            }
+                            if (Math.abs(dz) > this.gridZ / 2) {
+                                dz = dz > 0 ? dz - this.gridZ : dz + this.gridZ;
+                            }
 
                             // Apply 3D rotations
                             if (rotX !== 0) {
@@ -1445,9 +1593,7 @@ export class CoreScenes {
 
         // Pass movement to pattern renderers
         const patterns = {
-            'rain': () => this.flowRain(voxels, params, time),
-            'stars': () => this.flowStars(voxels, params, time),
-            'fountain': () => this.flowFountain(voxels, params, time),
+            'particles': () => this.flowParticles(voxels, params, time),
             'spiral': () => this.flowSpiral(voxels, time, params),
             'explode': () => this.flowExplode(voxels, time, params),
             // Vortex patterns merged into particle flow
@@ -1456,7 +1602,7 @@ export class CoreScenes {
             'galaxy': () => this.flowGalaxy(voxels, time, params)
         };
 
-        const flowFn = patterns[params.pattern] || patterns['rain'];
+        const flowFn = patterns[params.pattern] || patterns['particles'];
         flowFn();
     }
 
@@ -1532,15 +1678,15 @@ export class CoreScenes {
             offsetZ += Math.sin(effectiveTime * params.wobbleSpeed * 2.9) * wobbleAmount;
         }
 
-        // 8. Continuous scroll
-        if (params.scrollSpeed > 0) {
-            const scrollAmount = (effectiveTime * params.scrollSpeed * 15) % (this.gridX + this.gridZ);
+        // 8. Continuous scroll (no modulo - wrapping handled in drawParticle)
+        if (params.scrollSpeed !== 0) {
+            const scrollAmount = effectiveTime * params.scrollSpeed * 15;
             switch (params.scrollDirection) {
                 case 'x':
                     offsetX += scrollAmount;
                     break;
                 case 'y':
-                    offsetY += scrollAmount % this.gridY;
+                    offsetY += scrollAmount;
                     break;
                 case 'z':
                     offsetZ += scrollAmount;
@@ -1557,20 +1703,27 @@ export class CoreScenes {
 
     /**
      * Helper function to draw a particle with size
+     * Wraps coordinates to create seamless scrolling
      */
     drawParticle(voxels, centerX, centerY, centerZ, size) {
         const radius = Math.max(0, size - 1);
 
         if (size === 1) {
-            // Single voxel (fast path)
-            const x = Math.floor(centerX);
-            const y = Math.floor(centerY);
-            const z = Math.floor(centerZ);
+            // Single voxel (fast path) with wrapping
+            let x = Math.floor(centerX) % this.gridX;
+            let y = Math.floor(centerY) % this.gridY;
+            let z = Math.floor(centerZ) % this.gridZ;
+
+            // Handle negative wrapping
+            if (x < 0) x += this.gridX;
+            if (y < 0) y += this.gridY;
+            if (z < 0) z += this.gridZ;
+
             if (x >= 0 && x < this.gridX && y >= 0 && y < this.gridY && z >= 0 && z < this.gridZ) {
                 voxels[x + y * this.gridX + z * this.gridX * this.gridY] = 1;
             }
         } else {
-            // Multi-voxel particle (draw a small sphere)
+            // Multi-voxel particle (draw a small sphere) with wrapping
             const cx = Math.floor(centerX);
             const cy = Math.floor(centerY);
             const cz = Math.floor(centerZ);
@@ -1580,9 +1733,15 @@ export class CoreScenes {
                     for (let dz = -radius; dz <= radius; dz++) {
                         const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
                         if (dist <= radius) {
-                            const x = cx + dx;
-                            const y = cy + dy;
-                            const z = cz + dz;
+                            let x = (cx + dx) % this.gridX;
+                            let y = (cy + dy) % this.gridY;
+                            let z = (cz + dz) % this.gridZ;
+
+                            // Handle negative wrapping
+                            if (x < 0) x += this.gridX;
+                            if (y < 0) y += this.gridY;
+                            if (z < 0) z += this.gridZ;
+
                             if (x >= 0 && x < this.gridX && y >= 0 && y < this.gridY && z >= 0 && z < this.gridZ) {
                                 voxels[x + y * this.gridX + z * this.gridX * this.gridY] = 1;
                             }
@@ -1593,8 +1752,10 @@ export class CoreScenes {
         }
     }
 
-    flowRain(voxels, params, time) {
-        this.rainSystem.update(params.velocity);
+    flowParticles(voxels, params, time) {
+        // Unified particle system - direction controlled by scrollSpeed/scrollDirection in movement params
+        // Use rain system as default particle generator
+        this.rainSystem.update(params.velocity, params.scrollDirection, params.scrollSpeed);
         const particles = this.rainSystem.getParticles();
         const totalParticles = particles.length;
 
@@ -1605,38 +1766,6 @@ export class CoreScenes {
                 p.y + movement.offsetY,
                 p.z + movement.offsetZ,
                 params.particleSize);
-        });
-    }
-
-    flowStars(voxels, params, time) {
-        this.starSystem.update(params.velocity);
-        const particles = this.starSystem.getParticles();
-        const totalParticles = particles.length;
-
-        particles.forEach((p, i) => {
-            const movement = this.calculateParticleMovement(time, params, i, totalParticles);
-            this.drawParticle(voxels,
-                p.x + movement.offsetX,
-                p.y + movement.offsetY,
-                p.z + movement.offsetZ,
-                params.particleSize);
-        });
-    }
-
-    flowFountain(voxels, params, time) {
-        // Similar to rain but particles move upward
-        // For now, reuse rain system but could create dedicated fountain system
-        this.rainSystem.update(params.velocity);
-        const particles = this.rainSystem.getParticles();
-        const totalParticles = particles.length;
-
-        particles.forEach((p, i) => {
-            const movement = this.calculateParticleMovement(time, params, i, totalParticles);
-            // Flip Y coordinate for upward motion
-            const x = p.x + movement.offsetX;
-            const y = this.gridY - 1 - p.y + movement.offsetY;
-            const z = p.z + movement.offsetZ;
-            this.drawParticle(voxels, x, y, z, params.particleSize);
         });
     }
 
