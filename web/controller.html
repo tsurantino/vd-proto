@@ -45,21 +45,21 @@
 
                     <div class="control-group slider-control">
                         <div class="slider-label-container">
-                            <label>CLR SPD</label>
-                            <span id="color-speed-value" class="value-display">1.00</span>
-                        </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="color-speed" min="0.1" max="10" step="0.1" value="1.0">
-                        </div>
-                    </div>
-
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
                             <label>DECAY</label>
                             <span id="decay-value" class="value-display">0.00</span>
                         </div>
                         <div class="slider-input-container">
                             <input type="range" id="decay" min="0" max="3" step="0.1" value="0.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>CLR SPD</label>
+                            <span id="color-speed-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-speed" min="0.1" max="10" step="0.1" value="1.0">
                         </div>
                     </div>
 
@@ -147,44 +147,50 @@
                         <button class="scene-btn" data-scene="waveField">Wave Field</button>
                         <button class="scene-btn" data-scene="procedural">Procedural</button>
                         <button class="scene-btn" data-scene="particleFlow">Particle Flow</button>
-                        <button class="scene-btn" data-scene="rainbow">Rainbow</button>
+                        <button class="scene-btn" data-scene="illusions">Illusions</button>
+                        <button class="scene-btn" data-scene="grid">Grid</button>
                     </div>
-                </div>
-
-                <div class="panel">
-                    <h3>Scene-Specific Parameters</h3>
-
                     <!-- Shape selector for shapeMorph -->
                     <div class="control-group" id="shape-control">
                         <label>Shape</label>
-                        <select id="shape">
-                            <option value="sphere">Sphere</option>
-                            <option value="helix">Helix</option>
-                            <option value="cube">Cube</option>
-                            <option value="torus">Torus</option>
-                            <option value="pyramid">Pyramid</option>
-                        </select>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="shape" data-value="sphere">Sphere</button>
+                            <button class="toggle-btn" data-param="shape" data-value="cube">Cube</button>
+                            <button class="toggle-btn" data-param="shape" data-value="torus">Torus</button>
+                            <button class="toggle-btn" data-param="shape" data-value="pyramid">Pyramid</button>
+                        </div>
                     </div>
 
                     <!-- Wave type selector for waveField -->
                     <div class="control-group" id="waveType-control" style="display: none;">
                         <label>Wave Type</label>
-                        <select id="waveType">
-                            <option value="ripple">Ripple</option>
-                            <option value="plane">Plane</option>
-                            <option value="standing">Standing</option>
-                            <option value="interference">Interference</option>
-                        </select>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="waveType" data-value="ripple">Ripple</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="plane">Plane</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="standing">Standing</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="interference">Interference</button>
+                        </div>
                     </div>
 
                     <!-- Pattern selector for particleFlow -->
                     <div class="control-group" id="pattern-control" style="display: none;">
                         <label>Pattern</label>
-                        <select id="pattern">
-                            <option value="particles">Particles</option>
-                            <option value="spiral">Spiral</option>
-                            <option value="explode">Explode</option>
-                        </select>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="pattern" data-value="particles">Particles</button>
+                            <button class="toggle-btn" data-param="pattern" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="pattern" data-value="explode">Explode</button>
+                        </div>
+                    </div>
+
+                    <!-- Illusion type selector for illusions -->
+                    <div class="control-group" id="illusionType-control" style="display: none;">
+                        <label>Illusion Type</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="illusionType" data-value="infiniteCorridor">Corridor</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="waterfallIllusion">Waterfall</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="pulfrich">Pulfrich</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="moirePattern">Moire</button>
+                        </div>
                     </div>
                 </div>
 
@@ -457,7 +463,8 @@
             scene_params: {
                 shape: 'sphere',
                 waveType: 'ripple',
-                pattern: 'particles'
+                pattern: 'particles',
+                illusionType: 'infiniteCorridor'
             }
         };
 
@@ -510,6 +517,8 @@
                 sceneType === 'waveField' ? 'block' : 'none';
             document.getElementById('pattern-control').style.display =
                 sceneType === 'particleFlow' ? 'block' : 'none';
+            document.getElementById('illusionType-control').style.display =
+                sceneType === 'illusions' ? 'block' : 'none';
         }
 
         // Parameter sliders
@@ -624,20 +633,41 @@
             });
         });
 
-        // Scene-specific selects
-        document.getElementById('shape').addEventListener('change', (e) => {
-            params.scene_params.shape = e.target.value;
-            sendParams();
+        // Scene-specific parameter buttons
+        document.querySelectorAll('[data-param="shape"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="shape"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.shape = btn.dataset.value;
+                sendParams();
+            });
         });
 
-        document.getElementById('waveType').addEventListener('change', (e) => {
-            params.scene_params.waveType = e.target.value;
-            sendParams();
+        document.querySelectorAll('[data-param="waveType"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="waveType"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.waveType = btn.dataset.value;
+                sendParams();
+            });
         });
 
-        document.getElementById('pattern').addEventListener('change', (e) => {
-            params.scene_params.pattern = e.target.value;
-            sendParams();
+        document.querySelectorAll('[data-param="pattern"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="pattern"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.pattern = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        document.querySelectorAll('[data-param="illusionType"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="illusionType"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.illusionType = btn.dataset.value;
+                sendParams();
+            });
         });
 
         // Invert toggle buttons

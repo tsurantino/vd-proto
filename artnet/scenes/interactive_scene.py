@@ -11,18 +11,22 @@ from artnet import Scene, Raster
 # Import geometry generators
 from .geometry.shapes import (
     generate_sphere, generate_pulsing_sphere, generate_helix,
-    generate_cube, generate_torus, generate_pyramid
+    generate_cube, generate_torus, generate_pyramid, generate_cross_grid
 )
 from .geometry.waves import (
     generate_ripple_wave, generate_plane_wave,
     generate_standing_wave, generate_interference_wave
 )
+from .geometry.utils import rotate_coordinates
 
 # Import color utilities
 from .colors.utils import (
     vectorized_hsv_to_rgb, parse_hex_color, parse_gradient,
     apply_color_to_mask, rainbow_color, hue_shift
 )
+
+# Import ColorEffects class for advanced color effects
+from .colors.effects import ColorEffects
 
 
 @dataclass
@@ -79,12 +83,15 @@ class InteractiveScene(Scene):
         self.properties = kwargs.get("properties")
         self.params = SceneParameters()
 
-        # Initialize with rainbow scene
-        self.params.scene_type = 'rainbow'
+        # Initialize with grid scene
+        self.params.scene_type = 'grid'
 
         # Coordinate cache
         self.coords_cache = None
         self.grid_shape = None
+
+        # ColorEffects instance (initialized when raster is available)
+        self.color_effects = None
 
         # Previous frame for decay
         self.previous_frame = None
@@ -98,6 +105,10 @@ class InteractiveScene(Scene):
         # Mask phase tracking for smooth speed changes
         self.mask_phase = 0
         self.last_frame_time = 0
+
+        # Track previous values to only log changes
+        self.prev_color_mode = None
+        self.prev_color_effect = None
 
         print(f"✨ InteractiveScene v2.0 initialized (modular architecture)")
 
@@ -168,12 +179,19 @@ class InteractiveScene(Scene):
         self.previous_frame[:] = raster.data
 
     def _init_coords(self, raster):
-        """Initialize coordinate grids"""
+        """Initialize coordinate grids and ColorEffects"""
         self.coords_cache = np.indices(
             (raster.length, raster.height, raster.width),
             sparse=True
         )
         self.grid_shape = (raster.length, raster.height, raster.width)
+
+        # Initialize ColorEffects with grid dimensions
+        self.color_effects = ColorEffects(
+            gridX=raster.width,
+            gridY=raster.height,
+            gridZ=raster.length
+        )
 
     # ================================================================
     # LAYER 1: GEOMETRY GENERATION
@@ -191,8 +209,10 @@ class InteractiveScene(Scene):
             return self._geometry_particle_flow(raster, time)
         elif scene_type == 'procedural':
             return self._geometry_procedural(raster, time)
-        elif scene_type == 'rainbow':
-            return self._geometry_rainbow(raster, time)
+        elif scene_type == 'grid':
+            return self._geometry_grid(raster, time)
+        elif scene_type == 'illusions':
+            return self._geometry_illusions(raster, time)
         else:
             # Default: fill entire volume
             return np.ones((raster.length, raster.height, raster.width), dtype=bool)
@@ -208,80 +228,95 @@ class InteractiveScene(Scene):
             raster.length / 2
         )
 
+        # Apply rotation to coordinates
+        # Controller sends values -1 to 1, convert to radians (-π to π)
+        angles = (
+            self.params.rotationX * np.pi,
+            self.params.rotationY * np.pi,
+            self.params.rotationZ * np.pi
+        )
+        coords = rotate_coordinates(self.coords_cache, center, angles)
+
         if shape == 'sphere':
             radius = min(center) * size * 0.8
             return generate_pulsing_sphere(
-                self.coords_cache, center, radius, time,
+                coords, center, radius, time,
                 pulse_speed=2, pulse_amount=2
             )
 
-        elif shape == 'helix':
-            radius = min(center[0], center[2]) * size * 0.5
-            mask = np.zeros(self.grid_shape, dtype=bool)
-            for i in range(max(1, self.params.objectCount)):
-                helix_mask = generate_helix(
-                    self.coords_cache, center, radius,
-                    (0, raster.height), time,
-                    rotation_speed=self.params.rotationY * 2,
-                    num_strands=self.params.objectCount,
-                    strand_index=i,
-                    thickness=int(3 * size)
-                )
-                mask |= helix_mask
-            return mask
-
         elif shape == 'cube':
             cube_size = min(center) * size * 0.8
-            return generate_cube(self.coords_cache, center, cube_size)
+            # Use density to control edge thickness (0.1-1.0 -> 0.5-2.5 pixels)
+            # Smaller range prevents edges from overlapping
+            edge_thickness = 0.5 + self.params.density * 2.0
+            return generate_cube(coords, center, cube_size, edge_thickness)
 
         elif shape == 'torus':
             major_r = min(center[0], center[2]) * size * 0.6
             minor_r = major_r * 0.3
-            return generate_torus(self.coords_cache, center, major_r, minor_r)
+            return generate_torus(coords, center, major_r, minor_r)
 
         elif shape == 'pyramid':
-            base_size = min(center[0], center[2]) * size * 0.6
-            height = center[1] * size * 1.2
-            return generate_pyramid(self.coords_cache, center, base_size, height)
+            # Base sits on XY plane, extends along Z axis
+            base_size = min(center[0], center[1]) * size * 0.6
+            # Height along Z axis (length dimension)
+            height = raster.length * size * 0.9
+            return generate_pyramid(coords, center, base_size, height)
 
         else:
             # Default sphere
             radius = min(center) * size * 0.8
-            return generate_sphere(self.coords_cache, center, radius)
+            return generate_sphere(coords, center, radius)
 
     def _geometry_wave_field(self, raster, time):
         """Wave field geometry"""
         wave_type = self.params.scene_params.get('waveType', 'ripple')
 
+        # Apply rotation to coordinates
+        # Controller sends values -1 to 1, convert to radians (-π to π)
+        center = (
+            raster.width / 2,
+            raster.height / 2,
+            raster.length / 2
+        )
+        angles = (
+            self.params.rotationX * np.pi,
+            self.params.rotationY * np.pi,
+            self.params.rotationZ * np.pi
+        )
+        coords = rotate_coordinates(self.coords_cache, center, angles)
+
         if wave_type == 'ripple':
             return generate_ripple_wave(
-                self.coords_cache, self.grid_shape, time,
+                coords, self.grid_shape, time,
                 frequency=self.params.frequency,
                 amplitude=self.params.amplitude,
                 speed=5
             )
         elif wave_type == 'plane':
             return generate_plane_wave(
-                self.coords_cache, self.grid_shape, time,
+                coords, self.grid_shape, time,
                 amplitude=self.params.amplitude,
-                speed=3
+                speed=3,
+                direction='x',  # Default direction
+                frequency=self.params.frequency
             )
         elif wave_type == 'standing':
             return generate_standing_wave(
-                self.coords_cache, self.grid_shape, time,
+                coords, self.grid_shape, time,
                 frequency=self.params.frequency,
                 amplitude=self.params.amplitude
             )
         elif wave_type == 'interference':
             mask, _ = generate_interference_wave(
-                self.coords_cache, self.grid_shape, time,
+                coords, self.grid_shape, time,
                 frequency=self.params.frequency,
                 amplitude=self.params.amplitude
             )
             return mask
         else:
             return generate_ripple_wave(
-                self.coords_cache, self.grid_shape, time,
+                coords, self.grid_shape, time,
                 frequency=self.params.frequency,
                 amplitude=self.params.amplitude
             )
@@ -312,7 +347,20 @@ class InteractiveScene(Scene):
 
     def _geometry_procedural(self, raster, time):
         """Procedural noise geometry"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        # Apply rotation to coordinates
+        # Controller sends values -1 to 1, convert to radians (-π to π)
+        center = (
+            raster.width / 2,
+            raster.height / 2,
+            raster.length / 2
+        )
+        angles = (
+            self.params.rotationX * np.pi,
+            self.params.rotationY * np.pi,
+            self.params.rotationZ * np.pi
+        )
+        coords = rotate_coordinates(self.coords_cache, center, angles)
+        z_coords, y_coords, x_coords = coords
 
         scale = self.params.size * 0.1
         threshold = self.params.amplitude * 0.5
@@ -331,9 +379,184 @@ class InteractiveScene(Scene):
         noise = (noise + 1.5) / 3.0
         return noise > threshold
 
-    def _geometry_rainbow(self, raster, time):
-        """Rainbow fills entire volume"""
-        return np.ones(self.grid_shape, dtype=bool)
+    def _geometry_grid(self, raster, time):
+        """Grid - can be full volume or cross pattern"""
+        pattern = self.params.scene_params.get('gridPattern', 'full')
+
+        if pattern == 'cross':
+            # Cross pattern with density-controlled line thickness
+            center = (
+                raster.width / 2,
+                raster.height / 2,
+                raster.length / 2
+            )
+            size = min(center)
+            # Use density to control cross line thickness (1-10 pixels)
+            line_thickness = 1 + self.params.density * 9
+            return generate_cross_grid(self.coords_cache, center, size, line_thickness)
+        else:
+            # Full grid (default)
+            return np.ones(self.grid_shape, dtype=bool)
+
+    def _geometry_illusions(self, raster, time):
+        """Optical illusion effects"""
+        illusion_type = self.params.scene_params.get('illusionType', 'infiniteCorridor')
+
+        if illusion_type == 'infiniteCorridor':
+            return self._illusion_infinite_corridor(raster, time)
+        elif illusion_type == 'waterfallIllusion':
+            return self._illusion_waterfall(raster, time)
+        elif illusion_type == 'pulfrich':
+            return self._illusion_pulfrich(raster, time)
+        elif illusion_type == 'moirePattern':
+            return self._illusion_moire(raster, time)
+        else:
+            return self._illusion_infinite_corridor(raster, time)
+
+    def _illusion_infinite_corridor(self, raster, time):
+        """Infinite corridor - scrolling perspective frames along Y axis (vertical)"""
+        z_coords, y_coords, x_coords = self.coords_cache
+
+        # Parameters
+        frame_spacing = max(3, int(4 * (1 + self.params.density)))
+        num_frames = int(5 + self.params.size * 5)
+        scroll_offset = (time * 3) % (frame_spacing * num_frames)
+
+        mask = np.zeros(self.grid_shape, dtype=bool)
+
+        for frame in range(num_frames):
+            # Position along Y axis (height) - scrolling upward
+            base_y = (frame * frame_spacing - scroll_offset)
+            y = int(base_y) % raster.height
+
+            # Calculate perspective scale based on Y position
+            # Bottom (y near 0) = small (far away)
+            # Top (y near height) = large (close)
+            normalized_pos = y / raster.height
+            scale = 0.2 + normalized_pos * 0.8 * self.params.size
+
+            # Frame dimensions in XZ plane
+            width = max(1, int(raster.width / 2 * scale))
+            depth = max(1, int(raster.length / 2 * scale))
+
+            # Draw rectangular frame at this Y position
+            center_x = raster.width // 2
+            center_z = raster.length // 2
+
+            # Draw all four edges of the rectangle
+            # Top and bottom edges (parallel to X axis)
+            for x in range(-width, width + 1):
+                for offset_z in [-depth, depth]:
+                    wz = center_z + offset_z
+                    wx = center_x + x
+                    if 0 <= wx < raster.width and 0 <= wz < raster.length:
+                        mask[wz, y, wx] = True
+
+            # Left and right edges (parallel to Z axis)
+            for z in range(-depth, depth + 1):
+                for offset_x in [-width, width]:
+                    wx = center_x + offset_x
+                    wz = center_z + z
+                    if 0 <= wx < raster.width and 0 <= wz < raster.length:
+                        mask[wz, y, wx] = True
+
+        return mask
+
+    def _illusion_waterfall(self, raster, time):
+        """Waterfall illusion - moving vertical stripes"""
+        z_coords, y_coords, x_coords = self.coords_cache
+
+        offset = time * 10
+        stripe_spacing = max(2, int(5 - self.params.density * 3))
+
+        mask = np.zeros(self.grid_shape, dtype=bool)
+
+        # Create moving stripes pattern along Z axis
+        for z in range(raster.length):
+            pattern = (z + offset) % (stripe_spacing * 2)
+            is_stripe = pattern < stripe_spacing
+
+            if is_stripe:
+                # Fill this Z slice
+                mask[z, :, :] = True
+
+        # Add horizontal marker lines every 5 units in Y
+        # These create the reference frame that makes the illusion work
+        for y in range(0, raster.height, 5):
+            mask[:, y, :] = True
+
+        return mask
+
+    def _illusion_pulfrich(self, raster, time):
+        """Pulfrich effect - rotating objects with brightness variation in XY plane"""
+        z_coords, y_coords, x_coords = self.coords_cache
+
+        radius = 12 * self.params.size
+        num_objects = 8
+
+        center_x = raster.width / 2
+        center_y = raster.height / 2
+        center_z = raster.length / 2
+
+        mask = np.zeros(self.grid_shape, dtype=np.float32)
+
+        for i in range(num_objects):
+            obj_angle = time + (i / num_objects) * np.pi * 2
+
+            # Position in XY plane (rotating vertically)
+            px = int(center_x + np.cos(obj_angle) * radius)
+            py = int(center_y + np.sin(obj_angle) * radius)
+
+            # Brightness varies with position
+            brightness = 0.5 + 0.5 * np.sin(obj_angle)
+
+            # Draw sphere at this position
+            obj_size = 2
+            for dx in range(-obj_size, obj_size + 1):
+                for dy in range(-obj_size, obj_size + 1):
+                    for dz in range(-obj_size, obj_size + 1):
+                        if dx*dx + dy*dy + dz*dz <= obj_size * obj_size:
+                            wx = px + dx
+                            wy = py + dy
+                            wz = int(center_z + dz)
+
+                            if 0 <= wx < raster.width and 0 <= wy < raster.height and 0 <= wz < raster.length:
+                                mask[wz, wy, wx] = max(mask[wz, wy, wx], brightness)
+
+        return mask > 0.3
+
+    def _illusion_moire(self, raster, time):
+        """Moire pattern - overlapping rotated grids"""
+        grid_spacing = max(2, int(3 * (1 + self.params.density)))
+        angle = time * 0.1
+
+        mask = np.zeros(self.grid_shape, dtype=bool)
+
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+
+        center_x = raster.width / 2
+        center_z = raster.length / 2
+
+        # Draw first grid - vertical lines along X
+        for x in range(0, raster.width, grid_spacing):
+            mask[:, :, x] = True
+
+        # Draw second grid - rotated in XZ plane
+        for z in range(raster.length):
+            for x in range(raster.width):
+                # Transform to center-origin coords
+                cx = x - center_x
+                cz = z - center_z
+
+                # Rotate
+                rx = cx * cos_angle - cz * sin_angle
+
+                # Check if this point is on a grid line
+                if int(abs(rx)) % grid_spacing == 0:
+                    mask[z, :, x] = True
+
+        return mask
 
     # ================================================================
     # LAYER 2: COLOR APPLICATION
@@ -342,14 +565,19 @@ class InteractiveScene(Scene):
     def _apply_colors(self, raster, mask, time):
         """Apply colors to geometry mask"""
         if not np.any(mask):
-            print(f"⚠️  COLOR: No geometry to color (mask is empty)")
             return
 
+        # Only log when color mode changes
+        if self.params.color_mode != self.prev_color_mode:
+            if self.params.color_mode == 'rainbow':
+                print(f"🌈 COLOR MODE: rainbow")
+            else:
+                print(f"🎨 COLOR MODE: base (type={self.params.color_type})")
+            self.prev_color_mode = self.params.color_mode
+
         if self.params.color_mode == 'rainbow':
-            print(f"🌈 COLOR MODE: rainbow")
             self._apply_rainbow_colors(raster, mask, time)
         else:
-            print(f"🎨 COLOR MODE: base (type={self.params.color_type})")
             self._apply_base_colors(raster, mask, time)
 
         # Apply color effect
@@ -386,10 +614,6 @@ class InteractiveScene(Scene):
             # Now index with the boolean mask
             masked_y = y_coords_full[mask]
 
-            # Debug logging
-            mask_count = np.sum(mask)
-            print(f"🎨 GRADIENT: mask_count={mask_count}, gradient={self.params.color_gradient}")
-
             y_min, y_max = masked_y.min(), masked_y.max()
 
             # Avoid division by zero if all pixels are at same Y
@@ -402,21 +626,29 @@ class InteractiveScene(Scene):
             positions = np.linspace(0, 1, len(gradient_colors))
             colors = interpolate_colors(gradient_colors, positions, t)
             raster.data[mask] = colors
-            print(f"  → Applied gradient to {len(colors)} voxels")
 
     def _apply_color_effect(self, raster, mask, time):
-        """Apply color effect to existing colors using comprehensive effects module"""
+        """Apply color effect to existing colors using ColorEffects class"""
         effect = self.params.color_effect
         intensity = self.params.color_effect_intensity
 
         if effect == 'none' or intensity == 0:
+            if self.prev_color_effect is not None and self.prev_color_effect != 'none':
+                print(f"🎨 COLOR EFFECT: disabled")
+                self.prev_color_effect = 'none'
             return
 
-        # Import and apply effect from comprehensive effects module
-        from .colors.all_effects import apply_color_effect
-        apply_color_effect(
-            raster.data, mask, self.coords_cache,
-            self.color_time, effect, intensity
+        # Only log when effect changes
+        if effect != self.prev_color_effect:
+            print(f"🎨 COLOR EFFECT: {effect} (intensity={intensity}, speed={self.params.color_speed})")
+            self.prev_color_effect = effect
+
+        # Use new ColorEffects class for all 50+ effects
+        self.color_effects.set_effect(effect)
+        self.color_effects.set_intensity(intensity)
+        self.color_effects.set_speed(self.params.color_speed)
+        self.color_effects.apply_to_raster(
+            raster.data, mask, self.coords_cache, self.color_time
         )
 
     # ================================================================
@@ -431,25 +663,20 @@ class InteractiveScene(Scene):
         1. Strobe/Pulse apply globally to entire scene
         2. Scrolling is an independent masking effect applied after strobe/pulse
         """
-        print(f"🎯 EFFECTS: strobe={self.params.strobe}, pulse={self.params.pulse}, scroll_enabled={self.params.scrolling_enabled}, scroll_thickness={self.params.scrolling_thickness}")
-
         # Step 1: Apply global strobe effect
         if self.params.strobe != 'off':
-            print(f"  → Applying GLOBAL STROBE ({self.params.strobe})")
             freq = {'slow': 2, 'medium': 5, 'fast': 10}[self.params.strobe]
             if int(time * freq * 2) % 2 == 1:
                 raster.data.fill(0)
 
         # Step 2: Apply global pulse effect
         if self.params.pulse != 'off':
-            print(f"  → Applying GLOBAL PULSE ({self.params.pulse})")
             freq = {'slow': 0.5, 'medium': 1.0, 'fast': 2.0}[self.params.pulse]
             factor = 0.65 + 0.35 * np.sin(time * freq * np.pi * 2)
             raster.data[:] = (raster.data * factor).astype(np.uint8)
 
         # Step 3: Apply scrolling mask (if enabled)
         if self.params.scrolling_enabled and self.params.scrolling_thickness > 0:
-            print(f"  → Applying SCROLLING MASK (dir={self.params.scrolling_direction}, wdt={self.params.scrolling_thickness}%, spd={self.params.scrolling_speed})")
             mask = self._get_scrolling_band_mask(raster, time)
             # Apply mask: normal mode masks out the band, inverted mode keeps only the band
             if self.params.scrolling_invert_mask:

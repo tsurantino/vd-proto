@@ -389,10 +389,10 @@ button.active {
 }
 
 .advanced-effect-btn.active {
-    background: #ff00ff;
+    background: #0ff;
     color: #000;
     font-weight: bold;
-    border-color: #ff00ff;
+    border-color: #0ff;
 }
 
 .effect-category-title {
