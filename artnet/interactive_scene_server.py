@@ -122,10 +122,10 @@ def handle_update_params(data):
 
 
 def render_loop():
-    """Main rendering loop @ 60 FPS"""
+    """Main rendering loop @ 80 FPS"""
     logger.info("🎬 Starting render loop...")
 
-    target_fps = 60
+    target_fps = 80
     frame_time = 1.0 / target_fps
     state.start_time = time.time()
     last_stats_time = time.time()
@@ -177,17 +177,11 @@ def render_loop():
                 avg_render = sum(t.get('render', 0) for t in timing_samples) / len(timing_samples)
                 avg_artnet = sum(t.get('artnet', 0) for t in timing_samples) / len(timing_samples)
                 avg_slice = sum(t.get('slice_transform', 0) for t in timing_samples) / len(timing_samples)
-                avg_submit = sum(t.get('submit_jobs', 0) for t in timing_samples) / len(timing_samples)
-                avg_rgb = sum(t.get('rgb_conversion', 0) for t in timing_samples) / len(timing_samples)
                 avg_udp = sum(t.get('udp_send', 0) for t in timing_samples) / len(timing_samples)
-                # Detailed UDP breakdown
-                avg_udp_copy = sum(t.get('udp_job_copy', 0) for t in timing_samples) / len(timing_samples)
                 avg_udp_dmx = sum(t.get('udp_job_dmx', 0) for t in timing_samples) / len(timing_samples)
-                avg_udp_job = sum(t.get('udp_job_total', 0) for t in timing_samples) / len(timing_samples)
                 timing_samples.clear()
             else:
-                avg_render = avg_artnet = avg_slice = avg_submit = avg_rgb = avg_udp = 0
-                avg_udp_copy = avg_udp_dmx = avg_udp_job = 0
+                avg_render = avg_artnet = avg_slice = avg_udp = avg_udp_dmx = 0
 
             with state.lock:
                 state.fps_stats = {
@@ -197,7 +191,7 @@ def render_loop():
                 }
 
             socketio.emit('stats', state.fps_stats)
-            logger.info(f"📊 FPS: {fps:.1f} | Frame: {avg_frame_time:.2f}ms | Render: {avg_render:.2f}ms | ArtNet: {avg_artnet:.2f}ms (Slice: {avg_slice:.2f}ms, RGB: {avg_rgb:.2f}ms, UDP: {avg_udp:.2f}ms [Copy={avg_udp_copy:.2f}ms DMX={avg_udp_dmx:.2f}ms Total={avg_udp_job:.2f}ms]) | LEDs: {state.fps_stats['active_leds']:,}")
+            logger.info(f"📊 FPS: {fps:.1f} | Frame: {avg_frame_time:.2f}ms | Render: {avg_render:.2f}ms | ArtNet: {avg_artnet:.2f}ms (Slice: {avg_slice:.2f}ms, UDP: {avg_udp:.2f}ms [DMX={avg_udp_dmx:.2f}ms/job]) | LEDs: {state.fps_stats['active_leds']:,}")
 
             last_stats_time = now
             last_frame_count = state.frame_count
@@ -238,12 +232,9 @@ def convert_cube_to_rgb_tuples(data_bytes, num_pixels):
 
 
 def send_to_artnet():
-    """Send world raster to ArtNet (using parallel RGB conversion)"""
+    """Send world raster to ArtNet (using send_dmx_bytes - no RGB object conversion!)"""
     if not state.artnet_manager or not state.world_raster:
         return {}
-
-    import dataclasses
-    from artnet import RGB
 
     timings = {}
     world_data = state.world_raster.data
@@ -251,7 +242,6 @@ def send_to_artnet():
 
     # Process each cube only once (track which cubes we've processed)
     processed_cubes = set()
-    conversion_cache = {}
 
     # First pass: slice and transform cube data
     t0 = time.perf_counter()
@@ -280,56 +270,8 @@ def send_to_artnet():
             processed_cubes.add(cube_pos_tuple)
     timings['slice_transform'] = (time.perf_counter() - t0) * 1000
 
-    # Second pass: parallel RGB conversion for unique rasters
-    t0 = time.perf_counter()
-    unique_rasters = {}
-    for job in state.artnet_manager.send_jobs:
-        cube_raster = job["cube_raster"]
-        raster_id = id(cube_raster)
-        if raster_id not in conversion_cache and raster_id not in unique_rasters:
-            unique_rasters[raster_id] = cube_raster
-
-    # Submit all cube conversions in parallel (one cube per worker)
-    # We have 4 cubes and 5 workers, so we get good parallelization
-    if unique_rasters:
-        futures = {}
-        for raster_id, cube_raster in unique_rasters.items():
-            # Get raw bytes directly from NumPy array (zero-copy with tobytes())
-            numpy_data = cube_raster.data.reshape(-1, 3)
-            num_pixels = len(numpy_data)
-
-            # Submit entire cube to one worker process
-            # Pass raw bytes to avoid NumPy import in worker
-            future = state.conversion_executor.submit(
-                convert_cube_to_rgb_tuples,
-                numpy_data.tobytes(),
-                num_pixels
-            )
-            futures[raster_id] = future
-    timings['submit_jobs'] = (time.perf_counter() - t0) * 1000
-
-    # Collect results and convert tuples to RGB objects
-    # This tuple→RGB step MUST happen on main thread (RGB objects aren't picklable)
-    t0 = time.perf_counter()
-    if unique_rasters:
-        for raster_id, future in futures.items():
-            rgb_tuples = future.result()  # Get all tuples for this cube
-
-            # Check if we have cached RGB list for this raster
-            if raster_id in state.rgb_cache:
-                # Reuse existing RGB list, just update values
-                rgb_list = state.rgb_cache[raster_id]
-                for i, (r, g, b) in enumerate(rgb_tuples):
-                    rgb_list[i] = RGB(r, g, b)
-            else:
-                # Create new RGB objects and cache the list
-                rgb_list = [RGB(r, g, b) for r, g, b in rgb_tuples]
-                state.rgb_cache[raster_id] = rgb_list
-
-            conversion_cache[raster_id] = rgb_list
-    timings['rgb_conversion'] = (time.perf_counter() - t0) * 1000
-
-    # Third pass: send to ArtNet controllers (sequential)
+    # Second pass: send to ArtNet controllers directly with raw bytes
+    # NO RGB CONVERSION NEEDED! This is the key optimization.
     t0_total = time.perf_counter()
 
     job_timings = []
@@ -337,49 +279,50 @@ def send_to_artnet():
         t_job_start = time.perf_counter()
 
         cube_raster = job["cube_raster"]
-        raster_id = id(cube_raster)
-
-        t_copy = time.perf_counter()
-        temp_raster = dataclasses.replace(cube_raster)
-        temp_raster.data = conversion_cache[raster_id]
-        copy_time = (time.perf_counter() - t_copy) * 1000
-
         controller = job["controller"]
         z_indices = job["z_indices"]
         universes_per_layer = 3
         base_universe_offset = min(z_indices) * universes_per_layer
 
+        # Get raw bytes directly from NumPy array (C-contiguous, zero-copy)
+        pixel_bytes = cube_raster.data.tobytes()
+
         t_dmx = time.perf_counter()
         try:
-            controller.send_dmx(
+            # Use new send_dmx_bytes method - passes bytes directly to Rust!
+            controller.send_dmx_bytes(
                 base_universe=base_universe_offset,
-                raster=temp_raster,
-                z_indices=z_indices,
+                pixel_bytes=pixel_bytes,
+                width=cube_raster.width,
+                height=cube_raster.height,
+                length=cube_raster.length,
+                brightness=1.0,
                 channels_per_universe=510,
                 universes_per_layer=universes_per_layer,
                 channel_span=1,
+                z_indices=z_indices,
             )
         except Exception as e:
-            logger.error(f"Error sending DMX: {e}", exc_info=True)
+            logger.error(f"Error sending DMX bytes: {e}", exc_info=True)
         dmx_time = (time.perf_counter() - t_dmx) * 1000
 
         job_time = (time.perf_counter() - t_job_start) * 1000
-        job_timings.append({'copy': copy_time, 'dmx': dmx_time, 'total': job_time})
+        job_timings.append({'dmx': dmx_time, 'total': job_time})
 
     # Calculate averages
     if job_timings:
-        avg_copy = sum(r['copy'] for r in job_timings) / len(job_timings)
         avg_dmx = sum(r['dmx'] for r in job_timings) / len(job_timings)
         avg_job = sum(r['total'] for r in job_timings) / len(job_timings)
     else:
-        avg_copy = avg_dmx = avg_job = 0
+        avg_dmx = avg_job = 0
 
     total_udp_time = (time.perf_counter() - t0_total) * 1000
 
     timings['udp_send'] = total_udp_time
-    timings['udp_job_copy'] = avg_copy
     timings['udp_job_dmx'] = avg_dmx
     timings['udp_job_total'] = avg_job
+    # Note: RGB conversion time is now zero (eliminated entirely!)
+    timings['rgb_conversion'] = 0.0
 
     return timings
 

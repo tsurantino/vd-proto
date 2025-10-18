@@ -451,5 +451,90 @@ mod artnet_rs {
 
             Ok(())
         }
+
+        /// High-performance method that accepts raw RGB bytes directly
+        /// This bypasses the need to create RGB objects in Python, eliminating conversion overhead
+        #[pyo3(signature = (base_universe, pixel_bytes, width, height, length, brightness=1.0, channels_per_universe=510, universes_per_layer=3, channel_span=1, z_indices=None))]
+        fn send_dmx_bytes(
+            &self,
+            base_universe: u16,
+            pixel_bytes: &[u8],
+            width: usize,
+            height: usize,
+            length: usize,
+            brightness: f32,
+            channels_per_universe: usize,
+            universes_per_layer: u16,
+            channel_span: usize,
+            z_indices: Option<Vec<usize>>,
+        ) -> PyResult<()> {
+            // Validate input
+            let expected_size = width * height * length * 3;
+            if pixel_bytes.len() != expected_size {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    format!(
+                        "pixel_bytes length {} doesn't match expected size {} ({}x{}x{}x3)",
+                        pixel_bytes.len(),
+                        expected_size,
+                        width,
+                        height,
+                        length
+                    ),
+                ));
+            }
+
+            let z_indices_vec: Vec<usize>;
+            let z_indices_ref: &[usize] = match z_indices {
+                Some(ref v) => v,
+                None => {
+                    z_indices_vec = (0..length).step_by(channel_span).collect();
+                    &z_indices_vec
+                }
+            };
+
+            let mut data_bytes = Vec::with_capacity(width * height * 3);
+
+            for (out_z, &z) in z_indices_ref.iter().enumerate() {
+                let mut universe =
+                    (out_z / channel_span) as u16 * universes_per_layer + base_universe;
+
+                let layer_size = width * height * 3;
+                let start = z * layer_size;
+                let end = (z + 1) * layer_size;
+
+                if end > pixel_bytes.len() {
+                    continue;
+                }
+
+                // Apply brightness directly to the byte slice
+                if brightness == 1.0 {
+                    // No brightness adjustment needed - direct copy
+                    data_bytes.extend_from_slice(&pixel_bytes[start..end]);
+                } else {
+                    // Apply brightness scaling
+                    for &byte in &pixel_bytes[start..end] {
+                        data_bytes.push(saturate_u8(byte as f32 * brightness));
+                    }
+                }
+
+                // Send data in chunks
+                let mut data_to_send = &data_bytes[..];
+                while !data_to_send.is_empty() {
+                    let chunk_size = std::cmp::min(data_to_send.len(), channels_per_universe);
+                    let chunk = &data_to_send[..chunk_size];
+                    let dmx_packet = self.create_dmx_packet(universe, chunk);
+                    self.socket.send_to(&dmx_packet, &self.target_addr)?;
+
+                    data_to_send = &data_to_send[chunk_size..];
+                    universe += 1;
+                }
+                data_bytes.clear();
+            }
+
+            let sync_packet = self.create_sync_packet();
+            self.socket.send_to(&sync_packet, &self.target_addr)?;
+
+            Ok(())
+        }
     }
 }
