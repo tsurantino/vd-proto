@@ -33,19 +33,34 @@
                 <div class="panel">
                     <h3>Global Controls</h3>
 
-                    <div class="control-group">
-                        <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ANIM SPD</label>
+                            <span id="animationSpeed-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="animationSpeed" min="0.1" max="10" step="0.1" value="1.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Color Speed <span id="color-speed-value" class="value-display">1.00</span></label>
-                        <input type="range" id="color-speed" min="0.1" max="5" step="0.1" value="1.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>CLR SPD</label>
+                            <span id="color-speed-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-speed" min="0.1" max="10" step="0.1" value="1.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Decay / Blur <span id="decay-value" class="value-display">0.00</span></label>
-                        <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>DECAY</label>
+                            <span id="decay-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="decay" min="0" max="3" step="0.1" value="0.0">
+                        </div>
                     </div>
 
                     <div class="control-group">
@@ -66,13 +81,28 @@
                         </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Scrolling Thickness <span id="scrolling_thickness-value" class="value-display">0</span></label>
-                        <input type="range" id="scrolling_thickness" min="0" max="20" step="1" value="0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>MASK WDT</label>
+                            <span id="scrolling_thickness-value" class="value-display">0%</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scrolling_thickness" min="0" max="100" step="1" value="0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>MASK SPD</label>
+                            <span id="scrolling_speed-value" class="value-display">1.0</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scrolling_speed" min="0" max="10" step="0.1" value="1.0">
+                        </div>
                     </div>
 
                     <div class="control-group">
-                        <label>Direction</label>
+                        <label>Mask Direction</label>
                         <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
                             <button class="toggle-btn active" data-param="scrolling_direction" data-value="y">Y</button>
                             <button class="toggle-btn" data-param="scrolling_direction" data-value="x">X</button>
@@ -81,12 +111,17 @@
                             <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-yz">Diag YZ</button>
                             <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xy">Diag XY</button>
                             <button class="toggle-btn" data-param="scrolling_direction" data-value="radial">Radial</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="wave">Wave</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="rings">Rings</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="noise">Noise</button>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <div class="button-group" style="grid-template-columns: 1fr 1fr;">
-                            <button class="toggle-btn" id="scrolling_invert" data-param="scrolling_invert">Invert Scrolling</button>
+                        <div class="button-group" style="grid-template-columns: 1fr 1fr 1fr;">
+                            <button class="toggle-btn" id="scrolling_loop" data-param="scrolling_loop">Loop</button>
+                            <button class="toggle-btn" id="scrolling_invert_mask" data-param="scrolling_invert_mask">Invert Mask</button>
                             <button class="toggle-btn" id="invert" data-param="invert">Invert Colors</button>
                         </div>
                     </div>
@@ -146,46 +181,86 @@
                 <div class="panel">
                     <h3>Global Scene Parameters</h3>
 
-                    <div class="control-group">
-                        <label>Size <span id="size-value" class="value-display">1.00</span></label>
-                        <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SIZE</label>
+                            <span id="size-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Density <span id="density-value" class="value-display">0.50</span></label>
-                        <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>DENSITY</label>
+                            <span id="density-value" class="value-display">0.50</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Frequency <span id="frequency-value" class="value-display">1.00</span></label>
-                        <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>FREQ</label>
+                            <span id="frequency-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Amplitude <span id="amplitude-value" class="value-display">0.50</span></label>
-                        <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>AMP</label>
+                            <span id="amplitude-value" class="value-display">0.50</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Object Count <span id="objectCount-value" class="value-display">1</span></label>
-                        <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>COUNT</label>
+                            <span id="objectCount-value" class="value-display">1</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                        </div>
                     </div>
 
                     <div class="subsection-title">Rotation</div>
 
-                    <div class="control-group">
-                        <label>Rotation X <span id="rotationX-value" class="value-display">0.00</span></label>
-                        <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT X</label>
+                            <span id="rotationX-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Rotation Y <span id="rotationY-value" class="value-display">0.00</span></label>
-                        <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT Y</label>
+                            <span id="rotationY-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
                     </div>
 
-                    <div class="control-group">
-                        <label>Rotation Z <span id="rotationZ-value" class="value-display">0.00</span></label>
-                        <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT Z</label>
+                            <span id="rotationZ-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -350,9 +425,14 @@
                     </div>
 
                     <!-- Effect Controls -->
-                    <div class="control-group">
-                        <label>Effect Intensity <span class="value-display" id="color-effect-intensity-value">1.0</span></label>
-                        <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>FX INT</label>
+                            <span class="value-display" id="color-effect-intensity-value">1.0</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -389,9 +469,11 @@
             strobe: 'off',
             pulse: 'off',
             invert: false,
+            scrolling_enabled: false,
             scrolling_direction: 'y',
             scrolling_thickness: 0,
-            scrolling_invert: false,
+            scrolling_loop: false,
+            scrolling_invert_mask: false,
             // Scene-specific params
             scene_params: {
                 shape: 'sphere',
@@ -475,7 +557,20 @@
         setupSlider('decay', 'decay', 2);
         setupSlider('color-speed', 'color_speed', 2);
         setupSlider('color-effect-intensity', 'color_effect_intensity', 2);
-        setupSlider('scrolling_thickness', 'scrolling_thickness', 0);
+
+        // Special handler for scrolling thickness
+        const scrollingSlider = document.getElementById('scrolling_thickness');
+        const scrollingValueDisplay = document.getElementById('scrolling_thickness-value');
+        scrollingSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            scrollingValueDisplay.textContent = value + '%';
+            params.scrolling_thickness = value;
+            params.scrolling_enabled = value > 0;
+            sendParams();
+        });
+
+        // Handler for scrolling speed
+        setupSlider('scrolling_speed', 'scrolling_speed', 1);
 
         // Color preset buttons
         document.querySelectorAll('.color-preset-btn').forEach(btn => {
@@ -576,9 +671,15 @@
             sendParams();
         });
 
-        document.getElementById('scrolling_invert').addEventListener('click', (e) => {
+        document.getElementById('scrolling_loop').addEventListener('click', (e) => {
             e.target.classList.toggle('active');
-            params.scrolling_invert = e.target.classList.contains('active');
+            params.scrolling_loop = e.target.classList.contains('active');
+            sendParams();
+        });
+
+        document.getElementById('scrolling_invert_mask').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.scrolling_invert_mask = e.target.classList.contains('active');
             sendParams();
         });
 

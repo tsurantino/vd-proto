@@ -57,11 +57,11 @@ class SceneParameters:
     pulse: str = 'off'
     invert: bool = False
     scrolling_enabled: bool = False
-    scrolling_mode: str = 'strobe'
-    scrolling_thickness: int = 5
+    scrolling_thickness: int = 0  # Now represents percentage (0-100)
     scrolling_direction: str = 'y'
     scrolling_speed: float = 1.0
-    scrolling_invert: bool = False
+    scrolling_loop: bool = False
+    scrolling_invert_mask: bool = False
 
     # Scene-specific params
     scene_params: Dict[str, Any] = field(default_factory=dict)
@@ -92,6 +92,13 @@ class InteractiveScene(Scene):
         # Color time tracking
         self.color_time = 0
 
+        # Animation time tracking for smooth speed changes
+        self.animation_time = 0
+
+        # Mask phase tracking for smooth speed changes
+        self.mask_phase = 0
+        self.last_frame_time = 0
+
         print(f"✨ InteractiveScene v2.0 initialized (modular architecture)")
 
     def update_parameters(self, params_dict: Dict[str, Any]):
@@ -102,6 +109,14 @@ class InteractiveScene(Scene):
             else:
                 # Scene-specific params
                 self.params.scene_params[key] = value
+
+        # Debug logging for scrolling parameters
+        if 'scrolling_thickness' in params_dict or 'scrolling_enabled' in params_dict:
+            print(f"🔄 SCROLL UPDATE: enabled={self.params.scrolling_enabled}, thickness={self.params.scrolling_thickness}, direction={self.params.scrolling_direction}")
+        if 'strobe' in params_dict:
+            print(f"⚡ STROBE UPDATE: {self.params.strobe}")
+        if 'pulse' in params_dict:
+            print(f"💓 PULSE UPDATE: {self.params.pulse}")
 
     def render(self, raster: Raster, time: float):
         """
@@ -121,22 +136,30 @@ class InteractiveScene(Scene):
         # Update color time
         self.color_time += 1.0 / 60.0 * self.params.color_speed
 
-        # Clear or apply decay
+        # Update animation time and mask phase for smooth speed transitions
+        if self.last_frame_time > 0:
+            delta_time = time - self.last_frame_time
+            self.animation_time += delta_time * self.params.animationSpeed
+            self.mask_phase += delta_time * self.params.scrolling_speed
+        self.last_frame_time = time
+
+        # Apply decay/trail effect
         if self.params.decay == 0:
+            # No trail: start with a clean slate
             raster.data.fill(0)
         else:
-            current_weight = 1 - self.params.decay * 0.7
-            previous_weight = self.params.decay * 0.7
-            raster.data[:] = (
-                raster.data * current_weight +
-                self.previous_frame * previous_weight
-            ).astype(np.uint8)
+            # Create fading trail by starting with decayed previous frame
+            # Higher decay = longer trails (slower fade)
+            # Decay range: 0 to 3, map to fade factor
+            # decay=1.0 -> 58% retention, decay=2.0 -> 76%, decay=3.0 -> 94%
+            fade_factor = 0.4 + (self.params.decay * 0.18)
+            raster.data[:] = (self.previous_frame * fade_factor).astype(np.uint8)
 
         # LAYER 1: Generate geometry
-        mask = self._generate_geometry(raster, time * self.params.animationSpeed)
+        mask = self._generate_geometry(raster, self.animation_time)
 
-        # LAYER 2: Apply colors
-        self._apply_colors(raster, mask, time * self.params.animationSpeed)
+        # LAYER 2: Apply colors (draws on top of decayed frame)
+        self._apply_colors(raster, mask, self.animation_time)
 
         # LAYER 3: Apply global effects
         self._apply_global_effects(raster, time)
@@ -380,59 +403,289 @@ class InteractiveScene(Scene):
     # ================================================================
 
     def _apply_global_effects(self, raster, time):
-        """Apply global post-processing effects"""
-        # Strobe
+        """
+        Apply global post-processing effects.
+
+        Design:
+        1. Strobe/Pulse apply globally to entire scene
+        2. Scrolling is an independent masking effect applied after strobe/pulse
+        """
+        print(f"🎯 EFFECTS: strobe={self.params.strobe}, pulse={self.params.pulse}, scroll_enabled={self.params.scrolling_enabled}, scroll_thickness={self.params.scrolling_thickness}")
+
+        # Step 1: Apply global strobe effect
         if self.params.strobe != 'off':
+            print(f"  → Applying GLOBAL STROBE ({self.params.strobe})")
             freq = {'slow': 2, 'medium': 5, 'fast': 10}[self.params.strobe]
             if int(time * freq * 2) % 2 == 1:
                 raster.data.fill(0)
-                return
 
-        # Pulse
+        # Step 2: Apply global pulse effect
         if self.params.pulse != 'off':
+            print(f"  → Applying GLOBAL PULSE ({self.params.pulse})")
             freq = {'slow': 0.5, 'medium': 1.0, 'fast': 2.0}[self.params.pulse]
             factor = 0.65 + 0.35 * np.sin(time * freq * np.pi * 2)
             raster.data[:] = (raster.data * factor).astype(np.uint8)
 
-        # Invert
+        # Step 3: Apply scrolling mask (if enabled)
+        if self.params.scrolling_enabled and self.params.scrolling_thickness > 0:
+            print(f"  → Applying SCROLLING MASK (dir={self.params.scrolling_direction}, wdt={self.params.scrolling_thickness}%, spd={self.params.scrolling_speed})")
+            mask = self._get_scrolling_band_mask(raster, time)
+            # Apply mask: normal mode masks out the band, inverted mode keeps only the band
+            if self.params.scrolling_invert_mask:
+                # Invert mask: keep only the masked area, turn off everything else
+                raster.data[~mask] = 0
+            else:
+                # Normal: mask out the scrolling band itself
+                raster.data[mask] = 0
+
+        # Step 4: Invert (always apply after other effects)
         if self.params.invert:
             max_val = np.max(raster.data)
             if max_val > 0:
-                raster.data[:] = np.where(raster.data > 10, 0, max_val)
+                # Keep black pixels black, invert everything else
+                mask = raster.data > 10
+                raster.data[mask] = max_val - raster.data[mask]
 
-        # Scrolling
-        if self.params.scrolling_enabled:
-            self._apply_scrolling_effect(raster, time)
-
-    def _apply_scrolling_effect(self, raster, time):
-        """Apply scrolling effect"""
+    def _get_scrolling_band_mask(self, raster, time):
+        """Calculate the mask for the scrolling band"""
         z_coords, y_coords, x_coords = self.coords_cache
 
-        max_dim = {
-            'x': raster.width,
-            'y': raster.height,
-            'z': raster.length
-        }[self.params.scrolling_direction]
+        direction = self.params.scrolling_direction
 
-        scroll_pos = (time * self.params.scrolling_speed * 10) % max_dim
+        # Convert percentage (0-100) to actual pixel thickness based on direction
+        percentage = self.params.scrolling_thickness / 100.0
 
-        axis_coords = {
-            'x': x_coords,
-            'y': y_coords,
-            'z': z_coords
-        }[self.params.scrolling_direction]
+        # Calculate appropriate thickness for each direction type
+        if direction in ['x', 'y', 'z']:
+            max_dim = {
+                'x': raster.width,
+                'y': raster.height,
+                'z': raster.length
+            }[direction]
+            thickness = percentage * max_dim
+        elif direction in ['diagonal-xz', 'diagonal-yz', 'diagonal-xy']:
+            if direction == 'diagonal-xz':
+                max_dim = np.sqrt(raster.width**2 + raster.length**2)
+            elif direction == 'diagonal-yz':
+                max_dim = np.sqrt(raster.height**2 + raster.length**2)
+            else:  # diagonal-xy
+                max_dim = np.sqrt(raster.width**2 + raster.height**2)
+            thickness = percentage * max_dim
+        elif direction in ['radial', 'spiral', 'rings']:
+            center_x = raster.width / 2
+            center_y = raster.height / 2
+            center_z = raster.length / 2
+            max_radius = np.sqrt(center_x**2 + center_y**2 + center_z**2)
+            thickness = percentage * max_radius
+        else:  # wave, noise, or unknown
+            # For wave and noise, use a normalized thickness
+            thickness = percentage * 20  # Map to 0-20 range for compatibility
 
-        dist_from_band = np.abs(axis_coords - scroll_pos)
 
-        if self.params.scrolling_mode == 'strobe':
-            mask = dist_from_band < self.params.scrolling_thickness
-            if self.params.scrolling_invert:
-                raster.data[mask] = 0
+        # Helper function to calculate scroll position with wrap or ping-pong
+        def get_scroll_pos(max_dim):
+            raw_pos = self.mask_phase * 10
+            if self.params.scrolling_loop:
+                # Ping-pong: bounce back and forth
+                cycle_length = max_dim * 2
+                pos_in_cycle = raw_pos % cycle_length
+                if pos_in_cycle > max_dim:
+                    return cycle_length - pos_in_cycle
+                return pos_in_cycle
             else:
-                raster.data[~mask] = 0
+                # Wrap around (default)
+                return raw_pos % max_dim
 
-        elif self.params.scrolling_mode == 'pulse':
-            mask = dist_from_band < self.params.scrolling_thickness
-            if np.any(mask):
-                factor = 1 - dist_from_band[mask] / self.params.scrolling_thickness
-                raster.data[mask] = (raster.data[mask] * factor[..., np.newaxis]).astype(np.uint8)
+        # Simple axis-aligned scrolling
+        if direction in ['x', 'y', 'z']:
+            max_dim = {
+                'x': raster.width,
+                'y': raster.height,
+                'z': raster.length
+            }[direction]
+
+            scroll_pos = get_scroll_pos(max_dim)
+
+            axis_coords = {
+                'x': x_coords,
+                'y': y_coords,
+                'z': z_coords
+            }[direction]
+
+            # Force broadcast to full 3D grid
+            axis_coords_broadcast = axis_coords + y_coords * 0 + x_coords * 0 + z_coords * 0
+
+            # Calculate distance - use toroidal wrapping for smooth transitions
+            # but cap thickness to avoid full coverage at 50%
+            if self.params.scrolling_loop:
+                # In loop mode, use simple distance (no wrapping)
+                dist_from_band = np.abs(axis_coords_broadcast - scroll_pos)
+            else:
+                # In wrap mode, use toroidal distance but cap the effective thickness
+                linear_dist = np.abs(axis_coords_broadcast - scroll_pos)
+                dist_from_band = np.minimum(linear_dist, max_dim - linear_dist)
+                # Cap thickness to prevent full scene masking before 100%
+                # Toroidal distance maxes out at max_dim/2, so cap thickness at 49% to prevent overlap
+                thickness = min(thickness, max_dim * 0.49)  # Cap at 49% to prevent wrapping overlap
+
+        # Diagonal scrolling (moving along two axes simultaneously)
+        elif direction == 'diagonal-xz':
+            max_dim = np.sqrt(raster.width**2 + raster.length**2)
+            scroll_pos = get_scroll_pos(max_dim)
+            # Distance from diagonal line - force broadcast to full 3D
+            diagonal_coord = (x_coords + z_coords + y_coords * 0) / np.sqrt(2)
+            if self.params.scrolling_loop:
+                dist_from_band = np.abs(diagonal_coord - scroll_pos)
+            else:
+                linear_dist = np.abs(diagonal_coord - scroll_pos)
+                dist_from_band = np.minimum(linear_dist, max_dim - linear_dist)
+                thickness = min(thickness, max_dim * 0.49)
+
+        elif direction == 'diagonal-yz':
+            max_dim = np.sqrt(raster.height**2 + raster.length**2)
+            scroll_pos = get_scroll_pos(max_dim)
+            # Force broadcast to full 3D
+            diagonal_coord = (y_coords + z_coords + x_coords * 0) / np.sqrt(2)
+            if self.params.scrolling_loop:
+                dist_from_band = np.abs(diagonal_coord - scroll_pos)
+            else:
+                linear_dist = np.abs(diagonal_coord - scroll_pos)
+                dist_from_band = np.minimum(linear_dist, max_dim - linear_dist)
+                thickness = min(thickness, max_dim * 0.49)
+
+        elif direction == 'diagonal-xy':
+            max_dim = np.sqrt(raster.width**2 + raster.height**2)
+            scroll_pos = get_scroll_pos(max_dim)
+            # Force broadcast to full 3D
+            diagonal_coord = (x_coords + y_coords + z_coords * 0) / np.sqrt(2)
+            if self.params.scrolling_loop:
+                dist_from_band = np.abs(diagonal_coord - scroll_pos)
+            else:
+                linear_dist = np.abs(diagonal_coord - scroll_pos)
+                dist_from_band = np.minimum(linear_dist, max_dim - linear_dist)
+                thickness = min(thickness, max_dim * 0.49)
+
+        # Radial scrolling (expanding/contracting from center)
+        elif direction == 'radial':
+            center_x = raster.width / 2
+            center_y = raster.height / 2
+            center_z = raster.length / 2
+
+            # Distance from center
+            radius = np.sqrt((x_coords - center_x)**2 + (y_coords - center_y)**2 + (z_coords - center_z)**2)
+            max_radius = np.sqrt(center_x**2 + center_y**2 + center_z**2)
+
+            scroll_pos = get_scroll_pos(max_radius)
+
+            if self.params.scrolling_loop:
+                dist_from_band = np.abs(radius - scroll_pos)
+            else:
+                linear_dist = np.abs(radius - scroll_pos)
+                dist_from_band = np.minimum(linear_dist, max_radius - linear_dist)
+                thickness = min(thickness, max_radius * 0.49)
+
+            # Return mask for radial mode
+            return dist_from_band < thickness
+
+        # Spiral masking (combines radial and angular components)
+        elif direction == 'spiral':
+            center_x = raster.width / 2
+            center_y = raster.height / 2
+            center_z = raster.length / 2
+
+            # Calculate cylindrical coordinates (using Y as vertical axis)
+            radius_xz = np.sqrt((x_coords - center_x)**2 + (z_coords - center_z)**2)
+            angle = np.arctan2(z_coords - center_z, x_coords - center_x)
+
+            # Create an Archimedean spiral: r = a + b*theta
+            # Calculate max radius to determine spiral tightness
+            max_radius_xz = np.sqrt(center_x**2 + center_z**2)
+
+            # Tightness: how much radius increases per radian
+            # Divide by 2π to make one full rotation reach the edge
+            # Multiply by 1.5 to get ~1.5 rotations across the grid
+            spiral_tightness = (max_radius_xz / (2 * np.pi)) * 1.5
+
+            # The spiral rotates over time
+            time_rotation = self.mask_phase * 0.5
+            # Normalize angle to [0, 2*pi] and add time rotation
+            angle_normalized = (angle + np.pi + time_rotation) % (2 * np.pi)
+
+            # Spiral equation: for a given angle, we expect a certain radius
+            # We use angle to determine expected radius, then compare to actual
+            spiral_radius_expected = angle_normalized * spiral_tightness
+
+            # Distance from the spiral curve
+            dist_from_band = np.abs(radius_xz - spiral_radius_expected)
+
+        # Wave masking (3D sinusoidal wave)
+        elif direction == 'wave':
+            # Create a continuously flowing 3D wave
+            # Use a traveling wave: combine position and time smoothly
+            wave_value = (
+                np.sin(x_coords * 0.3 + self.mask_phase * 2) +
+                np.cos(y_coords * 0.3 + self.mask_phase * 2) +
+                np.sin(z_coords * 0.3 + self.mask_phase * 2)
+            )
+            # Wave value ranges from -3 to 3
+            # Use threshold-based masking like noise (thickness is already scaled 0-20)
+            # Map thickness (0-20) to threshold (-3 to 3) for gradual masking
+            # Higher threshold = more masking (invert comparison for correct behavior)
+            threshold = -3.0 + (thickness / 20.0) * 6.0
+            return wave_value < threshold
+
+        # Rings masking (concentric spherical shells)
+        elif direction == 'rings':
+            center_x = raster.width / 2
+            center_y = raster.height / 2
+            center_z = raster.length / 2
+
+            # Distance from center (same as radial but with multiple rings)
+            radius = np.sqrt((x_coords - center_x)**2 + (y_coords - center_y)**2 + (z_coords - center_z)**2)
+
+            # Create pulsing rings by using modulo
+            ring_period = 8  # Distance between rings
+            ring_coord = (radius + self.mask_phase * 10) % ring_period
+
+            # Scale thickness relative to ring_period (not max_radius)
+            # thickness is 0-20 from percentage conversion, map to 0-ring_period
+            ring_thickness = (thickness / 20.0) * ring_period
+
+            # Threshold creates the ring band
+            dist_from_band = ring_coord
+            return dist_from_band < ring_thickness
+
+        # Noise masking (Perlin-like noise pattern)
+        elif direction == 'noise':
+            # Create organic, cloud-like masking using multiple octaves of noise
+            # Octave 1: large features
+            noise1 = np.sin(x_coords * 0.2 + self.mask_phase) * \
+                     np.cos(y_coords * 0.2 - self.mask_phase * 0.7) * \
+                     np.sin(z_coords * 0.2 + self.mask_phase * 0.5)
+
+            # Octave 2: medium features
+            noise2 = np.sin(x_coords * 0.5 + self.mask_phase * 1.5) * \
+                     np.cos(y_coords * 0.5 + self.mask_phase * 1.2) * \
+                     np.sin(z_coords * 0.5 - self.mask_phase * 0.8)
+
+            # Octave 3: fine features
+            noise3 = np.sin(x_coords * 1.0 - self.mask_phase * 2) * \
+                     np.cos(y_coords * 1.0 + self.mask_phase * 1.8) * \
+                     np.sin(z_coords * 1.0 + self.mask_phase * 1.5)
+
+            # Combine octaves with decreasing weights
+            noise = noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2
+
+            # Threshold based on mask width (thickness is already scaled 0-20)
+            # Map thickness (0-20) to threshold (-1 to 1)
+            # Higher threshold = more masking (invert comparison for correct behavior)
+            threshold = -1.0 + (thickness / 20.0) * 2.0
+            return noise < threshold
+
+        else:
+            # Fallback for unknown directions
+            return np.ones_like(x_coords, dtype=bool)
+
+        mask = dist_from_band < thickness
+        return mask
+
