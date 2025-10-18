@@ -14,37 +14,36 @@ export class GlobalParameterMapper {
     static mapToScene(sceneType, globalParams, sceneParams) {
         const mapped = { ...sceneParams };
 
-        // Pass through all movement parameters to shape-based scenes and particleFlow
-        if (sceneType === 'shapeMorph' || sceneType === 'particleFlow') {
-            mapped.rotationX = globalParams.rotationX || 0;
-            mapped.rotationY = globalParams.rotationY || 0;
-            mapped.rotationZ = globalParams.rotationZ || 0;
-            mapped.translateX = globalParams.translateX || 0;
-            mapped.translateZ = globalParams.translateZ || 0;
-            mapped.translateAmplitude = globalParams.translateAmplitude || 0;
-            mapped.bounceSpeed = globalParams.bounceSpeed || 0;
-            mapped.bounceHeight = globalParams.bounceHeight || 0;
-            mapped.orbitSpeed = globalParams.orbitSpeed || 0;
-            mapped.orbitRadius = globalParams.orbitRadius || 0;
-            mapped.pulseSpeed = globalParams.pulseSpeed || 0;
-            mapped.pulseAmount = globalParams.pulseAmount || 0;
+        // Pass through all movement parameters to all scenes (now universal)
+        mapped.rotationX = globalParams.rotationX || 0;
+        mapped.rotationY = globalParams.rotationY || 0;
+        mapped.rotationZ = globalParams.rotationZ || 0;
+        mapped.translateX = globalParams.translateX || 0;
+        mapped.translateY = globalParams.translateY || 0;
+        mapped.translateZ = globalParams.translateZ || 0;
+        mapped.translateAmplitude = globalParams.translateAmplitude || 0;
+        mapped.bounceSpeed = globalParams.bounceSpeed || 0;
+        mapped.bounceHeight = globalParams.bounceHeight || 0;
+        mapped.orbitSpeed = globalParams.orbitSpeed || 0;
+        mapped.orbitRadius = globalParams.orbitRadius || 0;
+        mapped.pulseSpeed = globalParams.pulseSpeed || 0;
+        mapped.pulseAmount = globalParams.pulseAmount || 0;
 
-            // New movement types
-            mapped.spiralSpeed = globalParams.spiralSpeed || 0;
-            mapped.spiralRadius = globalParams.spiralRadius || 0;
-            mapped.spiralHeight = globalParams.spiralHeight || 0;
-            mapped.wobbleSpeed = globalParams.wobbleSpeed || 0;
-            mapped.wobbleAmount = globalParams.wobbleAmount || 0;
-            mapped.figure8Speed = globalParams.figure8Speed || 0;
-            mapped.figure8Size = globalParams.figure8Size || 0;
-            mapped.ellipseSpeed = globalParams.ellipseSpeed || 0;
-            mapped.ellipseRadiusX = globalParams.ellipseRadiusX || 0;
-            mapped.ellipseRadiusZ = globalParams.ellipseRadiusZ || 0;
-            mapped.scrollSpeed = globalParams.scrollSpeed || 0;
-            mapped.scrollDirection = globalParams.scrollDirection || 'x';
-            mapped.objectArrangement = globalParams.objectArrangement || 'circular';
-            mapped.objectOffset = globalParams.objectOffset || 0;
-        }
+        // Advanced movement types
+        mapped.spiralSpeed = globalParams.spiralSpeed || 0;
+        mapped.spiralRadius = globalParams.spiralRadius || 0;
+        mapped.spiralHeight = globalParams.spiralHeight || 0;
+        mapped.wobbleSpeed = globalParams.wobbleSpeed || 0;
+        mapped.wobbleAmount = globalParams.wobbleAmount || 0;
+        mapped.figure8Speed = globalParams.figure8Speed || 0;
+        mapped.figure8Size = globalParams.figure8Size || 0;
+        mapped.ellipseSpeed = globalParams.ellipseSpeed || 0;
+        mapped.ellipseRadiusX = globalParams.ellipseRadiusX || 0;
+        mapped.ellipseRadiusZ = globalParams.ellipseRadiusZ || 0;
+        mapped.scrollSpeed = globalParams.scrollSpeed || 0;
+        mapped.scrollDirection = globalParams.scrollDirection || 'x';
+        mapped.objectArrangement = globalParams.objectArrangement || 'circular';
+        mapped.objectOffset = globalParams.objectOffset || 0;
 
         // Map Size/Scale parameter
         if (globalParams.size !== undefined) {
@@ -245,6 +244,7 @@ export class GlobalParameterMapper {
             rotationY: 0,           // -1.0 to 1.0 (rotation speed around Y axis)
             rotationZ: 0,           // -1.0 to 1.0 (rotation speed around Z axis)
             translateX: 0,          // 0.0 to 1.0 (translation oscillation speed)
+            translateY: 0,          // 0.0 to 1.0 (translation oscillation speed)
             translateZ: 0,          // 0.0 to 1.0 (translation oscillation speed)
             translateAmplitude: 0,  // 0.0 to 1.0 (how far to translate)
             bounceSpeed: 0,         // 0.0 to 1.0 (vertical bounce speed)
@@ -280,7 +280,7 @@ export class GlobalParameterMapper {
     static getActiveParameters(sceneType) {
         const movementParams = [
             'rotationX', 'rotationY', 'rotationZ',
-            'translateX', 'translateZ', 'translateAmplitude',
+            'translateX', 'translateY', 'translateZ', 'translateAmplitude',
             'bounceSpeed', 'bounceHeight',
             'orbitSpeed', 'orbitRadius',
             'pulseSpeed', 'pulseAmount',
@@ -294,14 +294,95 @@ export class GlobalParameterMapper {
         const paramMap = {
             'shapeMorph': ['size', 'density', 'objectCount', ...movementParams],
             'particleFlow': ['size', 'density', 'animationSpeed', ...movementParams],
-            'waveField': ['frequency', 'amplitude', 'direction'],
-            'procedural': ['size', 'amplitude', 'detailLevel', 'animationType', 'inversion'],
-            'vortex': ['density', 'animationSpeed', 'amplitude', 'depth', 'objectCount'],
-            'grid': ['density', 'spacing'],
-            'text3D': ['size', 'depth'],
-            'plasma': ['size', 'frequency', 'amplitude', 'detailLevel']
+            'waveField': ['frequency', 'amplitude', 'direction', ...movementParams],
+            'procedural': ['size', 'amplitude', 'detailLevel', 'animationType', 'inversion', ...movementParams],
+            'vortex': ['density', 'animationSpeed', 'amplitude', 'depth', 'objectCount', ...movementParams],
+            'grid': ['density', 'spacing', ...movementParams],
+            'text3D': ['size', 'depth', ...movementParams]
         };
 
         return paramMap[sceneType] || [];
+    }
+
+    /**
+     * Get mapping description for a parameter in a specific scene
+     * @param {string} paramName - Global parameter name
+     * @param {string} sceneType - Scene type
+     * @returns {string|null} Description of how this parameter maps to the scene
+     */
+    static getMappingDescription(paramName, sceneType) {
+        const mappings = {
+            'size': {
+                'shapeMorph': 'Maps to shape size',
+                'text3D': 'Maps to text size',
+                'particleFlow': 'Maps to particle size (1-5)',
+                'procedural': 'Maps to noise scale (inverse)',
+                'waveField': 'Maps to plasma scale (inverse)'
+            },
+            'density': {
+                'particleFlow': 'Maps to particle density',
+                'vortex': 'Maps to vortex density',
+                'shapeMorph': 'Maps to shape thickness',
+                'grid': 'Maps to grid line thickness'
+            },
+            'animationSpeed': {
+                'particleFlow': 'Maps to particle velocity',
+                'vortex': 'Maps to vortex twist speed'
+            },
+            'frequency': {
+                'waveField': 'Maps to wave frequency',
+                'plasma': 'Maps to plasma complexity'
+            },
+            'amplitude': {
+                'waveField': 'Maps to wave amplitude',
+                'procedural': 'Maps to noise threshold (inverse)',
+                'vortex': 'Maps to vortex radius'
+            },
+            'detailLevel': {
+                'procedural': 'Maps to noise octaves',
+                'plasma': 'Maps to plasma layers'
+            },
+            'spacing': {
+                'grid': 'Maps to grid spacing & offset'
+            },
+            'direction': {
+                'waveField': 'Maps to wave direction'
+            },
+            'depth': {
+                'text3D': 'Maps to text depth/extrusion',
+                'vortex': 'Maps to vortex height'
+            },
+            'inversion': {
+                'procedural': 'Maps to noise inversion'
+            },
+            'objectCount': {
+                'shapeMorph': 'Number of shapes to render',
+                'vortex': 'Number of vortices to render'
+            }
+        };
+
+        // Movement parameters are universal
+        const movementParams = [
+            'rotationX', 'rotationY', 'rotationZ',
+            'translateX', 'translateY', 'translateZ', 'translateAmplitude',
+            'bounceSpeed', 'bounceHeight',
+            'orbitSpeed', 'orbitRadius',
+            'pulseSpeed', 'pulseAmount',
+            'spiralSpeed', 'spiralRadius', 'spiralHeight',
+            'wobbleSpeed', 'wobbleAmount',
+            'figure8Speed', 'figure8Size',
+            'ellipseSpeed', 'ellipseRadiusX', 'ellipseRadiusZ',
+            'scrollSpeed', 'scrollDirection', 'objectArrangement', 'objectOffset'
+        ];
+
+        if (movementParams.includes(paramName)) {
+            return 'Applied to all scenes for movement effects';
+        }
+
+        if (mappings[paramName] && mappings[paramName][sceneType]) {
+            return mappings[paramName][sceneType];
+        }
+
+        return null;
     }
 }

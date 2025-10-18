@@ -4,7 +4,6 @@
  */
 import { VolumetricRenderer } from './VolumetricRenderer.js';
 import { SceneLibrary } from './effects/SceneLibrary.js';
-import { IllusionSceneLibrary } from './effects/IllusionSceneLibrary.js';
 import { GlobalEffects } from './effects/GlobalEffects.js';
 import { ParameterAutomation } from './automation/ParameterAutomation.js';
 import { GlobalParameterMapper } from './utils/GlobalParameterMapper.js';
@@ -23,9 +22,8 @@ export class VolumetricDisplay {
         const canvas = document.getElementById(canvasId);
         this.renderer = new VolumetricRenderer(canvas, gridX, gridY, gridZ);
 
-        // Initialize scene libraries and global effects
+        // Initialize scene library and global effects
         this.sceneLibrary = new SceneLibrary(gridX, gridY, gridZ);
-        this.illusionSceneLibrary = new IllusionSceneLibrary(gridX, gridY, gridZ);
         this.globalEffects = new GlobalEffects(gridX, gridY, gridZ);
 
         // Initialize parameter automation
@@ -84,15 +82,7 @@ export class VolumetricDisplay {
     }
 
     getSceneFromLibrary(sceneType) {
-        // Check main scene library first
-        let scene = this.sceneLibrary.getScene(sceneType);
-        if (scene) return scene;
-
-        // Then check illusion scene library
-        scene = this.illusionSceneLibrary.getScene(sceneType);
-        if (scene) return scene;
-
-        return null;
+        return this.sceneLibrary.getScene(sceneType);
     }
 
     setSceneParameter(name, value) {
@@ -325,12 +315,11 @@ export class VolumetricDisplay {
         return this.sceneLibrary.getSceneTypes();
     }
 
-    getIllusionSceneNames() {
-        return this.illusionSceneLibrary.getSceneNames();
-    }
-
-    getIllusionSceneTypes() {
-        return this.illusionSceneLibrary.getSceneTypes();
+    getScenesByCategory(category) {
+        const allScenes = this.sceneLibrary.scenes;
+        return Object.entries(allScenes)
+            .filter(([_, scene]) => scene.category === category)
+            .map(([key, scene]) => ({ key, ...scene }));
     }
 
     getCurrentSceneType() {

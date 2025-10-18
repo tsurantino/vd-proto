@@ -3,6 +3,10 @@
  * Initializes the volumetric display and UI controls for scene-based system
  */
 import { VolumetricDisplay } from './VolumetricDisplay.js';
+import { MovementPresets } from './utils/MovementPresets.js';
+import { AutomationPresets } from './utils/AutomationPresets.js';
+import { ParameterLock } from './utils/ParameterLock.js';
+import { GlobalParameterMapper } from './utils/GlobalParameterMapper.js';
 
 // ============================================================================
 // DEBUG LOGGING SYSTEM
@@ -24,6 +28,7 @@ const DebugLogger = {
         const debugContent = document.getElementById('debug-content');
         const debugToggle = document.getElementById('debug-toggle');
         const debugClear = document.getElementById('debug-clear');
+        const debugCopy = document.getElementById('debug-copy');
 
         debugHeader.addEventListener('click', () => {
             debugHeader.classList.toggle('collapsed');
@@ -34,6 +39,20 @@ const DebugLogger = {
         debugClear.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent toggling when clicking clear
             this.clear();
+        });
+
+        debugCopy.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent toggling when clicking copy
+            const logText = this.logs.map(log => `[${log.timestamp}] ${log.message}`).join('\n');
+            navigator.clipboard.writeText(logText).then(() => {
+                console.log('Debug logs copied to clipboard');
+                debugCopy.textContent = 'Copied!';
+                setTimeout(() => {
+                    debugCopy.textContent = 'Copy';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy debug logs:', err);
+            });
         });
     },
 
@@ -107,6 +126,10 @@ DebugLogger.init();
 console.log('Initializing Volumetric Display...');
 const display = new VolumetricDisplay('canvas', 40, 20, 40);
 console.log('Display initialized successfully');
+
+// Initialize parameter lock system
+const parameterLock = new ParameterLock();
+console.log('Parameter lock system initialized');
 
 // Get grid info and display
 const gridInfo = display.getGridInfo();
@@ -201,6 +224,100 @@ colorEffectSpeedSlider.addEventListener('input', (e) => {
 
 const globalParamsContainer = document.getElementById('global-params-container');
 
+// Helper function to create collapsible subsections
+function createCollapsibleSubsection(title) {
+    const header = document.createElement('div');
+    header.className = 'subsection-collapsible';
+    header.textContent = title;
+
+    const content = document.createElement('div');
+    content.className = 'subsection-content';
+
+    header.addEventListener('click', () => {
+        header.classList.toggle('collapsed');
+        content.classList.toggle('collapsed');
+    });
+
+    return { header, content };
+}
+
+// Element-returning versions of control creators
+function createGlobalSliderControlElement(paramName, label, currentValue, min, max, step) {
+    const group = document.createElement('div');
+    group.className = 'control-group global-param';
+    group.dataset.param = paramName;
+
+    const labelEl = document.createElement('label');
+    labelEl.innerHTML = `${label} <span class="value-display" id="global-param-${paramName}-value">${currentValue.toFixed(step >= 1 ? 0 : 2)}</span>`;
+
+    // Add lock button
+    const lockBtn = document.createElement('button');
+    lockBtn.className = 'param-lock-btn';
+    lockBtn.dataset.paramId = `global-param-${paramName}`;
+    lockBtn.textContent = '🔓';
+    lockBtn.title = 'Lock this parameter';
+    lockBtn.style.marginLeft = '5px';
+    lockBtn.style.fontSize = '12px';
+    lockBtn.style.cursor = 'pointer';
+    lockBtn.style.background = 'none';
+    lockBtn.style.border = 'none';
+    lockBtn.style.padding = '0';
+
+    labelEl.appendChild(lockBtn);
+    group.appendChild(labelEl);
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.id = `global-param-${paramName}`;
+    slider.min = min;
+    slider.max = max;
+    slider.step = step;
+    slider.value = currentValue;
+
+    slider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        display.setGlobalSceneParameter(paramName, val);
+        document.getElementById(`global-param-${paramName}-value`).textContent = val.toFixed(step >= 1 ? 0 : 2);
+
+        // Update locked value if locked
+        if (parameterLock.isLocked(slider.id)) {
+            parameterLock.lock(slider.id, val);
+        }
+    });
+
+    group.appendChild(slider);
+    return group;
+}
+
+function createGlobalSelectControlElement(paramName, label, currentValue, options) {
+    const group = document.createElement('div');
+    group.className = 'control-group global-param';
+    group.dataset.param = paramName;
+
+    const labelEl = document.createElement('label');
+    labelEl.textContent = label;
+    group.appendChild(labelEl);
+
+    const select = document.createElement('select');
+    select.className = 'param-select';
+    select.id = `global-param-${paramName}`;
+
+    options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        option.selected = opt.value === currentValue;
+        select.appendChild(option);
+    });
+
+    select.addEventListener('change', (e) => {
+        display.setGlobalSceneParameter(paramName, e.target.value);
+    });
+
+    group.appendChild(select);
+    return group;
+}
+
 function createGlobalParameterControls() {
     console.log('Creating global parameter controls');
 
@@ -225,68 +342,115 @@ function createGlobalParameterControls() {
     // Animation Speed
     createGlobalSliderControl('animationSpeed', 'Animation Speed', display.getGlobalSceneParameter('animationSpeed'), 0.1, 3, 0.1);
 
-    // Movement Controls Section Header
+    // MOVEMENT PRESETS (moved above Movement Controls)
+    const presetsHeader = document.createElement('div');
+    presetsHeader.className = 'subsection-title';
+    presetsHeader.textContent = 'Movement Presets';
+    presetsHeader.style.marginTop = '15px';
+    globalParamsContainer.appendChild(presetsHeader);
+
+    const presetsContainer = document.createElement('div');
+    presetsContainer.className = 'color-effect-buttons';
+    presetsContainer.style.marginBottom = '15px';
+
+    MovementPresets.getAll().forEach(([key, preset]) => {
+        const btn = document.createElement('button');
+        btn.className = 'color-effect-btn';
+        btn.textContent = preset.name;
+        btn.title = preset.description;
+        btn.addEventListener('click', () => {
+            // Apply preset
+            MovementPresets.apply(display, key);
+
+            // Update all slider UIs
+            Object.entries(preset.params).forEach(([param, value]) => {
+                const valueDisplay = document.getElementById(`global-param-${param}-value`);
+                const slider = document.getElementById(`global-param-${param}`);
+                if (valueDisplay && slider) {
+                    const step = parseFloat(slider.step) || 0.05;
+                    valueDisplay.textContent = value.toFixed(step >= 1 ? 0 : 2);
+                    slider.value = value;
+                }
+            });
+
+            console.log(`Applied preset: ${preset.name}`);
+        });
+        presetsContainer.appendChild(btn);
+    });
+
+    globalParamsContainer.appendChild(presetsContainer);
+
+    // Movement Controls - Collapsible Sections
     const movementHeader = document.createElement('div');
     movementHeader.className = 'subsection-title';
     movementHeader.textContent = 'Movement Controls';
     movementHeader.style.marginTop = '15px';
     globalParamsContainer.appendChild(movementHeader);
 
+    // BASIC MOVEMENT - Collapsible (collapsed by default)
+    const basicMovementSection = createCollapsibleSubsection('Basic Movement');
+    basicMovementSection.header.classList.add('collapsed');
+    basicMovementSection.content.classList.add('collapsed');
+    globalParamsContainer.appendChild(basicMovementSection.header);
+    globalParamsContainer.appendChild(basicMovementSection.content);
+
     // Rotation Controls
-    createGlobalSliderControl('rotationX', 'Rotation X', display.getGlobalSceneParameter('rotationX'), -1, 1, 0.1);
-    createGlobalSliderControl('rotationY', 'Rotation Y', display.getGlobalSceneParameter('rotationY'), -1, 1, 0.1);
-    createGlobalSliderControl('rotationZ', 'Rotation Z', display.getGlobalSceneParameter('rotationZ'), -1, 1, 0.1);
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('rotationX', 'Rotation X', display.getGlobalSceneParameter('rotationX'), -1, 1, 0.1));
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('rotationY', 'Rotation Y', display.getGlobalSceneParameter('rotationY'), -1, 1, 0.1));
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('rotationZ', 'Rotation Z', display.getGlobalSceneParameter('rotationZ'), -1, 1, 0.1));
 
     // Translation Controls
-    createGlobalSliderControl('translateX', 'Translate X Speed', display.getGlobalSceneParameter('translateX'), 0, 1, 0.05);
-    createGlobalSliderControl('translateZ', 'Translate Z Speed', display.getGlobalSceneParameter('translateZ'), 0, 1, 0.05);
-    createGlobalSliderControl('translateAmplitude', 'Translate Distance', display.getGlobalSceneParameter('translateAmplitude'), 0, 1, 0.05);
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('translateX', 'Translate X Speed', display.getGlobalSceneParameter('translateX'), 0, 1, 0.05));
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('translateY', 'Translate Y Speed', display.getGlobalSceneParameter('translateY'), 0, 1, 0.05));
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('translateZ', 'Translate Z Speed', display.getGlobalSceneParameter('translateZ'), 0, 1, 0.05));
+    basicMovementSection.content.appendChild(createGlobalSliderControlElement('translateAmplitude', 'Translate Distance', display.getGlobalSceneParameter('translateAmplitude'), 0, 1, 0.05));
 
-    // Bounce Controls
-    createGlobalSliderControl('bounceSpeed', 'Bounce Speed', display.getGlobalSceneParameter('bounceSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('bounceHeight', 'Bounce Height', display.getGlobalSceneParameter('bounceHeight'), 0, 1, 0.05);
+    // OSCILLATION - Collapsible (collapsed by default)
+    const oscillationSection = createCollapsibleSubsection('Oscillation');
+    oscillationSection.header.classList.add('collapsed');
+    oscillationSection.content.classList.add('collapsed');
+    globalParamsContainer.appendChild(oscillationSection.header);
+    globalParamsContainer.appendChild(oscillationSection.content);
 
-    // Orbit Controls
-    createGlobalSliderControl('orbitSpeed', 'Orbit Speed', display.getGlobalSceneParameter('orbitSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('orbitRadius', 'Orbit Radius', display.getGlobalSceneParameter('orbitRadius'), 0, 1, 0.05);
+    oscillationSection.content.appendChild(createGlobalSliderControlElement('bounceSpeed', 'Bounce Speed', display.getGlobalSceneParameter('bounceSpeed'), 0, 1, 0.05));
+    oscillationSection.content.appendChild(createGlobalSliderControlElement('bounceHeight', 'Bounce Height', display.getGlobalSceneParameter('bounceHeight'), 0, 1, 0.05));
+    oscillationSection.content.appendChild(createGlobalSliderControlElement('pulseSpeed', 'Pulse Speed', display.getGlobalSceneParameter('pulseSpeed'), 0, 1, 0.05));
+    oscillationSection.content.appendChild(createGlobalSliderControlElement('pulseAmount', 'Pulse Amount', display.getGlobalSceneParameter('pulseAmount'), 0, 1, 0.05));
 
-    // Pulse Controls
-    createGlobalSliderControl('pulseSpeed', 'Pulse Speed', display.getGlobalSceneParameter('pulseSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('pulseAmount', 'Pulse Amount', display.getGlobalSceneParameter('pulseAmount'), 0, 1, 0.05);
+    // PATH MOTION - Collapsible (collapsed by default)
+    const pathMotionSection = createCollapsibleSubsection('Path Motion');
+    pathMotionSection.header.classList.add('collapsed');
+    pathMotionSection.content.classList.add('collapsed');
+    globalParamsContainer.appendChild(pathMotionSection.header);
+    globalParamsContainer.appendChild(pathMotionSection.content);
 
-    // Advanced Movement Section Header
-    const advMovementHeader = document.createElement('div');
-    advMovementHeader.className = 'subsection-title';
-    advMovementHeader.textContent = 'Advanced Movement';
-    advMovementHeader.style.marginTop = '15px';
-    globalParamsContainer.appendChild(advMovementHeader);
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('orbitSpeed', 'Orbit Speed', display.getGlobalSceneParameter('orbitSpeed'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('orbitRadius', 'Orbit Radius', display.getGlobalSceneParameter('orbitRadius'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('spiralSpeed', 'Spiral Speed', display.getGlobalSceneParameter('spiralSpeed'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('spiralRadius', 'Spiral Radius', display.getGlobalSceneParameter('spiralRadius'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('spiralHeight', 'Spiral Height', display.getGlobalSceneParameter('spiralHeight'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('figure8Speed', 'Figure-8 Speed', display.getGlobalSceneParameter('figure8Speed'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('figure8Size', 'Figure-8 Size', display.getGlobalSceneParameter('figure8Size'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('ellipseSpeed', 'Ellipse Speed', display.getGlobalSceneParameter('ellipseSpeed'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('ellipseRadiusX', 'Ellipse Radius X', display.getGlobalSceneParameter('ellipseRadiusX'), 0, 1, 0.05));
+    pathMotionSection.content.appendChild(createGlobalSliderControlElement('ellipseRadiusZ', 'Ellipse Radius Z', display.getGlobalSceneParameter('ellipseRadiusZ'), 0, 1, 0.05));
 
-    // Spiral Controls
-    createGlobalSliderControl('spiralSpeed', 'Spiral Speed', display.getGlobalSceneParameter('spiralSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('spiralRadius', 'Spiral Radius', display.getGlobalSceneParameter('spiralRadius'), 0, 1, 0.05);
-    createGlobalSliderControl('spiralHeight', 'Spiral Height', display.getGlobalSceneParameter('spiralHeight'), 0, 1, 0.05);
+    // ADVANCED - Collapsible (collapsed by default)
+    const advancedSection = createCollapsibleSubsection('Advanced');
+    advancedSection.header.classList.add('collapsed');
+    advancedSection.content.classList.add('collapsed');
+    globalParamsContainer.appendChild(advancedSection.header);
+    globalParamsContainer.appendChild(advancedSection.content);
 
-    // Wobble Controls
-    createGlobalSliderControl('wobbleSpeed', 'Wobble Speed', display.getGlobalSceneParameter('wobbleSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('wobbleAmount', 'Wobble Amount', display.getGlobalSceneParameter('wobbleAmount'), 0, 1, 0.05);
-
-    // Figure-8 Controls
-    createGlobalSliderControl('figure8Speed', 'Figure-8 Speed', display.getGlobalSceneParameter('figure8Speed'), 0, 1, 0.05);
-    createGlobalSliderControl('figure8Size', 'Figure-8 Size', display.getGlobalSceneParameter('figure8Size'), 0, 1, 0.05);
-
-    // Elliptical Orbit Controls
-    createGlobalSliderControl('ellipseSpeed', 'Ellipse Speed', display.getGlobalSceneParameter('ellipseSpeed'), 0, 1, 0.05);
-    createGlobalSliderControl('ellipseRadiusX', 'Ellipse Radius X', display.getGlobalSceneParameter('ellipseRadiusX'), 0, 1, 0.05);
-    createGlobalSliderControl('ellipseRadiusZ', 'Ellipse Radius Z', display.getGlobalSceneParameter('ellipseRadiusZ'), 0, 1, 0.05);
-
-    // Scroll Controls
-    createGlobalSliderControl('scrollSpeed', 'Scroll Speed', display.getGlobalSceneParameter('scrollSpeed'), 0, 5, 0.1);
-    createGlobalSelectControl('scrollDirection', 'Scroll Direction', display.getGlobalSceneParameter('scrollDirection'), [
+    advancedSection.content.appendChild(createGlobalSliderControlElement('wobbleSpeed', 'Wobble Speed', display.getGlobalSceneParameter('wobbleSpeed'), 0, 1, 0.05));
+    advancedSection.content.appendChild(createGlobalSliderControlElement('wobbleAmount', 'Wobble Amount', display.getGlobalSceneParameter('wobbleAmount'), 0, 1, 0.05));
+    advancedSection.content.appendChild(createGlobalSliderControlElement('scrollSpeed', 'Scroll Speed', display.getGlobalSceneParameter('scrollSpeed'), 0, 5, 0.1));
+    advancedSection.content.appendChild(createGlobalSelectControlElement('scrollDirection', 'Scroll Direction', display.getGlobalSceneParameter('scrollDirection'), [
         { value: 'x', label: 'X' },
         { value: 'y', label: 'Y' },
         { value: 'z', label: 'Z' },
         { value: 'diagonal', label: 'Diagonal' }
-    ]);
+    ]));
 
     // Legacy Animation Type (for procedural/plasma scenes only)
     createGlobalSelectControl('animationType', 'Legacy Animation', display.getGlobalSceneParameter('animationType'), [
@@ -341,6 +505,21 @@ function createGlobalSliderControl(paramName, label, currentValue, min, max, ste
 
     const labelEl = document.createElement('label');
     labelEl.innerHTML = `${label} <span class="value-display" id="global-param-${paramName}-value">${currentValue.toFixed(step >= 1 ? 0 : 2)}</span>`;
+
+    // Add lock button
+    const lockBtn = document.createElement('button');
+    lockBtn.className = 'param-lock-btn';
+    lockBtn.dataset.paramId = `global-param-${paramName}`;
+    lockBtn.textContent = '🔓';
+    lockBtn.title = 'Lock this parameter';
+    lockBtn.style.marginLeft = '5px';
+    lockBtn.style.fontSize = '12px';
+    lockBtn.style.cursor = 'pointer';
+    lockBtn.style.background = 'none';
+    lockBtn.style.border = 'none';
+    lockBtn.style.padding = '0';
+
+    labelEl.appendChild(lockBtn);
     group.appendChild(labelEl);
 
     const slider = document.createElement('input');
@@ -355,6 +534,11 @@ function createGlobalSliderControl(paramName, label, currentValue, min, max, ste
         const val = parseFloat(e.target.value);
         display.setGlobalSceneParameter(paramName, val);
         document.getElementById(`global-param-${paramName}-value`).textContent = val.toFixed(step >= 1 ? 0 : 2);
+
+        // Update locked value if locked
+        if (parameterLock.isLocked(slider.id)) {
+            parameterLock.lock(slider.id, val);
+        }
     });
 
     group.appendChild(slider);
@@ -415,20 +599,96 @@ function createGlobalCheckboxControl(paramName, label, currentValue) {
 function updateActiveGlobalIndicators() {
     // Get which global params affect the current scene
     const activeParams = display.getActiveGlobalParameters();
+    const currentSceneType = display.getCurrentSceneType();
 
-    // Update visual indicators
+    // Update visual indicators and tooltips
     document.querySelectorAll('.global-param').forEach(el => {
         const paramName = el.dataset.param;
         if (activeParams.includes(paramName)) {
             el.classList.add('active');
+
+            // Add tooltip showing parameter mapping
+            const mappingDesc = GlobalParameterMapper.getMappingDescription(paramName, currentSceneType);
+            if (mappingDesc) {
+                const label = el.querySelector('label');
+                if (label) {
+                    label.title = mappingDesc;
+                }
+            }
         } else {
             el.classList.remove('active');
+
+            // Clear tooltip for inactive parameters
+            const label = el.querySelector('label');
+            if (label) {
+                label.title = '';
+            }
         }
     });
 }
 
 // Initialize global parameter controls
 createGlobalParameterControls();
+
+// ============================================================================
+// PARAMETER LOCK SYSTEM
+// ============================================================================
+
+// Setup lock button handlers (delegated event listening)
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('param-lock-btn')) {
+        const paramId = e.target.dataset.paramId;
+        const slider = document.getElementById(paramId);
+
+        if (!slider) return;
+
+        if (parameterLock.isLocked(paramId)) {
+            // Unlock
+            parameterLock.unlock(paramId);
+            e.target.textContent = '🔓';
+            e.target.title = 'Lock this parameter';
+            slider.classList.remove('locked');
+            console.log(`Unlocked parameter: ${paramId}`);
+        } else {
+            // Lock
+            const value = parseFloat(slider.value);
+            parameterLock.lock(paramId, value);
+            e.target.textContent = '🔒';
+            e.target.title = 'Unlock this parameter';
+            slider.classList.add('locked');
+            console.log(`Locked parameter: ${paramId} = ${value}`);
+        }
+    }
+});
+
+// Apply locked parameters when scene changes
+const originalSetScene = display.setScene.bind(display);
+display.setScene = function(sceneType) {
+    originalSetScene(sceneType);
+    // Apply locks after a short delay to let scene initialize
+    setTimeout(() => {
+        parameterLock.applyLocks(display);
+        // Update UI to reflect locked values
+        parameterLock.getAllLocked().forEach((value, paramId) => {
+            const slider = document.getElementById(paramId);
+            const lockBtn = document.querySelector(`[data-param-id="${paramId}"]`);
+            if (slider) {
+                slider.value = value;
+                slider.classList.add('locked');
+                const paramName = paramId.replace('global-param-', '').replace('scene-param-', '');
+                const valueDisplay = document.getElementById(`${paramId}-value`);
+                if (valueDisplay) {
+                    const step = parseFloat(slider.step) || 0.05;
+                    valueDisplay.textContent = value.toFixed(step >= 1 ? 0 : 2);
+                }
+            }
+            if (lockBtn) {
+                lockBtn.textContent = '🔒';
+                lockBtn.title = 'Unlock this parameter';
+            }
+        });
+    }, 100);
+};
 
 // ============================================================================
 // SCENE CONTROLS
@@ -448,8 +708,7 @@ const sceneNames = {
     'procedural': 'Procedural',
     'vortex': 'Vortex',
     'grid': 'Grid',
-    'text3D': 'Text 3D',
-    'plasma': 'Plasma'
+    'text3D': 'Text 3D'
 };
 
 if (!sceneTypeContainer) {
@@ -507,9 +766,6 @@ function updateSceneControls(sceneType) {
     } else if (sceneType === 'text3D') {
         console.log('Creating Text 3D controls');
         createText3DControls(params);
-    } else if (sceneType === 'plasma') {
-        console.log('Creating Plasma controls');
-        createPlasmaControls(params);
     }
     console.log('Scene controls created');
 }
@@ -548,7 +804,8 @@ function createWaveFieldControls(params) {
         { value: 'ripple', label: 'Ripple' },
         { value: 'plane', label: 'Plane' },
         { value: 'standing', label: 'Standing' },
-        { value: 'interference', label: 'Interference' }
+        { value: 'interference', label: 'Interference' },
+        { value: 'plasma', label: 'Plasma' }
     ]);
 
     // Note: frequency, amplitude, direction moved to global parameters
@@ -599,19 +856,6 @@ function createText3DControls(params) {
     createTextControl('text', 'Text', params.text || 'HELLO');
 
     // Note: size, depth moved to global parameters
-}
-
-function createPlasmaControls(params) {
-    // No scene-specific controls - everything uses global parameters
-    // Note: scale (size), complexity (frequency), threshold (amplitude), layers (detailLevel) moved to global parameters
-
-    const notice = document.createElement('div');
-    notice.className = 'scene-notice';
-    notice.textContent = 'All parameters controlled by global settings';
-    notice.style.padding = '10px';
-    notice.style.fontStyle = 'italic';
-    notice.style.color = '#888';
-    sceneParamsContainer.appendChild(notice);
 }
 
 // Helper functions to create controls
@@ -723,57 +967,6 @@ function createTextControl(paramName, label, currentValue) {
 console.log('Initializing scene controls for:', display.getCurrentSceneType());
 updateSceneControls(display.getCurrentSceneType());
 console.log('Scene controls initialized');
-
-// ============================================================================
-// ILLUSION SCENE CONTROLS
-// ============================================================================
-
-// Generate illusion scene buttons
-const illusionSceneTypeContainer = document.getElementById('illusion-scene-type-container');
-console.log('Illusion scene type container:', illusionSceneTypeContainer);
-
-const illusionSceneTypes = display.getIllusionSceneTypes();
-console.log('Available illusion scene types:', illusionSceneTypes);
-
-const illusionSceneNames = {
-    'rotatingAmes': 'Ames Room',
-    'infiniteCorridor': 'Infinite Corridor',
-    'kineticDepth': 'Kinetic Depth',
-    'waterfallIllusion': 'Waterfall',
-    'penroseTriangle': 'Penrose Tri',
-    'neckerCube': 'Necker Cube',
-    'fraserSpiral': 'Fraser Spiral',
-    'cafeWall': 'Café Wall',
-    'pulfrich': 'Pulfrich',
-    'rotatingSnakes': 'Rotating Snakes',
-    'breathingSquare': 'Breathing Square',
-    'moirePattern': 'Moiré Pattern'
-};
-
-if (!illusionSceneTypeContainer) {
-    console.error('Illusion scene type container not found!');
-} else {
-    illusionSceneTypes.forEach((sceneType) => {
-        const btn = document.createElement('button');
-        btn.className = 'scene-type-btn';
-        btn.dataset.sceneType = sceneType;
-        btn.textContent = illusionSceneNames[sceneType] || sceneType;
-
-        btn.addEventListener('click', () => {
-            console.log('Illusion scene type clicked:', sceneType);
-            // Deactivate both regular and illusion scene buttons
-            document.querySelectorAll('.scene-type-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            display.setScene(sceneType);
-            updateSceneControls(sceneType);
-            updateActiveGlobalIndicators();
-        });
-
-        illusionSceneTypeContainer.appendChild(btn);
-        console.log('Added illusion scene button:', sceneType);
-    });
-    console.log('Illusion scene buttons created successfully');
-}
 
 // ============================================================================
 // GLOBAL EFFECTS CONTROLS
@@ -912,7 +1105,6 @@ console.log('Setting up collapsible sections...');
 const collapsibleSections = [
     { header: 'led-colors-header', content: 'led-colors-content' },
     { header: 'scenes-header', content: 'scenes-content' },
-    { header: 'illusion-scenes-header', content: 'illusion-scenes-content' },
     { header: 'controls-header', content: 'controls-content' }
 ];
 
@@ -1042,6 +1234,27 @@ automationAmplitude.addEventListener('input', (e) => {
 
 automationPhase.addEventListener('input', (e) => {
     automationPhaseValue.textContent = parseFloat(e.target.value).toFixed(2);
+});
+
+// Generate automation preset buttons
+const automationPresetBtnsContainer = document.getElementById('automation-preset-buttons');
+AutomationPresets.getAll().forEach(([key, preset]) => {
+    const btn = document.createElement('button');
+    btn.className = 'color-effect-btn';
+    btn.textContent = preset.name;
+    btn.title = preset.description;
+    btn.addEventListener('click', () => {
+        // Apply preset values to modal controls
+        automationWaveType.value = preset.config.waveType;
+        automationFrequency.value = preset.config.frequency;
+        automationAmplitude.value = preset.config.amplitude;
+        automationPhase.value = preset.config.phase;
+        automationFrequencyValue.textContent = preset.config.frequency.toFixed(1);
+        automationAmplitudeValue.textContent = preset.config.amplitude.toFixed(2);
+        automationPhaseValue.textContent = preset.config.phase.toFixed(2);
+        console.log(`Applied automation preset: ${preset.name}`);
+    });
+    automationPresetBtnsContainer.appendChild(btn);
 });
 
 // Close modal

@@ -103,6 +103,48 @@ h1 {
     opacity: 0.8;
 }
 
+.subsection-collapsible {
+    font-size: 10px;
+    color: #0ff;
+    margin: 15px 0 0 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(0, 170, 170, 0.1);
+    padding: 8px 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 3px solid #0aa;
+}
+
+.subsection-collapsible:hover {
+    background: rgba(0, 255, 255, 0.15);
+    border-left-color: #0ff;
+}
+
+.subsection-collapsible::after {
+    content: '▾';
+    font-size: 12px;
+    transition: transform 0.3s;
+}
+
+.subsection-collapsible.collapsed::after {
+    transform: rotate(-90deg);
+}
+
+.subsection-content {
+    max-height: 2000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.subsection-content.collapsed {
+    max-height: 0;
+}
+
 .effect-category-title {
     font-size: 9px;
     color: #0ff;
@@ -504,14 +546,14 @@ input[type="range"]::-ms-thumb {
 
 /* Specific handling for scenes section which needs more space */
 #scenes-content.active {
-    max-height: 800px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
 }
 
 /* Specific handling for illusion scenes section */
 #illusion-scenes-content.active {
-    max-height: 800px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
 }
 
 /* Scene Controls */
@@ -941,8 +983,8 @@ label:has(input[type="checkbox"]) {
     font-size: 9px;
     color: #0aa;
     margin-bottom: 10px;
-    max-height: 180px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
 }
 
 #debug-logs div {
@@ -984,6 +1026,11 @@ label:has(input[type="checkbox"]) {
 }
 
 #debug-clear:hover {
+    background: #002a2a;
+    border-color: #0ff;
+}
+
+#debug-copy:hover {
     background: #002a2a;
     border-color: #0ff;
 }
