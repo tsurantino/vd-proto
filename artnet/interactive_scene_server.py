@@ -125,7 +125,7 @@ def render_loop():
     """Main rendering loop @ 80 FPS"""
     logger.info("🎬 Starting render loop...")
 
-    target_fps = 80
+    target_fps = 120
     frame_time = 1.0 / target_fps
     state.start_time = time.time()
     last_stats_time = time.time()

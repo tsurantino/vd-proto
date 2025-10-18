@@ -27,7 +27,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
@@ -45,6 +45,14 @@
             font-size: 16px;
             border-bottom: 1px solid #0aa;
             padding-bottom: 5px;
+        }
+
+        .subsection-title {
+            color: #0aa;
+            font-size: 13px;
+            margin: 15px 0 8px 0;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #044;
         }
 
         .control-group {
@@ -89,6 +97,11 @@
             border-radius: 50%;
         }
 
+        input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
         select {
             width: 100%;
             padding: 8px;
@@ -110,6 +123,7 @@
             font-family: 'Courier New', monospace;
             font-weight: bold;
             transition: all 0.2s;
+            font-size: 12px;
         }
 
         button:hover {
@@ -162,6 +176,90 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 15px;
         }
+
+        /* Color preset grids */
+        .color-presets-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .color-preset-btn {
+            width: 100%;
+            aspect-ratio: 1;
+            padding: 0;
+            border: 2px solid #0aa;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .color-preset-btn:hover {
+            transform: scale(1.1);
+            border-color: #0ff;
+            box-shadow: 0 0 10px #0ff;
+        }
+
+        .color-preset-btn.active {
+            border-color: #0ff;
+            box-shadow: 0 0 15px #0ff;
+            transform: scale(1.05);
+        }
+
+        /* Color effect buttons */
+        .color-effect-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 8px 0;
+        }
+
+        .color-effect-btn,
+        .advanced-effect-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #044;
+            color: #0aa;
+            border: 1px solid #0aa;
+        }
+
+        .color-effect-btn:hover,
+        .advanced-effect-btn:hover {
+            background: #066;
+            color: #0ff;
+        }
+
+        .color-effect-btn.active,
+        .advanced-effect-btn.active {
+            background: #0aa;
+            color: #000;
+            box-shadow: 0 0 8px #0aa;
+        }
+
+        .effect-category-title {
+            font-size: 11px;
+            color: #088;
+            margin: 12px 0 5px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Layout columns */
+        .controls-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 1200px) {
+            .controls-columns {
+                grid-template-columns: 1fr;
+            }
+            .color-presets-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
@@ -187,175 +285,360 @@
             </div>
         </div>
 
-        <div class="panel">
-            <h3>Scene Selection</h3>
-            <div class="button-group">
-                <button class="scene-btn active" data-scene="shapeMorph">Shape Morph</button>
-                <button class="scene-btn" data-scene="waveField">Wave Field</button>
-                <button class="scene-btn" data-scene="procedural">Procedural</button>
-                <button class="scene-btn" data-scene="particleFlow">Particle Flow</button>
-                <button class="scene-btn" data-scene="rainbow">Rainbow</button>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="panel">
-                <h3>Global Parameters</h3>
-
-                <div class="control-group">
-                    <label>Size <span id="size-value" class="value-display">1.00</span></label>
-                    <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Density <span id="density-value" class="value-display">0.50</span></label>
-                    <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
-                </div>
-
-                <div class="control-group">
-                    <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
-                    <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Frequency <span id="frequency-value" class="value-display">1.00</span></label>
-                    <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Amplitude <span id="amplitude-value" class="value-display">0.50</span></label>
-                    <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
-                </div>
-
-                <div class="control-group">
-                    <label>Object Count <span id="objectCount-value" class="value-display">1</span></label>
-                    <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
-                </div>
-            </div>
-
-            <div class="panel">
-                <h3>Movement Parameters</h3>
-
-                <div class="control-group">
-                    <label>Rotation X <span id="rotationX-value" class="value-display">0.00</span></label>
-                    <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Rotation Y <span id="rotationY-value" class="value-display">0.00</span></label>
-                    <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Rotation Z <span id="rotationZ-value" class="value-display">0.00</span></label>
-                    <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
-                </div>
-            </div>
-        </div>
-
-        <div class="panel" id="scene-params-panel">
-            <h3>Scene-Specific Parameters</h3>
-            <div id="scene-params">
-                <!-- Shape selector for shapeMorph -->
-                <div class="control-group" id="shape-control">
-                    <label>Shape</label>
-                    <select id="shape">
-                        <option value="sphere">Sphere</option>
-                        <option value="helix">Helix</option>
-                        <option value="cube">Cube</option>
-                        <option value="torus">Torus</option>
-                        <option value="pyramid">Pyramid</option>
-                    </select>
-                </div>
-
-                <!-- Wave type selector for waveField -->
-                <div class="control-group" id="waveType-control" style="display: none;">
-                    <label>Wave Type</label>
-                    <select id="waveType">
-                        <option value="ripple">Ripple</option>
-                        <option value="plane">Plane</option>
-                        <option value="standing">Standing</option>
-                        <option value="interference">Interference</option>
-                    </select>
-                </div>
-
-                <!-- Pattern selector for particleFlow -->
-                <div class="control-group" id="pattern-control" style="display: none;">
-                    <label>Pattern</label>
-                    <select id="pattern">
-                        <option value="particles">Particles</option>
-                        <option value="spiral">Spiral</option>
-                        <option value="explode">Explode</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid">
-            <div class="panel">
-                <h3>Global Effects</h3>
-
-                <div class="control-group">
-                    <label>Decay <span id="decay-value" class="value-display">0.00</span></label>
-                    <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
-                </div>
-
-                <div class="control-group">
-                    <label>Strobe</label>
+        <div class="controls-columns">
+            <!-- LEFT COLUMN: Scenes -->
+            <div>
+                <div class="panel">
+                    <h3>Scene Selection</h3>
                     <div class="button-group">
-                        <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
-                        <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
-                        <button class="effect-btn" data-param="strobe" data-value="medium">Medium</button>
-                        <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
+                        <button class="scene-btn active" data-scene="shapeMorph">Shape Morph</button>
+                        <button class="scene-btn" data-scene="waveField">Wave Field</button>
+                        <button class="scene-btn" data-scene="procedural">Procedural</button>
+                        <button class="scene-btn" data-scene="particleFlow">Particle Flow</button>
+                        <button class="scene-btn" data-scene="rainbow">Rainbow</button>
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Pulse</label>
-                    <div class="button-group">
-                        <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
-                        <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
-                        <button class="effect-btn" data-param="pulse" data-value="medium">Medium</button>
-                        <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
+                <div class="panel" id="scene-params-panel">
+                    <h3>Scene-Specific Parameters</h3>
+                    <div id="scene-params">
+                        <!-- Shape selector for shapeMorph -->
+                        <div class="control-group" id="shape-control">
+                            <label>Shape</label>
+                            <select id="shape">
+                                <option value="sphere">Sphere</option>
+                                <option value="helix">Helix</option>
+                                <option value="cube">Cube</option>
+                                <option value="torus">Torus</option>
+                                <option value="pyramid">Pyramid</option>
+                            </select>
+                        </div>
+
+                        <!-- Wave type selector for waveField -->
+                        <div class="control-group" id="waveType-control" style="display: none;">
+                            <label>Wave Type</label>
+                            <select id="waveType">
+                                <option value="ripple">Ripple</option>
+                                <option value="plane">Plane</option>
+                                <option value="standing">Standing</option>
+                                <option value="interference">Interference</option>
+                            </select>
+                        </div>
+
+                        <!-- Pattern selector for particleFlow -->
+                        <div class="control-group" id="pattern-control" style="display: none;">
+                            <label>Pattern</label>
+                            <select id="pattern">
+                                <option value="particles">Particles</option>
+                                <option value="spiral">Spiral</option>
+                                <option value="explode">Explode</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Global Scene Parameters</h3>
+
+                    <div class="control-group">
+                        <label>Size <span id="size-value" class="value-display">1.00</span></label>
+                        <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Density <span id="density-value" class="value-display">0.50</span></label>
+                        <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Frequency <span id="frequency-value" class="value-display">1.00</span></label>
+                        <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Amplitude <span id="amplitude-value" class="value-display">0.50</span></label>
+                        <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Object Count <span id="objectCount-value" class="value-display">1</span></label>
+                        <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                    </div>
+
+                    <div class="subsection-title">Rotation</div>
+
+                    <div class="control-group">
+                        <label>Rotation X <span id="rotationX-value" class="value-display">0.00</span></label>
+                        <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Rotation Y <span id="rotationY-value" class="value-display">0.00</span></label>
+                        <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Rotation Z <span id="rotationZ-value" class="value-display">0.00</span></label>
+                        <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
                     </div>
                 </div>
             </div>
 
-            <div class="panel">
-                <h3>Scrolling Effect</h3>
+            <!-- RIGHT COLUMN: Colors & Effects -->
+            <div>
+                <div class="panel">
+                    <h3>Colors</h3>
 
-                <div class="control-group">
-                    <label>
-                        <input type="checkbox" id="scrolling_enabled">
-                        Enable Scrolling
-                    </label>
+                    <!-- Solid Colors -->
+                    <div class="subsection-title">Solid Colors</div>
+                    <div class="color-presets-grid">
+                        <button class="color-preset-btn active" data-type="single" data-color="#64C8FF" style="background: #64C8FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF6464" style="background: #FF6464;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#64FF64" style="background: #64FF64;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFD700" style="background: #FFD700;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF64FF" style="background: #FF64FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#00FFFF" style="background: #00FFFF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFFFFF" style="background: #FFFFFF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFA500" style="background: #FFA500;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#9B59B6" style="background: #9B59B6;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#E74C3C" style="background: #E74C3C;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#2ECC71" style="background: #2ECC71;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#3498DB" style="background: #3498DB;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#F39C12" style="background: #F39C12;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#1ABC9C" style="background: #1ABC9C;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#E67E22" style="background: #E67E22;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#95A5A6" style="background: #95A5A6;"></button>
+                    </div>
+
+                    <!-- Preset Gradients -->
+                    <div class="subsection-title">Gradients</div>
+                    <div class="color-presets-grid">
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF0000,#FF00FF,#0000FF" style="background: linear-gradient(135deg, #FF0000 0%, #FF00FF 50%, #0000FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#00FFFF,#00FF00,#FFFF00" style="background: linear-gradient(135deg, #00FFFF 0%, #00FF00 50%, #FFFF00 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF00FF,#FF0080,#FF00FF" style="background: linear-gradient(135deg, #FF00FF 0%, #FF0080 50%, #FF00FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FFD700,#FFA500,#FF4500" style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF4500 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#1E3A8A,#3B82F6,#BFDBFE" style="background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 50%, #BFDBFE 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#7C3AED,#A78BFA,#DDD6FE" style="background: linear-gradient(135deg, #7C3AED 0%, #A78BFA 50%, #DDD6FE 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#059669,#10B981,#86EFAC" style="background: linear-gradient(135deg, #059669 0%, #10B981 50%, #86EFAC 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#DC2626,#F87171,#FECACA" style="background: linear-gradient(135deg, #DC2626 0%, #F87171 50%, #FECACA 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#0891B2,#06B6D4,#A5F3FC" style="background: linear-gradient(135deg, #0891B2 0%, #06B6D4 50%, #A5F3FC 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#EA580C,#FB923C,#FED7AA" style="background: linear-gradient(135deg, #EA580C 0%, #FB923C 50%, #FED7AA 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#BE185D,#EC4899,#FBCFE8" style="background: linear-gradient(135deg, #BE185D 0%, #EC4899 50%, #FBCFE8 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#CA8A04,#EAB308,#FEF08A" style="background: linear-gradient(135deg, #CA8A04 0%, #EAB308 50%, #FEF08A 100%);"></button>
+                    </div>
+
+                    <!-- Color Mode -->
+                    <div class="subsection-title">Color Mode</div>
+                    <div class="button-group">
+                        <button class="toggle-btn active" data-mode="rainbow" id="color-mode-rainbow">Rainbow</button>
+                        <button class="toggle-btn" data-mode="base" id="color-mode-base">Base Color</button>
+                    </div>
+
+                    <!-- Basic Color Effects -->
+                    <div class="subsection-title">Basic Effects</div>
+                    <div class="color-effect-buttons">
+                        <button class="color-effect-btn active" data-effect="none">None</button>
+                        <button class="color-effect-btn" data-effect="cycle">Cycle</button>
+                        <button class="color-effect-btn" data-effect="pulse">Pulse</button>
+                        <button class="color-effect-btn" data-effect="wave">Wave</button>
+                    </div>
+
+                    <!-- Advanced Color Effects -->
+                    <div class="subsection-title">Advanced Effects</div>
+
+                    <!-- Wave Effects -->
+                    <div class="effect-category-title">Waves</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="waveMulti">Multi</button>
+                        <button class="advanced-effect-btn" data-effect="waveVertical">Vertical</button>
+                        <button class="advanced-effect-btn" data-effect="waveCircular">Circular</button>
+                        <button class="advanced-effect-btn" data-effect="waveStanding">Standing</button>
+                    </div>
+
+                    <!-- Cycle Effects -->
+                    <div class="effect-category-title">Cycles</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="cycleHue">Hue</button>
+                        <button class="advanced-effect-btn" data-effect="cyclePalette">Palette</button>
+                        <button class="advanced-effect-btn" data-effect="cycleComplementary">Complement</button>
+                        <button class="advanced-effect-btn" data-effect="cycleTriadic">Triadic</button>
+                    </div>
+
+                    <!-- Pulse Effects -->
+                    <div class="effect-category-title">Pulses</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="pulseRadial">Radial</button>
+                        <button class="advanced-effect-btn" data-effect="pulseAlternating">Alternating</button>
+                        <button class="advanced-effect-btn" data-effect="pulseLayered">Layered</button>
+                        <button class="advanced-effect-btn" data-effect="pulseBeat">Beat</button>
+                    </div>
+
+                    <!-- Static/Noise Effects -->
+                    <div class="effect-category-title">Static</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="staticColor">Color</button>
+                        <button class="advanced-effect-btn" data-effect="staticDynamic">Dynamic</button>
+                        <button class="advanced-effect-btn" data-effect="staticWave">Wave</button>
+                    </div>
+
+                    <!-- Combination Effects -->
+                    <div class="effect-category-title">Combos</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="pulseWave">Pulse Wave</button>
+                        <button class="advanced-effect-btn" data-effect="cyclePulse">Cycle Pulse</button>
+                        <button class="advanced-effect-btn" data-effect="waveChase">Wave Chase</button>
+                        <button class="advanced-effect-btn" data-effect="staticCycle">Static Cycle</button>
+                        <button class="advanced-effect-btn" data-effect="pulseTrail">Pulse Trail</button>
+                    </div>
+
+                    <!-- 3D Spatial Effects -->
+                    <div class="effect-category-title">3D Spatial</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="diagonalWaves">Diagonal</button>
+                        <button class="advanced-effect-btn" data-effect="helix">Helix</button>
+                        <button class="advanced-effect-btn" data-effect="vortex">Vortex</button>
+                        <button class="advanced-effect-btn" data-effect="tunnel">Tunnel</button>
+                    </div>
+
+                    <!-- Procedural Effects -->
+                    <div class="effect-category-title">Procedural</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="perlinNoise">Perlin</button>
+                        <button class="advanced-effect-btn" data-effect="voronoi">Voronoi</button>
+                        <button class="advanced-effect-btn" data-effect="checkerboard3D">Checker</button>
+                    </div>
+
+                    <!-- Interference Effects -->
+                    <div class="effect-category-title">Interference</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="sineInterferenceXZ">Sine XZ</button>
+                        <button class="advanced-effect-btn" data-effect="sphericalShellsMoving">Bubbles</button>
+                        <button class="advanced-effect-btn" data-effect="cornerExplosion">Corners</button>
+                    </div>
+
+                    <!-- Geometric Effects -->
+                    <div class="effect-category-title">Geometric</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="depthLayers">Depth</button>
+                        <button class="advanced-effect-btn" data-effect="cubeInCube">Cube³</button>
+                        <button class="advanced-effect-btn" data-effect="manhattanDistance">Manhattan</button>
+                    </div>
+
+                    <!-- Symmetry Effects -->
+                    <div class="effect-category-title">Symmetry</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="xzMirror">XZ Mirror</button>
+                        <button class="advanced-effect-btn" data-effect="directionalSweep">Dir Sweep</button>
+                    </div>
+
+                    <!-- Classic Effects -->
+                    <div class="effect-category-title">Classic</div>
+                    <div class="color-effect-buttons">
+                        <button class="advanced-effect-btn" data-effect="sparkle">Sparkle</button>
+                        <button class="advanced-effect-btn" data-effect="rainbowSweep">Rainbow</button>
+                        <button class="advanced-effect-btn" data-effect="fire">Fire</button>
+                        <button class="advanced-effect-btn" data-effect="plasma">Plasma</button>
+                        <button class="advanced-effect-btn" data-effect="kaleidoscope">Kaleid</button>
+                        <button class="advanced-effect-btn" data-effect="breath">Breath</button>
+                        <button class="advanced-effect-btn" data-effect="colorChase">Chase</button>
+                    </div>
+
+                    <!-- Effect Controls -->
+                    <div class="control-group">
+                        <label>Effect Intensity <span class="value-display" id="color-effect-intensity-value">1.0</span></label>
+                        <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
+                    </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Mode</label>
-                    <select id="scrolling_mode">
-                        <option value="strobe">Strobe</option>
-                        <option value="pulse">Pulse</option>
-                    </select>
-                </div>
+                <div class="panel">
+                    <h3>Global Controls</h3>
 
-                <div class="control-group">
-                    <label>Direction</label>
-                    <select id="scrolling_direction">
-                        <option value="x">X</option>
-                        <option value="y" selected>Y</option>
-                        <option value="z">Z</option>
-                    </select>
-                </div>
+                    <div class="control-group">
+                        <label>Animation Speed <span id="animationSpeed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
 
-                <div class="control-group">
-                    <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
-                    <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
-                </div>
+                    <div class="control-group">
+                        <label>Color Speed <span id="color-speed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="color-speed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
 
-                <div class="control-group">
-                    <label>Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
-                    <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
+                    <div class="subsection-title">Global Effects</div>
+
+                    <div class="control-group">
+                        <label>Decay / Blur <span id="decay-value" class="value-display">0.00</span></label>
+                        <input type="range" id="decay" min="0" max="1" step="0.05" value="0.0">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Strobe</label>
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="strobe" data-value="off">Off</button>
+                            <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="strobe" data-value="medium">Medium</button>
+                            <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Pulse</label>
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="pulse" data-value="off">Off</button>
+                            <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="pulse" data-value="medium">Medium</button>
+                            <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="invert">
+                            Invert
+                        </label>
+                    </div>
+
+                    <div class="subsection-title">Scrolling</div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="scrolling_enabled">
+                            Enable Scrolling
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Mode</label>
+                        <select id="scrolling_mode">
+                            <option value="strobe">Strobe</option>
+                            <option value="pulse">Pulse</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Thickness <span id="scrolling_thickness-value" class="value-display">5</span></label>
+                        <input type="range" id="scrolling_thickness" min="1" max="20" step="1" value="5">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Direction</label>
+                        <select id="scrolling_direction">
+                            <option value="y">Y (Vertical)</option>
+                            <option value="x">X (Horizontal)</option>
+                            <option value="z">Z (Depth)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <input type="checkbox" id="scrolling_invert">
+                            Invert (Turn Pixels Off)
+                        </label>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Scroll Speed <span id="scrolling_speed-value" class="value-display">1.00</span></label>
+                        <input type="range" id="scrolling_speed" min="0.1" max="5" step="0.1" value="1.0">
+                    </div>
                 </div>
             </div>
         </div>
@@ -378,6 +661,15 @@
             rotationX: 0.0,
             rotationY: 0.0,
             rotationZ: 0.0,
+            // Color system
+            color_type: 'single',
+            color_single: '#64C8FF',
+            color_gradient: '#FF0000,#0000FF',
+            color_effect: 'none',
+            color_effect_intensity: 1.0,
+            color_mode: 'rainbow',
+            color_speed: 1.0,
+            // Global effects
             decay: 0.0,
             strobe: 'off',
             pulse: 'off',
@@ -476,10 +768,78 @@
         setupSlider('rotationY', 'rotationY', 2);
         setupSlider('rotationZ', 'rotationZ', 2);
         setupSlider('decay', 'decay', 2);
+        setupSlider('color-speed', 'color_speed', 2);
+        setupSlider('color-effect-intensity', 'color_effect_intensity', 2);
         setupSlider('scrolling_thickness', 'scrolling_thickness', 0);
         setupSlider('scrolling_speed', 'scrolling_speed', 2);
 
-        // Effect buttons
+        // Color preset buttons
+        document.querySelectorAll('.color-preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+
+                if (type === 'single') {
+                    // Remove active from all single color buttons
+                    document.querySelectorAll('.color-preset-btn[data-type="single"]')
+                        .forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    params.color_type = 'single';
+                    params.color_single = btn.dataset.color;
+                } else if (type === 'gradient') {
+                    // Remove active from all gradient buttons
+                    document.querySelectorAll('.color-preset-btn[data-type="gradient"]')
+                        .forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    params.color_type = 'gradient';
+                    params.color_gradient = btn.dataset.gradient;
+                }
+
+                sendParams();
+            });
+        });
+
+        // Color mode toggle
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                params.color_mode = mode;
+                sendParams();
+            });
+        });
+
+        // Basic color effect buttons
+        document.querySelectorAll('.color-effect-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all color effect buttons
+                document.querySelectorAll('.color-effect-btn, .advanced-effect-btn')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                params.color_effect = btn.dataset.effect;
+                sendParams();
+            });
+        });
+
+        // Advanced color effect buttons
+        document.querySelectorAll('.advanced-effect-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all color effect buttons
+                document.querySelectorAll('.color-effect-btn, .advanced-effect-btn')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                params.color_effect = btn.dataset.effect;
+                sendParams();
+            });
+        });
+
+        // Global effect buttons
         document.querySelectorAll('.effect-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const param = btn.dataset.param;
@@ -511,12 +871,23 @@
             sendParams();
         });
 
-        // Scrolling controls
+        // Checkboxes
+        document.getElementById('invert').addEventListener('change', (e) => {
+            params.invert = e.target.checked;
+            sendParams();
+        });
+
         document.getElementById('scrolling_enabled').addEventListener('change', (e) => {
             params.scrolling_enabled = e.target.checked;
             sendParams();
         });
 
+        document.getElementById('scrolling_invert').addEventListener('change', (e) => {
+            params.scrolling_invert = e.target.checked;
+            sendParams();
+        });
+
+        // Scrolling selects
         document.getElementById('scrolling_mode').addEventListener('change', (e) => {
             params.scrolling_mode = e.target.value;
             sendParams();
