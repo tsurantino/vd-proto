@@ -127,3 +127,9 @@ Temporary Items
 # Project-specific
 *.json.bak
 *.backup
+
+# Claude Code ignore file
+.claudeignore
+
+# Legacy implementations (not tracked in git, but preserved locally)
+legacy/
