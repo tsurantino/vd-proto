@@ -643,10 +643,11 @@ class InteractiveScene(Scene):
             print(f"🎨 COLOR EFFECT: {effect} (intensity={intensity}, speed={self.params.color_speed})")
             self.prev_color_effect = effect
 
-        # Use new ColorEffects class for all 50+ effects
+        # Use ColorEffects class (20 core effects)
         self.color_effects.set_effect(effect)
         self.color_effects.set_intensity(intensity)
         self.color_effects.set_speed(self.params.color_speed)
+        self.color_effects.set_color_mode(self.params.color_mode)
         self.color_effects.apply_to_raster(
             raster.data, mask, self.coords_cache, self.color_time
         )

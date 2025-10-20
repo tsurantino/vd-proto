@@ -10,6 +10,7 @@ struct ArtNetListenerConfig {
     std::string ip;
     int port;
     std::vector<int> z_indices;
+    std::vector<std::string> orientation = {"X", "Y", "Z"}; // Per-listener orientation (optional)
 };
 
 // Defines a single cube, including its position in world space

@@ -101,6 +101,9 @@ class ArtNetManager:
                 if controller_key not in self.controllers_cache:
                     self.controllers_cache[controller_key] = ArtNetController(ip, port)
 
+                # Get mapping-level orientation if specified, otherwise use cube-level orientation
+                mapping_orientation = mapping.get("orientation", cube_orientations[position_tuple])
+
                 # A "send job" is a dictionary with everything needed to send one packet
                 self.send_jobs.append(
                     {
@@ -109,6 +112,7 @@ class ArtNetManager:
                         "cube_position": cube_config["position"],
                         "z_indices": mapping["z_idx"],
                         "universe": mapping.get("universe", 0),
+                        "orientation": mapping_orientation,  # Store orientation for this specific mapping
                     }
                 )
 
@@ -473,7 +477,7 @@ def main():
             print(f"🎮 Connected {len(scene.input_handler.controllers)} game controllers")
 
         # --- Main Rendering and Transmission Loop ---
-        TARGET_FPS = 60.0
+        TARGET_FPS = 80.0
         FRAME_DURATION = 1.0 / TARGET_FPS
 
         # ⏱️ PROFILING: Setup for logging performance stats
@@ -528,17 +532,25 @@ def main():
             # Note: ArtNet transmission is now handled in the "C. SEND" section below
             # using the artnet_manager.send_jobs infrastructure
 
-            # B. SLICE: Copy data from the world raster to each cube's individual raster.
+            # B. SLICE & TRANSFORM: Process each mapping with its specific orientation
             # Skip cubes that have active cube-specific debug commands
-            processed_cubes = set()
+            # Cache transformed slices per (cube_position, orientation) tuple
+            transformed_cache = {}
             for job in artnet_manager.send_jobs:
                 cube_pos_tuple = tuple(job["cube_position"])
 
-                # This check ensures we only slice a cube's data once per frame,
-                # even if it has multiple ArtNet mappings.
-                if cube_pos_tuple not in processed_cubes:
-                    # Skip slicing if this cube has an active cube-specific debug command
-                    if cube_pos_tuple not in cubes_with_debug_commands:
+                # Skip slicing if this cube has an active cube-specific debug command
+                if cube_pos_tuple not in cubes_with_debug_commands:
+                    # Use mapping-specific orientation if available
+                    mapping_orientation = job.get("orientation", artnet_manager.cube_orientations.get(
+                        cube_pos_tuple, ["X", "Y", "Z"]
+                    ))
+
+                    # Create a cache key that includes both position and orientation
+                    cache_key = (cube_pos_tuple, tuple(mapping_orientation))
+
+                    # Only transform if we haven't done this exact combination yet
+                    if cache_key not in transformed_cache:
                         # Get cube position relative to world origin
                         cube_position = (
                             job["cube_position"][0] - min_coord[0],
@@ -554,42 +566,52 @@ def main():
                             cube_raster.length,
                         )
 
-                        # Get cube orientation
-                        cube_orientation = artnet_manager.cube_orientations.get(
-                            cube_pos_tuple, ["X", "Y", "Z"]
-                        )
-
                         # Apply orientation transformation
                         transformed_slice = apply_orientation_transform(
-                            world_raster.data, cube_position, cube_dimensions, cube_orientation
+                            world_raster.data, cube_position, cube_dimensions, mapping_orientation
                         )
 
-                        cube_raster.data[:] = transformed_slice
-                    processed_cubes.add(cube_pos_tuple)
+                        transformed_cache[cache_key] = transformed_slice
+
+                    # Store the cache key in the job for later retrieval
+                    job["_cache_key"] = cache_key
+                else:
+                    # For debug mode, mark that we shouldn't use transformed cache
+                    job["_cache_key"] = None
             t_slice_done = time.monotonic()
 
             # C. SEND: Iterate through all jobs and send the specified Z-layers.
             conversion_cache = {}
             for job in artnet_manager.send_jobs:
-                # Get the original raster with its NumPy data
-                cube_raster = job["cube_raster"]
-                raster_id = id(cube_raster)
+                # Get the transformed data for this mapping's specific orientation
+                cache_key = job.get("_cache_key")
+                if cache_key and cache_key in transformed_cache:
+                    transformed_data = transformed_cache[cache_key]
+                else:
+                    # Fallback to cube raster data if no transform was applied (e.g., debug mode)
+                    cube_raster = job["cube_raster"]
+                    transformed_data = cube_raster.data
+
+                # Use cache key for conversion cache too
+                conversion_key = cache_key if cache_key else id(job["cube_raster"])
 
                 # Convert the NumPy array into the Python list of RGB objects
                 # that the Rust library expects.
-                if raster_id not in conversion_cache:
+                if conversion_key not in conversion_cache:
                     # If not in cache, do the expensive conversion and store it
-                    numpy_data = cube_raster.data.reshape(-1, 3)
-                    conversion_cache[raster_id] = [
+                    numpy_data = transformed_data.reshape(-1, 3)
+                    conversion_cache[conversion_key] = [
                         RGB(int(r), int(g), int(b)) for r, g, b in numpy_data
                     ]
 
                 # Create a temporary raster with the (now cached) Python list
+                # Use the original cube_raster dimensions as a template
+                cube_raster = job["cube_raster"]
                 temp_raster = dataclasses.replace(cube_raster)
-                temp_raster.data = conversion_cache[raster_id]
+                temp_raster.data = conversion_cache[conversion_key]
 
                 universes_per_layer = 3
-                base_universe_offset = min(job["z_indices"]) * universes_per_layer
+                base_universe = job.get("universe", 0)  # Use the controller's configured base universe (defaults to 0)
 
                 # Get controller IP and port for monitoring
                 controller_ip = job["controller"].get_ip()
@@ -597,7 +619,7 @@ def main():
 
                 try:
                     job["controller"].send_dmx(
-                        base_universe=base_universe_offset,
+                        base_universe=base_universe,
                         raster=temp_raster,
                         z_indices=job["z_indices"],
                         # --- These params can be customized if needed ---

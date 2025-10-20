@@ -273,7 +273,9 @@ mod artnet_rs {
         #[new]
         fn new(ip: String, port: u16) -> PyResult<Self> {
             let socket = UdpSocket::bind("0.0.0.0:0")?;
-            socket.set_broadcast(true)?;
+            // Note: Broadcast mode removed - use unicast for direct addressing
+            // For localhost simulation, unicast is more efficient (no network pollution)
+            // For network ArtNet, unicast works when target IPs are known
             let target_addr = format!("{}:{}", ip, port);
             Ok(ArtNetControllerRs {
                 socket,

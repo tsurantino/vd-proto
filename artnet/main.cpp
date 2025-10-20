@@ -114,6 +114,18 @@ int main(int argc, char *argv[]) {
                 for (const auto& z : mapping_json["z_idx"]) {
                     listener.z_indices.push_back(z);
                 }
+
+                // Parse per-mapping orientation (optional, falls back to cube orientation)
+                if (mapping_json.contains("orientation")) {
+                    listener.orientation.clear();
+                    for (const auto& axis : mapping_json["orientation"]) {
+                        listener.orientation.push_back(axis.get<std::string>());
+                    }
+                } else {
+                    // Use cube-level orientation as fallback
+                    listener.orientation = current_cube.orientation;
+                }
+
                 current_cube.listeners.push_back(listener);
             }
             cube_configs.push_back(current_cube);

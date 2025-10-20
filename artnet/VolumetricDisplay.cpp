@@ -154,7 +154,8 @@ VolumetricDisplay::VolumetricDisplay(int width, int height, int length,
             listener_cfg.ip,
             listener_cfg.port,
             static_cast<int>(i),
-            listener_cfg.z_indices
+            listener_cfg.z_indices,
+            listener_cfg.orientation  // Add per-listener orientation
         });
         }
     }
@@ -677,7 +678,10 @@ void VolumetricDisplay::listenArtNet(int listener_index) {
             int universe_in_layer = universe % universes_per_layer;
             int start_pixel_in_layer = universe_in_layer * 170;
 
-            auto lg = std::lock_guard(pixels_mu);
+            // Pre-compute all updates outside the lock to minimize critical section
+            std::vector<std::pair<size_t, VoxelColor>> updates;
+            updates.reserve(dmx_length / 3);
+
             for (size_t i = 0; i < dmx_length; i += 3) {
                 if (18 + i + 2 >= total_length) break;
 
@@ -686,18 +690,33 @@ void VolumetricDisplay::listenArtNet(int listener_index) {
                     continue; // Skip overflow pixels
                 }
 
-                int x = idx_in_layer % current_cube_cfg.width;
-                int y = idx_in_layer / current_cube_cfg.width;
+                // These are coordinates in the controller's local coordinate system
+                int local_x = idx_in_layer % current_cube_cfg.width;
+                int local_y = idx_in_layer / current_cube_cfg.width;
+                int local_z = actual_z;
 
-                // Write to ONE specific Z-index, not all of them
-                size_t pixel_index = pixel_buffer_offset + static_cast<size_t>(x + y * current_cube_cfg.width + actual_z * current_cube_cfg.width * current_cube_cfg.height);
+                // Transform from controller-local to world coordinates using orientation
+                size_t pixel_index = transformControllerToWorldIndex(
+                    local_x, local_y, local_z,
+                    info.orientation,  // Use per-listener orientation
+                    current_cube_cfg,
+                    pixel_buffer_offset
+                );
 
                 if (pixel_index < pixels.size()) {
-                    pixels[pixel_index] = {
+                    updates.emplace_back(pixel_index, VoxelColor{
                         (unsigned char)buffer[18 + i],
                         (unsigned char)buffer[18 + i + 1],
                         (unsigned char)buffer[18 + i + 2]
-                    };
+                    });
+                }
+            }
+
+            // Now acquire lock only for the actual write - minimal critical section
+            {
+                auto lg = std::lock_guard(pixels_mu);
+                for (const auto& [idx, color] : updates) {
+                    pixels[idx] = color;
                 }
             }
             view_update.notify_all();
@@ -936,41 +955,99 @@ void VolumetricDisplay::scrollCallback(GLFWwindow* window, double xoffset, doubl
   view_update.notify_all();
 }
 
-// Transform matrix computation functions for cube orientation
-glm::mat4 VolumetricDisplay::computeCubeLocalTransformMatrix(const std::vector<std::string>& world_orientation, const glm::vec3& size) {
-    // TODO: Implement cube-local transform matrix
-    // This should handle axis swaps and sign flip compensation
-    // For now, just return identity matrix
-    auto transform_matrix = glm::mat4(0.0f);
-    for (int i = 0; i < 3; i++) {
-        std::string world_axis = world_orientation[i];
-        bool is_negative = world_axis.starts_with("-");
+// Helper function to transform controller-local coordinates to world voxel index
+size_t VolumetricDisplay::transformControllerToWorldIndex(int local_x, int local_y, int local_z,
+                                                           const std::vector<std::string>& orientation,
+                                                           const CubeConfig& cube_cfg,
+                                                           size_t pixel_buffer_offset) {
+    // The orientation array describes how to map FROM world TO controller
+    // orientation[0] = what world axis maps to controller X
+    // orientation[1] = what world axis maps to controller Y
+    // orientation[2] = what world axis maps to controller Z
+    //
+    // To invert this (controller -> world), we need to find for each world axis,
+    // which controller axis it comes from and whether it's negated.
+
+    int controller_coords[3] = {local_x, local_y, local_z};
+    int world_coords[3] = {0, 0, 0};
+
+    // For each controller axis, determine which world axis it maps to
+    for (int controller_axis = 0; controller_axis < 3; ++controller_axis) {
+        std::string mapping = orientation[controller_axis];
+        bool is_negative = mapping[0] == '-';
+        char world_axis_char = is_negative ? mapping[1] : mapping[0];
+
+        int world_axis_index;
+        if (world_axis_char == 'X') world_axis_index = 0;
+        else if (world_axis_char == 'Y') world_axis_index = 1;
+        else world_axis_index = 2; // 'Z'
+
+        int max_val;
+        if (controller_axis == 0) max_val = cube_cfg.width - 1;
+        else if (controller_axis == 1) max_val = cube_cfg.height - 1;
+        else max_val = cube_cfg.length - 1;
+
+        // Apply the inverse mapping
         if (is_negative) {
-            world_axis = world_axis.substr(1);
-        }
-
-        float axis_coeff = is_negative ? -1.0f : 1.0f;
-
-        if (world_axis == "X") {
-            transform_matrix[0][i] = axis_coeff;
-        } else if (world_axis == "Y") {
-            transform_matrix[1][i] = axis_coeff;
-        } else if (world_axis == "Z") {
-            transform_matrix[2][i] = axis_coeff;
-        }
-
-        if (is_negative) {
-            // Add an offset to the transform matrix
-            transform_matrix[3][i] = size[i];
+            world_coords[world_axis_index] = max_val - controller_coords[controller_axis];
+        } else {
+            world_coords[world_axis_index] = controller_coords[controller_axis];
         }
     }
+
+    // Convert world coordinates to linear index
+    int world_x = world_coords[0];
+    int world_y = world_coords[1];
+    int world_z = world_coords[2];
+
+    size_t pixel_index = pixel_buffer_offset +
+                         static_cast<size_t>(world_x + world_y * cube_cfg.width +
+                                           world_z * cube_cfg.width * cube_cfg.height);
+
+    return pixel_index;
+}
+
+// Transform matrix computation functions for cube orientation
+glm::mat4 VolumetricDisplay::computeCubeLocalTransformMatrix(const std::vector<std::string>& world_orientation, const glm::vec3& size) {
+    // This matrix transforms from local voxel coordinates to oriented coordinates
+    // world_orientation[i] tells us what local axis the world axis i maps to
+    //
+    // For example, if world_orientation = ["-Y", "Z", "-X"]:
+    // - World X (axis 0) maps to -Local Y
+    // - World Y (axis 1) maps to Local Z
+    // - World Z (axis 2) maps to -Local X
+
+    glm::mat4 transform_matrix = glm::mat4(0.0f);
+
+    for (int world_axis = 0; world_axis < 3; ++world_axis) {
+        std::string mapping = world_orientation[world_axis];
+        bool is_negative = mapping[0] == '-';
+        char local_axis_char = is_negative ? mapping[1] : mapping[0];
+
+        int local_axis;
+        if (local_axis_char == 'X') local_axis = 0;
+        else if (local_axis_char == 'Y') local_axis = 1;
+        else local_axis = 2; // 'Z'
+
+        float sign = is_negative ? -1.0f : 1.0f;
+
+        // Set the matrix element that maps local_axis to world_axis
+        transform_matrix[local_axis][world_axis] = sign;
+
+        // If negative, we need to add an offset after the transform
+        // to flip around the center
+        if (is_negative) {
+            transform_matrix[3][world_axis] = size[world_axis];
+        }
+    }
+
     transform_matrix[3][3] = 1.0f;
     return transform_matrix;
 }
 
 glm::mat4 VolumetricDisplay::computeCubeToWorldTransformMatrix(const std::vector<std::string>& world_orientation, const glm::vec3& cube_position) {
-    // TODO: Implement cube-to-world transform matrix
-    // This should handle orientation matrix and world translation
-    // For now, just return translation matrix
+    // This matrix translates the oriented cube to its world position
+    // The orientation transformation is already handled by computeCubeLocalTransformMatrix
+    // so this just needs to translate to the cube's position in world space
     return glm::translate(glm::mat4(1.0f), cube_position);
 }

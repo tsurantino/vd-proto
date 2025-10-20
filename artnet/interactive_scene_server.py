@@ -213,53 +213,71 @@ def send_to_artnet():
     world_data = state.world_raster.data
     min_coord = (0, 0, 0)
 
-    # Process each cube only once (track which cubes we've processed)
-    processed_cubes = set()
+    # Cache transformed slices per (cube_position, orientation) tuple
+    # This avoids redundant transformations when multiple mappings share the same cube and orientation
+    transformed_cache = {}
 
-    # First pass: slice and transform cube data
+    # First pass: Transform and cache unique (position, orientation) combinations
     for job in state.artnet_manager.send_jobs:
         cube_pos_tuple = tuple(job["cube_position"])
 
-        if cube_pos_tuple not in processed_cubes:
+        # Use mapping-specific orientation if available, otherwise fall back to cube orientation
+        mapping_orientation = job.get("orientation", state.artnet_manager.cube_orientations.get(
+            cube_pos_tuple, ["X", "Y", "Z"]
+        ))
+
+        # Create a cache key that includes both position and orientation
+        cache_key = (cube_pos_tuple, tuple(mapping_orientation))
+
+        # Only transform if we haven't done this exact combination yet
+        if cache_key not in transformed_cache:
+            # Get cube position relative to world origin
             cube_position = (
                 job["cube_position"][0] - min_coord[0],
                 job["cube_position"][1] - min_coord[1],
                 job["cube_position"][2] - min_coord[2],
             )
 
+            # Get cube dimensions
             cube_raster = job["cube_raster"]
             cube_dimensions = (cube_raster.width, cube_raster.height, cube_raster.length)
 
-            cube_orientation = state.artnet_manager.cube_orientations.get(
-                cube_pos_tuple, ["X", "Y", "Z"]
-            )
-
+            # Transform the world data slice for this mapping's specific orientation
             transformed_slice = apply_orientation_transform(
-                world_data, cube_position, cube_dimensions, cube_orientation
+                world_data, cube_position, cube_dimensions, mapping_orientation
             )
 
-            cube_raster.data[:] = transformed_slice
-            processed_cubes.add(cube_pos_tuple)
+            transformed_cache[cache_key] = transformed_slice
 
-    # Second pass: send to ArtNet controllers directly with raw bytes
+        # Store the cache key in the job for retrieval in send pass
+        job["_cache_key"] = cache_key
+
+    # Second pass: Send cached transformations to controllers
     for job in state.artnet_manager.send_jobs:
+        # Get the cached transformed data for this mapping's specific orientation
+        cache_key = job["_cache_key"]
+        transformed_slice = transformed_cache[cache_key]
+
+        # Get raw bytes directly from transformed slice (C-contiguous, zero-copy)
+        pixel_bytes = transformed_slice.tobytes()
+
         cube_raster = job["cube_raster"]
         controller = job["controller"]
         z_indices = job["z_indices"]
         universes_per_layer = 3
         base_universe_offset = min(z_indices) * universes_per_layer
 
-        # Get raw bytes directly from NumPy array (C-contiguous, zero-copy)
-        pixel_bytes = cube_raster.data.tobytes()
-
         try:
-            # Use new send_dmx_bytes method - passes bytes directly to Rust!
+            # Use send_dmx_bytes method - passes bytes directly to Rust!
+            # IMPORTANT: Use ORIGINAL cube dimensions, not transformed dimensions
+            # The transformed data bytes are already in the correct order; the Rust code
+            # uses the original dimensions to index into the flat byte array
             controller.send_dmx_bytes(
                 base_universe=base_universe_offset,
                 pixel_bytes=pixel_bytes,
-                width=cube_raster.width,
-                height=cube_raster.height,
-                length=cube_raster.length,
+                width=cube_raster.width,      # Original dimensions
+                height=cube_raster.height,    # Original dimensions
+                length=cube_raster.length,    # Original dimensions
                 brightness=1.0,
                 channels_per_universe=510,
                 universes_per_layer=universes_per_layer,

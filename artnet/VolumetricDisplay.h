@@ -25,6 +25,7 @@ struct ListenerThreadInfo {
     int port;
     int cube_index;
     std::vector<int> z_indices;
+    std::vector<std::string> orientation;  // Per-listener orientation
 };
 
 class VolumetricDisplay {
@@ -62,6 +63,13 @@ private:
     // Transform matrix computation functions for cube orientation
     glm::mat4 computeCubeLocalTransformMatrix(const std::vector<std::string>& world_orientation, const glm::vec3& size);
     glm::mat4 computeCubeToWorldTransformMatrix(const std::vector<std::string>& world_orientation, const glm::vec3& cube_position);
+
+    // Helper function to transform controller-local coordinates to world voxel indices
+    // Returns the world voxel index given local (x, y, z) coordinates and orientation
+    size_t transformControllerToWorldIndex(int local_x, int local_y, int local_z,
+                                           const std::vector<std::string>& orientation,
+                                           const CubeConfig& cube_cfg,
+                                           size_t pixel_buffer_offset);
 
     // GLFW Callbacks (must be static)
     void framebufferSizeCallback(GLFWwindow* window, int width, int height);

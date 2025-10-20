@@ -4,8 +4,7 @@
     {
       "position": [0, 0, 0],
       "dimensions": "20x20x20",
-      "orientation": ["Y", "-Z", "-X"],
-      "world_orientation": ["-Y", "Z", "-X"],
+      "orientation": ["X", "Y", "Z"],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
@@ -18,8 +17,7 @@
     {
       "position": [20, 0, 0],
       "dimensions": "20x20x20",
-      "orientation": ["Y", "-Z", "-X"],
-      "world_orientation": ["-Y", "Z", "-X"],
+      "orientation": ["X", "Y", "Z"],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
@@ -32,8 +30,7 @@
     {
       "position": [0, 20, 0],
       "dimensions": "20x20x20",
-      "orientation": ["Y", "-Z", "-X"],
-      "world_orientation": ["-Y", "Z", "-X"],
+      "orientation": ["X", "Y", "Z"],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
@@ -46,8 +43,7 @@
     {
       "position": [20, 20, 0],
       "dimensions": "20x20x20",
-      "orientation": ["Y", "-Z", "-X"],
-      "world_orientation": ["-Y", "Z", "-X"],
+      "orientation": ["X", "Y", "Z"],
       "artnet_mappings": [
         {
           "ip": "127.0.0.1",
