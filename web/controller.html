@@ -327,113 +327,47 @@
                         <button class="color-preset-btn active" data-type="rainbow" style="background: linear-gradient(90deg, #FF0000 0%, #FF7F00 16%, #FFFF00 33%, #00FF00 50%, #0000FF 66%, #4B0082 83%, #9400D3 100%);"></button>
                     </div>
 
-                    <!-- Basic Color Effects -->
-                    <div class="subsection-title">Basic Effects</div>
-                    <div class="color-effect-buttons">
-                        <button class="color-effect-btn active" data-effect="none">None</button>
-                        <button class="color-effect-btn" data-effect="cycle">Cycle</button>
-                        <button class="color-effect-btn" data-effect="pulse">Pulse</button>
-                        <button class="color-effect-btn" data-effect="wave">Wave</button>
+                    <!-- Effects -->
+                    <div class="subsection-title">Effects</div>
+
+                    <!-- Classic & Combo Effects -->
+                    <div class="button-group">
+                        <button class="scene-btn active" data-effect="none">None</button>
+                        <button class="scene-btn" data-effect="sparkle">Sparkle</button>
+                        <button class="scene-btn" data-effect="fire">Fire</button>
+                        <button class="scene-btn" data-effect="breath">Breath</button>
+                        <button class="scene-btn" data-effect="pulseWave">PulseWave</button>
+                        <button class="scene-btn" data-effect="waveChase">WaveChase</button>
+                        <button class="scene-btn" data-effect="cyclePulse">CyclePulse</button>
+                        <button class="scene-btn" data-effect="kaleidoscope">Kaleid</button>
                     </div>
 
-                    <!-- Advanced Color Effects -->
-                    <div class="subsection-title">Advanced Effects</div>
-
-                    <!-- Wave Effects -->
-                    <div class="effect-category-title">Waves</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="waveMulti">Multi</button>
-                        <button class="advanced-effect-btn" data-effect="waveVertical">Vertical</button>
-                        <button class="advanced-effect-btn" data-effect="waveCircular">Circular</button>
-                        <button class="advanced-effect-btn" data-effect="waveStanding">Standing</button>
-                    </div>
-
-                    <!-- Cycle Effects -->
-                    <div class="effect-category-title">Cycles</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="cycleHue">Hue</button>
-                        <button class="advanced-effect-btn" data-effect="cyclePalette">Palette</button>
-                        <button class="advanced-effect-btn" data-effect="cycleComplementary">Complement</button>
-                        <button class="advanced-effect-btn" data-effect="cycleTriadic">Triadic</button>
-                    </div>
-
-                    <!-- Pulse Effects -->
-                    <div class="effect-category-title">Pulses</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="pulseRadial">Radial</button>
-                        <button class="advanced-effect-btn" data-effect="pulseAlternating">Alternating</button>
-                        <button class="advanced-effect-btn" data-effect="pulseLayered">Layered</button>
-                        <button class="advanced-effect-btn" data-effect="pulseBeat">Beat</button>
-                    </div>
-
-                    <!-- Static/Noise Effects -->
-                    <div class="effect-category-title">Static</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="staticColor">Color</button>
-                        <button class="advanced-effect-btn" data-effect="staticDynamic">Dynamic</button>
-                        <button class="advanced-effect-btn" data-effect="staticWave">Wave</button>
-                    </div>
-
-                    <!-- 3D Spatial Effects -->
-                    <div class="effect-category-title">3D Spatial</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="diagonalWaves">Diagonal</button>
-                        <button class="advanced-effect-btn" data-effect="helix">Helix</button>
-                        <button class="advanced-effect-btn" data-effect="vortex">Vortex</button>
-                        <button class="advanced-effect-btn" data-effect="tunnel">Tunnel</button>
-                    </div>
-
-                    <!-- Procedural Effects -->
-                    <div class="effect-category-title">Procedural</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="perlinNoise">Perlin</button>
-                        <button class="advanced-effect-btn" data-effect="voronoi">Voronoi</button>
-                        <button class="advanced-effect-btn" data-effect="checkerboard3D">Checker</button>
-                    </div>
-
-                    <!-- Interference Effects -->
-                    <div class="effect-category-title">Interference</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="sineInterferenceXZ">SineXZ</button>
-                        <button class="advanced-effect-btn" data-effect="sphericalShellsMoving">Bubbles</button>
-                        <button class="advanced-effect-btn" data-effect="cornerExplosion">Corners</button>
+                    <!-- Wave/Flow Effects -->
+                    <div class="effect-category-title">Wave/Flow</div>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="waveCircular">Circular</button>
+                        <button class="scene-btn" data-effect="waveVertical">Vertical</button>
+                        <button class="scene-btn" data-effect="sineInterferenceXZ">Interference</button>
+                        <button class="scene-btn" data-effect="rainbowSweep">Rainbow</button>
+                        <button class="scene-btn" data-effect="directionalSweep">DirSweep</button>
                     </div>
 
                     <!-- Geometric Effects -->
                     <div class="effect-category-title">Geometric</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="depthLayers">Depth</button>
-                        <button class="advanced-effect-btn" data-effect="cubeInCube">Cube³</button>
-                        <button class="advanced-effect-btn" data-effect="manhattanDistance">Manhattan</button>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="helix">Helix</button>
+                        <button class="scene-btn" data-effect="vortex">Vortex</button>
+                        <button class="scene-btn" data-effect="tunnel">Tunnel</button>
+                        <button class="scene-btn" data-effect="sphericalShellsMoving">Bubbles</button>
+                        <button class="scene-btn" data-effect="cubeInCube">Cube³</button>
                     </div>
 
-                    <!-- Symmetry Effects -->
-                    <div class="effect-category-title">Symmetry</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="xzMirror">XZ Mirror</button>
-                        <button class="advanced-effect-btn" data-effect="directionalSweep">DirSweep</button>
-                    </div>
-
-                    <!-- Combination Effects -->
-                    <div class="effect-category-title">Combos</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="pulseWave">PulseWave</button>
-                        <button class="advanced-effect-btn" data-effect="cyclePulse">CyclePulse</button>
-                        <button class="advanced-effect-btn" data-effect="waveChase">WaveChase</button>
-                        <button class="advanced-effect-btn" data-effect="staticCycle">StaticCycle</button>
-                        <button class="advanced-effect-btn" data-effect="pulseTrail">PulseTrail</button>
-                    </div>
-
-                    <!-- Classic Effects -->
-                    <div class="effect-category-title">Classic</div>
-                    <div class="color-effect-buttons">
-                        <button class="advanced-effect-btn" data-effect="sparkle">Sparkle</button>
-                        <button class="advanced-effect-btn" data-effect="rainbowSweep">Rainbow</button>
-                        <button class="advanced-effect-btn" data-effect="fire">Fire</button>
-                        <button class="advanced-effect-btn" data-effect="plasma">Plasma</button>
-                        <button class="advanced-effect-btn" data-effect="kaleidoscope">Kaleid</button>
-                        <button class="advanced-effect-btn" data-effect="breath">Breath</button>
-                        <button class="advanced-effect-btn" data-effect="colorChase">Chase</button>
+                    <!-- Procedural Effects -->
+                    <div class="effect-category-title">Procedural</div>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="perlinNoise">Perlin</button>
+                        <button class="scene-btn" data-effect="voronoi">Voronoi</button>
+                        <button class="scene-btn" data-effect="plasma">Plasma</button>
                     </div>
                 </div>
             </div>
@@ -604,10 +538,11 @@
             });
         });
 
-        // Color effect buttons
-        document.querySelectorAll('.color-effect-btn, .advanced-effect-btn').forEach(btn => {
+        // Color effect buttons - select all buttons with data-effect attribute
+        document.querySelectorAll('button[data-effect]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.color-effect-btn, .advanced-effect-btn')
+                // Remove active from all effect buttons
+                document.querySelectorAll('button[data-effect]')
                     .forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 params.color_effect = btn.dataset.effect;

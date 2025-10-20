@@ -121,11 +121,10 @@ def handle_update_params(data):
             logger.debug(f"Updated params: scene={data.get('scene_type')}")
 
 
-def render_loop():
-    """Main rendering loop @ 80 FPS"""
-    logger.info("🎬 Starting render loop...")
+def render_loop(target_fps):
+    """Main rendering loop with configurable FPS"""
+    logger.info(f"🎬 Starting render loop @ {target_fps} FPS...")
 
-    target_fps = 120
     frame_time = 1.0 / target_fps
     state.start_time = time.time()
     last_stats_time = time.time()
@@ -253,6 +252,9 @@ def send_to_artnet():
         job["_cache_key"] = cache_key
 
     # Second pass: Send cached transformations to controllers
+    # Track unique controllers for sync packet optimization
+    controllers_used = set()
+
     for job in state.artnet_manager.send_jobs:
         # Get the cached transformed data for this mapping's specific orientation
         cache_key = job["_cache_key"]
@@ -267,11 +269,15 @@ def send_to_artnet():
         universes_per_layer = 3
         base_universe_offset = min(z_indices) * universes_per_layer
 
+        # Track controller for sync packet
+        controllers_used.add(controller)
+
         try:
             # Use send_dmx_bytes method - passes bytes directly to Rust!
             # IMPORTANT: Use ORIGINAL cube dimensions, not transformed dimensions
             # The transformed data bytes are already in the correct order; the Rust code
             # uses the original dimensions to index into the flat byte array
+            # send_sync=False to batch sync packets (send one sync per frame, not per controller)
             controller.send_dmx_bytes(
                 base_universe=base_universe_offset,
                 pixel_bytes=pixel_bytes,
@@ -283,9 +289,18 @@ def send_to_artnet():
                 universes_per_layer=universes_per_layer,
                 channel_span=1,
                 z_indices=z_indices,
+                send_sync=False,  # Don't send sync per controller
             )
         except Exception as e:
             logger.error(f"Error sending DMX bytes: {e}", exc_info=True)
+
+    # Send one sync packet to the first controller to trigger synchronized display update
+    # All controllers receive the same broadcast/multicast sync, so one packet is sufficient
+    if controllers_used:
+        try:
+            next(iter(controllers_used)).send_sync()
+        except Exception as e:
+            logger.error(f"Error sending sync packet: {e}", exc_info=True)
 
 
 def count_active_leds(raster):
@@ -300,7 +315,13 @@ def main():
     parser.add_argument('--config', required=True, help='Config JSON file (e.g., sim_config_4.json)')
     parser.add_argument('--port', type=int, default=5001, help='Server port')
     parser.add_argument('--workers', type=int, default=None, help='Number of parallel workers (default: CPU count - 2)')
+    parser.add_argument('--max-fps', type=int, default=60, help='Maximum FPS (default: 60, range: 1-120)')
     args = parser.parse_args()
+
+    # Validate FPS range
+    if args.max_fps < 1 or args.max_fps > 120:
+        logger.error(f"Invalid --max-fps value: {args.max_fps}. Must be between 1 and 120.")
+        return
 
     # Initialize state with worker count
     global state
@@ -310,6 +331,7 @@ def main():
     logger.info("🚀 Interactive Scene Server")
     logger.info("="*60)
     logger.info(f"⚙️  Using {state.num_workers} parallel workers for RGB conversion")
+    logger.info(f"🎯 Target FPS: {args.max_fps}")
 
     # Load config
     logger.info(f"📄 Loading config: {args.config}")
@@ -333,8 +355,8 @@ def main():
 
     state.is_running = True
 
-    # Start render loop in background thread
-    render_thread = Thread(target=render_loop, daemon=True)
+    # Start render loop in background thread with configurable FPS
+    render_thread = Thread(target=lambda: render_loop(args.max_fps), daemon=True)
     render_thread.start()
 
     logger.info("="*60)

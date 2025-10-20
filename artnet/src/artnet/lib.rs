@@ -456,7 +456,7 @@ mod artnet_rs {
 
         /// High-performance method that accepts raw RGB bytes directly
         /// This bypasses the need to create RGB objects in Python, eliminating conversion overhead
-        #[pyo3(signature = (base_universe, pixel_bytes, width, height, length, brightness=1.0, channels_per_universe=510, universes_per_layer=3, channel_span=1, z_indices=None))]
+        #[pyo3(signature = (base_universe, pixel_bytes, width, height, length, brightness=1.0, channels_per_universe=510, universes_per_layer=3, channel_span=1, z_indices=None, send_sync=true))]
         fn send_dmx_bytes(
             &self,
             base_universe: u16,
@@ -469,6 +469,7 @@ mod artnet_rs {
             universes_per_layer: u16,
             channel_span: usize,
             z_indices: Option<Vec<usize>>,
+            send_sync: bool,
         ) -> PyResult<()> {
             // Validate input
             let expected_size = width * height * length * 3;
@@ -533,9 +534,21 @@ mod artnet_rs {
                 data_bytes.clear();
             }
 
+            // Only send sync packet if requested (allows batching sync for multiple controllers)
+            if send_sync {
+                let sync_packet = self.create_sync_packet();
+                self.socket.send_to(&sync_packet, &self.target_addr)?;
+            }
+
+            Ok(())
+        }
+
+        /// Send an ArtNet sync packet to this controller
+        /// Used to synchronize multiple controllers - send data to all controllers first,
+        /// then send one sync packet to trigger simultaneous display update
+        fn send_sync(&self) -> PyResult<()> {
             let sync_packet = self.create_sync_packet();
             self.socket.send_to(&sync_packet, &self.target_addr)?;
-
             Ok(())
         }
     }
