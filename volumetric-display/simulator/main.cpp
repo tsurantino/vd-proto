@@ -18,7 +18,7 @@
 using json = nlohmann::json;
 
 // Define command-line flags using Abseil
-ABSL_FLAG(std::string, config, "sim_config.json", "Path to the simulation configuration file");
+ABSL_FLAG(std::string, config, "display_config/sim_config.json", "Path to the simulation configuration file");
 ABSL_FLAG(float, alpha, 0.5, "Alpha value for voxel colors");
 ABSL_FLAG(int, layer_span, 1, "Layer span (1 for 1:1 mapping)");
 ABSL_FLAG(std::string, rotate_rate, "0,0,0",

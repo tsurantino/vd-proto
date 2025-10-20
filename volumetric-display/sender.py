@@ -32,6 +32,17 @@ except ImportError:
     SENDER_MONITOR_AVAILABLE = False
     logger.debug("Sender monitor not available - monitoring disabled")
 
+# Try to import Flask/SocketIO for optional web server
+try:
+    from flask import Flask, jsonify, send_from_directory
+    from flask_socketio import SocketIO, emit
+    from flask_cors import CORS
+    FLASK_AVAILABLE = True
+    logger.debug("Flask/SocketIO available for web server")
+except ImportError:
+    FLASK_AVAILABLE = False
+    logger.debug("Flask/SocketIO not available - web server disabled")
+
 # Config (ARTNET IP & PORT are handled via sim_config updates and specified there)
 WEB_MONITOR_PORT = 8080  # Port for web monitoring interface
 SENDER_MONITOR_PORT = 8082  # Port for sender monitoring interface (changed to avoid conflict)
@@ -367,6 +378,110 @@ def apply_power_draw_tester(raster, debug_command, current_time):
         raster.data[i] = (modulated_r, modulated_g, modulated_b)
 
 
+def count_active_leds(raster):
+    """Count non-black voxels"""
+    if raster is None:
+        return 0
+    return int(np.sum(np.any(raster.data > 0, axis=-1)))
+
+
+def create_web_server(world_raster, artnet_manager, port=5001):
+    """Create Flask/SocketIO web server for real-time scene control
+
+    Uses duck typing to support scenes with update_parameters() method.
+    """
+    if not FLASK_AVAILABLE:
+        raise ImportError("Flask not installed. Install with: pip install flask flask-socketio flask-cors")
+
+    app = Flask(__name__, static_folder='web', static_url_path='')
+    app.config['SECRET_KEY'] = 'volumetric-display-sender'
+    CORS(app)
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+    # Store scene reference (set by main())
+    app.scene = None
+    app.stats = {'fps': 0, 'active_leds': 0, 'frame_time_ms': 0}
+
+    @app.route('/')
+    def index():
+        """Serve scene-specific web UI (no fallback)"""
+        if app.scene and hasattr(app.scene, 'get_web_ui_path'):
+            try:
+                custom_path = app.scene.get_web_ui_path()
+                logger.info(f"📄 Serving custom web UI: {custom_path}")
+
+                import os
+                from flask import send_file
+                if os.path.isabs(custom_path):
+                    return send_file(custom_path)
+                else:
+                    return send_file(custom_path)
+            except Exception as e:
+                logger.error(f"Failed to load web UI '{custom_path}': {e}")
+                return f"<h1>Error Loading Web UI</h1><p>Failed to load: {custom_path}</p><p>{e}</p>", 500
+        else:
+            # No custom UI provided
+            return """
+            <html>
+            <head><title>No Web UI</title></head>
+            <body>
+                <h1>No Web UI Available</h1>
+                <p>This scene does not provide a web interface.</p>
+                <p>Scene must implement <code>get_web_ui_path()</code> to use --web-server flag.</p>
+            </body>
+            </html>
+            """, 404
+
+    @app.route('/api/status', methods=['GET'])
+    def get_status():
+        """Get server status"""
+        return jsonify({
+            'connected': True,
+            'config': {
+                'gridX': world_raster.width,
+                'gridY': world_raster.height,
+                'gridZ': world_raster.length,
+                'cubes': len(artnet_manager.cubes)
+            },
+            'stats': app.stats,
+            'web_ui_enabled': hasattr(app.scene, 'update_parameters') if app.scene else False
+        })
+
+    @app.route('/scenes/<path:filepath>')
+    def serve_scene_assets(filepath):
+        """Serve scene-specific web assets (CSS, JS, images, etc.)"""
+        return send_from_directory('scenes', filepath)
+
+    @socketio.on('connect')
+    def handle_connect():
+        """Client connected"""
+        logger.info("🌐 Web UI connected")
+        emit('status', {
+            'connected': True,
+            'config': {
+                'gridX': world_raster.width,
+                'gridY': world_raster.height,
+                'gridZ': world_raster.length
+            }
+        })
+
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        """Client disconnected"""
+        logger.info("🌐 Web UI disconnected")
+
+    @socketio.on('update_params')
+    def handle_update_params(data):
+        """Update scene parameters from web UI (duck typing - checks for method)"""
+        if app.scene and hasattr(app.scene, 'update_parameters'):
+            app.scene.update_parameters(data)
+            logger.debug(f"Updated params: scene={data.get('scene_type', 'N/A')}")
+        else:
+            logger.warning("Scene does not support parameter updates (missing update_parameters method)")
+
+    return app, socketio
+
+
 def main():
     parser = argparse.ArgumentParser(description="Send ArtNet DMX data to volumetric display")
     parser.add_argument("--config", required=True, help="Path to display configuration JSON")
@@ -383,8 +498,24 @@ def main():
     parser.add_argument(
         "--sender-monitor-port", type=int, default=SENDER_MONITOR_PORT, help="Sender monitor port"
     )
+    parser.add_argument(
+        "--web-server", action='store_true', default=False,
+        help="Enable web server for real-time scene control"
+    )
+    parser.add_argument(
+        "--web-port", type=int, default=5001, help="Web server port (default: 5001)"
+    )
+    parser.add_argument(
+        "--max-fps", type=int, default=80,
+        help="Maximum FPS (default: 80, range: 1-120)"
+    )
 
     args = parser.parse_args()
+
+    # Validate FPS range
+    if args.max_fps < 1 or args.max_fps > 120:
+        logger.error(f"Invalid --max-fps value: {args.max_fps}. Must be between 1 and 120.")
+        return
 
     # --- Configuration Loading and Setup ---
     with open(args.config, "r") as f:
@@ -476,9 +607,45 @@ def main():
         ):
             print(f"🎮 Connected {len(scene.input_handler.controllers)} game controllers")
 
+        # --- Start Web Server (Optional) ---
+        web_app = None
+        socketio = None
+        if args.web_server:
+            if not FLASK_AVAILABLE:
+                logger.error("--web-server requires Flask. Install with: pip install flask flask-socketio flask-cors")
+                return
+
+            # Check if scene provides web UI (duck typing - REQUIRED)
+            if not hasattr(scene, 'get_web_ui_path'):
+                logger.error("❌ Scene does not provide a web UI (missing get_web_ui_path method)")
+                logger.error("   Only scenes with custom web UIs can use --web-server flag")
+                logger.error("   See scenes/interactive/ for an example of a scene with web UI support")
+                return
+
+            logger.info(f"🌐 Starting web server on port {args.web_port}...")
+            web_app, socketio = create_web_server(world_raster, artnet_manager, args.web_port)
+            web_app.scene = scene  # Store scene reference for parameter updates
+
+            # Check if scene supports parameter updates (optional but recommended)
+            if hasattr(scene, 'update_parameters'):
+                logger.info(f"✅ Scene supports web UI parameter updates")
+            else:
+                logger.warning(f"⚠️  Scene provides web UI but does not support parameter updates")
+
+            # Run Flask in background thread
+            import threading
+            flask_thread = threading.Thread(
+                target=lambda: socketio.run(web_app, host='0.0.0.0', port=args.web_port,
+                                            debug=False, allow_unsafe_werkzeug=True),
+                daemon=True
+            )
+            flask_thread.start()
+            logger.info(f"🎮 Web UI available at http://localhost:{args.web_port}")
+
         # --- Main Rendering and Transmission Loop ---
-        TARGET_FPS = 80.0
+        TARGET_FPS = float(args.max_fps)
         FRAME_DURATION = 1.0 / TARGET_FPS
+        logger.info(f"🎯 Target FPS: {TARGET_FPS}")
 
         # ⏱️ PROFILING: Setup for logging performance stats
         frame_count = 0
@@ -581,7 +748,9 @@ def main():
             t_slice_done = time.monotonic()
 
             # C. SEND: Iterate through all jobs and send the specified Z-layers.
-            conversion_cache = {}
+            # Track unique controllers for sync packet optimization
+            controllers_used = set()
+
             for job in artnet_manager.send_jobs:
                 # Get the transformed data for this mapping's specific orientation
                 cache_key = job.get("_cache_key")
@@ -592,24 +761,10 @@ def main():
                     cube_raster = job["cube_raster"]
                     transformed_data = cube_raster.data
 
-                # Use cache key for conversion cache too
-                conversion_key = cache_key if cache_key else id(job["cube_raster"])
+                # Get raw bytes directly from transformed data (zero-copy, C-contiguous)
+                pixel_bytes = transformed_data.tobytes()
 
-                # Convert the NumPy array into the Python list of RGB objects
-                # that the Rust library expects.
-                if conversion_key not in conversion_cache:
-                    # If not in cache, do the expensive conversion and store it
-                    numpy_data = transformed_data.reshape(-1, 3)
-                    conversion_cache[conversion_key] = [
-                        RGB(int(r), int(g), int(b)) for r, g, b in numpy_data
-                    ]
-
-                # Create a temporary raster with the (now cached) Python list
-                # Use the original cube_raster dimensions as a template
                 cube_raster = job["cube_raster"]
-                temp_raster = dataclasses.replace(cube_raster)
-                temp_raster.data = conversion_cache[conversion_key]
-
                 universes_per_layer = 3
                 base_universe = job.get("universe", 0)  # Use the controller's configured base universe (defaults to 0)
 
@@ -617,15 +772,24 @@ def main():
                 controller_ip = job["controller"].get_ip()
                 controller_port = job["controller"].get_port()
 
+                # Track controller for sync packet
+                controllers_used.add(job["controller"])
+
                 try:
-                    job["controller"].send_dmx(
+                    # Use send_dmx_bytes method - passes raw bytes directly to Rust!
+                    # This is 2-3x faster than converting to Python RGB object list
+                    job["controller"].send_dmx_bytes(
                         base_universe=base_universe,
-                        raster=temp_raster,
-                        z_indices=job["z_indices"],
-                        # --- These params can be customized if needed ---
+                        pixel_bytes=pixel_bytes,
+                        width=cube_raster.width,
+                        height=cube_raster.height,
+                        length=cube_raster.length,
+                        brightness=1.0,
                         channels_per_universe=510,
                         universes_per_layer=universes_per_layer,
                         channel_span=1,
+                        z_indices=job["z_indices"],
+                        send_sync=False,  # Don't send sync per controller - we'll send one at the end
                     )
                     # Reset failure count on successful transmission
                     controller_failures[controller_ip] = 0
@@ -660,10 +824,35 @@ def main():
                         sender_monitor.report_controller_failure(
                             controller_ip, controller_port, str(e)
                         )
+
+            # Send one sync packet to trigger synchronized display update
+            # All controllers receive the same broadcast/multicast sync, so one packet is sufficient
+            if controllers_used:
+                try:
+                    next(iter(controllers_used)).send_sync()
+                except Exception as e:
+                    logger.error(f"Error sending sync packet: {e}", exc_info=True)
+
             t_send_done = time.monotonic()
 
-            # ⏱️ PROFILING: Log stats every second
+            # ⏱️ PROFILING: Log stats every second and emit to web UI
             frame_count += 1
+
+            # Emit stats to web UI if enabled
+            if web_app and socketio and (time.monotonic() - last_log_time >= 1.0):
+                fps = frame_count / (time.monotonic() - last_log_time)
+                avg_frame_time = ((time.monotonic() - last_log_time) / frame_count * 1000) if frame_count > 0 else 0
+
+                web_app.stats = {
+                    'fps': round(fps, 1),
+                    'active_leds': count_active_leds(world_raster),
+                    'frame_time_ms': round(avg_frame_time, 2)
+                }
+                socketio.emit('stats', web_app.stats)
+
+                last_log_time = time.monotonic()
+                frame_count = 0
+
             """
             if t_send_done - last_log_time > 1.0:
                 fps = frame_count / (t_send_done - last_log_time)
