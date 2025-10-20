@@ -40,6 +40,8 @@ class SceneParameters:
     frequency: float = 1.0
     amplitude: float = 0.5
     animationSpeed: float = 1.0
+    scaling_amount: float = 2.0
+    scaling_speed: float = 2.0
 
     # Movement
     rotationX: float = 0.0
@@ -241,26 +243,37 @@ class InteractiveScene(Scene):
             radius = min(center) * size * 0.8
             return generate_pulsing_sphere(
                 coords, center, radius, time,
-                pulse_speed=2, pulse_amount=2
+                pulse_speed=self.params.scaling_speed,
+                pulse_amount=self.params.scaling_amount
             )
 
         elif shape == 'cube':
-            cube_size = min(center) * size * 0.8
+            base_size = min(center) * size * 0.8
+            # Apply pulsing/scaling effect
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            cube_size = base_size * pulse
             # Use density to control edge thickness (0.1-1.0 -> 0.5-2.5 pixels)
             # Smaller range prevents edges from overlapping
             edge_thickness = 0.5 + self.params.density * 2.0
             return generate_cube(coords, center, cube_size, edge_thickness)
 
         elif shape == 'torus':
-            major_r = min(center[0], center[2]) * size * 0.6
+            base_major_r = min(center[0], center[2]) * size * 0.6
+            # Apply pulsing/scaling effect
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            major_r = base_major_r * pulse
             minor_r = major_r * 0.3
             return generate_torus(coords, center, major_r, minor_r)
 
         elif shape == 'pyramid':
             # Base sits on XY plane, extends along Z axis
-            base_size = min(center[0], center[1]) * size * 0.6
+            base_base_size = min(center[0], center[1]) * size * 0.6
             # Height along Z axis (length dimension)
-            height = raster.length * size * 0.9
+            base_height = raster.length * size * 0.9
+            # Apply pulsing/scaling effect
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            base_size = base_base_size * pulse
+            height = base_height * pulse
             return generate_pyramid(coords, center, base_size, height)
 
         else:
@@ -286,17 +299,21 @@ class InteractiveScene(Scene):
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
 
+        # Apply pulsing/scaling effect to amplitude
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        modulated_amplitude = self.params.amplitude * pulse
+
         if wave_type == 'ripple':
             return generate_ripple_wave(
                 coords, self.grid_shape, time,
                 frequency=self.params.frequency,
-                amplitude=self.params.amplitude,
+                amplitude=modulated_amplitude,
                 speed=5
             )
         elif wave_type == 'plane':
             return generate_plane_wave(
                 coords, self.grid_shape, time,
-                amplitude=self.params.amplitude,
+                amplitude=modulated_amplitude,
                 speed=3,
                 direction='x',  # Default direction
                 frequency=self.params.frequency
@@ -305,20 +322,20 @@ class InteractiveScene(Scene):
             return generate_standing_wave(
                 coords, self.grid_shape, time,
                 frequency=self.params.frequency,
-                amplitude=self.params.amplitude
+                amplitude=modulated_amplitude
             )
         elif wave_type == 'interference':
             mask, _ = generate_interference_wave(
                 coords, self.grid_shape, time,
                 frequency=self.params.frequency,
-                amplitude=self.params.amplitude
+                amplitude=modulated_amplitude
             )
             return mask
         else:
             return generate_ripple_wave(
                 coords, self.grid_shape, time,
                 frequency=self.params.frequency,
-                amplitude=self.params.amplitude
+                amplitude=modulated_amplitude
             )
 
     def _geometry_particle_flow(self, raster, time):

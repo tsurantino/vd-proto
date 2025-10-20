@@ -263,6 +263,26 @@
                         </div>
                     </div>
 
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SCALE AMT</label>
+                            <span id="scaling_amount-value" class="value-display">2.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scaling_amount" min="0" max="5" step="0.1" value="2.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SCALE SPD</label>
+                            <span id="scaling_speed-value" class="value-display">2.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scaling_speed" min="0.1" max="10" step="0.1" value="2.0">
+                        </div>
+                    </div>
+
                     <div class="subsection-title">Rotation</div>
 
                     <div class="control-group slider-control">
@@ -388,6 +408,8 @@
             frequency: 1.0,
             amplitude: 0.5,
             objectCount: 1,
+            scaling_amount: 2.0,
+            scaling_speed: 2.0,
             rotationX: 0.0,
             rotationY: 0.0,
             rotationZ: 0.0,
@@ -450,9 +472,9 @@
         }
 
         // Scene selection
-        document.querySelectorAll('.scene-btn').forEach(btn => {
+        document.querySelectorAll('button[data-scene]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('button[data-scene]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 params.scene_type = btn.dataset.scene;
                 updateSceneParams(params.scene_type);
@@ -489,6 +511,8 @@
         setupSlider('frequency', 'frequency', 2);
         setupSlider('amplitude', 'amplitude', 2);
         setupSlider('objectCount', 'objectCount', 0);
+        setupSlider('scaling_amount', 'scaling_amount', 2);
+        setupSlider('scaling_speed', 'scaling_speed', 2);
         setupSlider('rotationX', 'rotationX', 2);
         setupSlider('rotationY', 'rotationY', 2);
         setupSlider('rotationZ', 'rotationZ', 2);
