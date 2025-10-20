@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Volumetric Display Controller</title>
+
+    <!-- PWA iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VD Controller">
+    <meta name="theme-color" content="#1a1a2e">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS Icons -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="icon-167.png">
+
+    <link rel="stylesheet" href="controller.css">
+</head>
+<body>
+    <div class="container">
+        <div id="status" class="panel">
+            <div class="status-item">
+                <span class="status-label">Status:</span>
+                <span id="connection-status" class="status-value disconnected">Disconnected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">FPS:</span>
+                <span id="fps" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Active LEDs:</span>
+                <span id="active-leds" class="status-value">0</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Grid:</span>
+                <span id="grid-size" class="status-value">0×0×0</span>
+            </div>
+        </div>
+
+        <div class="controls-grid">
+            <!-- COLUMN 1: Global Controls -->
+            <div>
+                <div class="panel">
+                    <h3>Global Controls</h3>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ANIM SPD</label>
+                            <span id="animationSpeed-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="animationSpeed" min="0.1" max="10" step="0.1" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>DECAY</label>
+                            <span id="decay-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="decay" min="0" max="3" step="0.1" value="0.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>CLR SPD</label>
+                            <span id="color-speed-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-speed" min="0.1" max="10" step="0.1" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>CLR INT</label>
+                            <span class="value-display" id="color-effect-intensity-value">1.0</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="color-effect-intensity" min="0" max="1" step="0.05" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="strobe" data-value="off">Strobe Off</button>
+                            <button class="effect-btn" data-param="strobe" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="strobe" data-value="medium">Med</button>
+                            <button class="effect-btn" data-param="strobe" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="button-group">
+                            <button class="effect-btn active" data-param="pulse" data-value="off">Pulse Off</button>
+                            <button class="effect-btn" data-param="pulse" data-value="slow">Slow</button>
+                            <button class="effect-btn" data-param="pulse" data-value="medium">Med</button>
+                            <button class="effect-btn" data-param="pulse" data-value="fast">Fast</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>MASK WDT</label>
+                            <span id="scrolling_thickness-value" class="value-display">0%</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scrolling_thickness" min="0" max="100" step="1" value="0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>MASK SPD</label>
+                            <span id="scrolling_speed-value" class="value-display">1.0</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scrolling_speed" min="0" max="10" step="0.1" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Mask Direction</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="toggle-btn active" data-param="scrolling_direction" data-value="y">Y</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="x">X</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="z">Z</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xz">Diag XZ</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-yz">Diag YZ</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xy">Diag XY</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="radial">Radial</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="wave">Wave</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="rings">Rings</button>
+                            <button class="toggle-btn" data-param="scrolling_direction" data-value="noise">Noise</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="button-group" style="grid-template-columns: 1fr 1fr 1fr;">
+                            <button class="toggle-btn" id="scrolling_loop" data-param="scrolling_loop">Loop</button>
+                            <button class="toggle-btn" id="scrolling_invert_mask" data-param="scrolling_invert_mask">Invert Mask</button>
+                            <button class="toggle-btn" id="invert" data-param="invert">Invert Colors</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: Scenes -->
+            <div>
+                <div class="panel">
+                    <h3>Scene Selection</h3>
+                    <div class="button-group">
+                        <button class="scene-btn active" data-scene="shapeMorph">Shape Morph</button>
+                        <button class="scene-btn" data-scene="waveField">Wave Field</button>
+                        <button class="scene-btn" data-scene="procedural">Procedural</button>
+                        <button class="scene-btn" data-scene="particleFlow">Particle Flow</button>
+                        <button class="scene-btn" data-scene="illusions">Illusions</button>
+                        <button class="scene-btn" data-scene="grid">Grid</button>
+                    </div>
+                    <!-- Shape selector for shapeMorph -->
+                    <div class="control-group" id="shape-control">
+                        <label>Shape</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="shape" data-value="sphere">Sphere</button>
+                            <button class="toggle-btn" data-param="shape" data-value="cube">Cube</button>
+                            <button class="toggle-btn" data-param="shape" data-value="torus">Torus</button>
+                            <button class="toggle-btn" data-param="shape" data-value="pyramid">Pyramid</button>
+                        </div>
+                    </div>
+
+                    <!-- Wave type selector for waveField -->
+                    <div class="control-group" id="waveType-control" style="display: none;">
+                        <label>Wave Type</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="waveType" data-value="ripple">Ripple</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="plane">Plane</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="standing">Standing</button>
+                            <button class="toggle-btn" data-param="waveType" data-value="interference">Interference</button>
+                        </div>
+                    </div>
+
+                    <!-- Pattern selector for particleFlow -->
+                    <div class="control-group" id="pattern-control" style="display: none;">
+                        <label>Pattern</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="pattern" data-value="particles">Particles</button>
+                            <button class="toggle-btn" data-param="pattern" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="pattern" data-value="explode">Explode</button>
+                        </div>
+                    </div>
+
+                    <!-- Illusion type selector for illusions -->
+                    <div class="control-group" id="illusionType-control" style="display: none;">
+                        <label>Illusion Type</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="illusionType" data-value="infiniteCorridor">Corridor</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="waterfallIllusion">Waterfall</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="pulfrich">Pulfrich</button>
+                            <button class="toggle-btn" data-param="illusionType" data-value="moirePattern">Moire</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Global Scene Parameters</h3>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SIZE</label>
+                            <span id="size-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>DENSITY</label>
+                            <span id="density-value" class="value-display">0.50</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="density" min="0" max="1" step="0.05" value="0.5">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>FREQ</label>
+                            <span id="frequency-value" class="value-display">1.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>AMP</label>
+                            <span id="amplitude-value" class="value-display">0.50</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="amplitude" min="0" max="1" step="0.05" value="0.5">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>COUNT</label>
+                            <span id="objectCount-value" class="value-display">1</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SCALE AMT</label>
+                            <span id="scaling_amount-value" class="value-display">2.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scaling_amount" min="0" max="5" step="0.1" value="2.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>SCALE SPD</label>
+                            <span id="scaling_speed-value" class="value-display">2.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="scaling_speed" min="0.1" max="10" step="0.1" value="2.0">
+                        </div>
+                    </div>
+
+                    <div class="subsection-title">Rotation</div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT X</label>
+                            <span id="rotationX-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT Y</label>
+                            <span id="rotationY-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
+                    </div>
+
+                    <div class="control-group slider-control">
+                        <div class="slider-label-container">
+                            <label>ROT Z</label>
+                            <span id="rotationZ-value" class="value-display">0.00</span>
+                        </div>
+                        <div class="slider-input-container">
+                            <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 3: Colors & Effects -->
+            <div>
+                <div class="panel colors-panel">
+                    <h3>Colors & Effects</h3>
+
+                    <!-- Row 1: Solid Colors -->
+                    <div class="color-presets-grid">
+                        <button class="color-preset-btn" data-type="single" data-color="#FF0000" style="background: #FF0000;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF8800" style="background: #FF8800;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFFF00" style="background: #FFFF00;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#00FF00" style="background: #00FF00;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#00FFFF" style="background: #00FFFF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#0000FF" style="background: #0000FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FF00FF" style="background: #FF00FF;"></button>
+                        <button class="color-preset-btn" data-type="single" data-color="#FFFFFF" style="background: #FFFFFF;"></button>
+                    </div>
+
+                    <!-- Row 2: Gradients + Rainbow -->
+                    <div class="color-presets-grid">
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF0000,#FF00FF,#0000FF" style="background: linear-gradient(135deg, #FF0000 0%, #FF00FF 50%, #0000FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#00FFFF,#00FF00,#FFFF00" style="background: linear-gradient(135deg, #00FFFF 0%, #00FF00 50%, #FFFF00 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF00FF,#FF0080,#FF00FF" style="background: linear-gradient(135deg, #FF00FF 0%, #FF0080 50%, #FF00FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#FF4500,#FF8C00,#FFD700" style="background: linear-gradient(135deg, #FF4500 0%, #FF8C00 50%, #FFD700 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#004B87,#0088CC,#00D9FF" style="background: linear-gradient(135deg, #004B87 0%, #0088CC 50%, #00D9FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#6A0DAD,#9D4EDD,#E0B0FF" style="background: linear-gradient(135deg, #6A0DAD 0%, #9D4EDD 50%, #E0B0FF 100%);"></button>
+                        <button class="color-preset-btn" data-type="gradient" data-gradient="#0B6623,#228B22,#90EE90" style="background: linear-gradient(135deg, #0B6623 0%, #228B22 50%, #90EE90 100%);"></button>
+                        <!-- Rainbow as last gradient option -->
+                        <button class="color-preset-btn active" data-type="rainbow" style="background: linear-gradient(90deg, #FF0000 0%, #FF7F00 16%, #FFFF00 33%, #00FF00 50%, #0000FF 66%, #4B0082 83%, #9400D3 100%);"></button>
+                    </div>
+
+                    <!-- Effects -->
+                    <div class="subsection-title">Effects</div>
+
+                    <!-- Classic & Combo Effects -->
+                    <div class="button-group">
+                        <button class="scene-btn active" data-effect="none">None</button>
+                        <button class="scene-btn" data-effect="sparkle">Sparkle</button>
+                        <button class="scene-btn" data-effect="fire">Fire</button>
+                        <button class="scene-btn" data-effect="breath">Breath</button>
+                        <button class="scene-btn" data-effect="pulseWave">PulseWave</button>
+                        <button class="scene-btn" data-effect="waveChase">WaveChase</button>
+                        <button class="scene-btn" data-effect="cyclePulse">CyclePulse</button>
+                        <button class="scene-btn" data-effect="kaleidoscope">Kaleid</button>
+                    </div>
+
+                    <!-- Wave/Flow Effects -->
+                    <div class="effect-category-title">Wave/Flow</div>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="waveCircular">Circular</button>
+                        <button class="scene-btn" data-effect="waveVertical">Vertical</button>
+                        <button class="scene-btn" data-effect="sineInterferenceXZ">Interference</button>
+                        <button class="scene-btn" data-effect="rainbowSweep">Rainbow</button>
+                        <button class="scene-btn" data-effect="directionalSweep">DirSweep</button>
+                    </div>
+
+                    <!-- Geometric Effects -->
+                    <div class="effect-category-title">Geometric</div>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="helix">Helix</button>
+                        <button class="scene-btn" data-effect="vortex">Vortex</button>
+                        <button class="scene-btn" data-effect="tunnel">Tunnel</button>
+                        <button class="scene-btn" data-effect="sphericalShellsMoving">Bubbles</button>
+                        <button class="scene-btn" data-effect="cubeInCube">Cube³</button>
+                    </div>
+
+                    <!-- Procedural Effects -->
+                    <div class="effect-category-title">Procedural</div>
+                    <div class="button-group">
+                        <button class="scene-btn" data-effect="perlinNoise">Perlin</button>
+                        <button class="scene-btn" data-effect="voronoi">Voronoi</button>
+                        <button class="scene-btn" data-effect="plasma">Plasma</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Connect to Python server
+        const socket = io(window.location.origin);
+
+        // Current parameters
+        const params = {
+            scene_type: 'shapeMorph',
+            size: 1.0,
+            density: 0.5,
+            animationSpeed: 1.0,
+            frequency: 1.0,
+            amplitude: 0.5,
+            objectCount: 1,
+            scaling_amount: 2.0,
+            scaling_speed: 2.0,
+            rotationX: 0.0,
+            rotationY: 0.0,
+            rotationZ: 0.0,
+            // Color system
+            color_type: 'single',
+            color_single: '#FF0000',
+            color_gradient: '#FF0000,#FF00FF,#0000FF',
+            color_effect: 'none',
+            color_effect_intensity: 1.0,
+            color_mode: 'rainbow',
+            color_speed: 1.0,
+            // Global effects
+            decay: 0.0,
+            strobe: 'off',
+            pulse: 'off',
+            invert: false,
+            scrolling_enabled: false,
+            scrolling_direction: 'y',
+            scrolling_thickness: 0,
+            scrolling_loop: false,
+            scrolling_invert_mask: false,
+            // Scene-specific params
+            scene_params: {
+                shape: 'sphere',
+                waveType: 'ripple',
+                pattern: 'particles',
+                illusionType: 'infiniteCorridor'
+            }
+        };
+
+        // Connection status
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            document.getElementById('connection-status').textContent = 'Connected';
+            document.getElementById('connection-status').className = 'status-value connected';
+            sendParams();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            document.getElementById('connection-status').textContent = 'Disconnected';
+            document.getElementById('connection-status').className = 'status-value disconnected';
+        });
+
+        socket.on('status', (data) => {
+            if (data.config) {
+                document.getElementById('grid-size').textContent =
+                    `${data.config.gridX}×${data.config.gridY}×${data.config.gridZ}`;
+            }
+        });
+
+        socket.on('stats', (data) => {
+            document.getElementById('fps').textContent = data.fps;
+            document.getElementById('active-leds').textContent = data.active_leds.toLocaleString();
+        });
+
+        function sendParams() {
+            const flatParams = {...params, ...params.scene_params};
+            socket.emit('update_params', flatParams);
+        }
+
+        // Scene selection
+        document.querySelectorAll('button[data-scene]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('button[data-scene]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_type = btn.dataset.scene;
+                updateSceneParams(params.scene_type);
+                sendParams();
+            });
+        });
+
+        function updateSceneParams(sceneType) {
+            document.getElementById('shape-control').style.display =
+                sceneType === 'shapeMorph' ? 'block' : 'none';
+            document.getElementById('waveType-control').style.display =
+                sceneType === 'waveField' ? 'block' : 'none';
+            document.getElementById('pattern-control').style.display =
+                sceneType === 'particleFlow' ? 'block' : 'none';
+            document.getElementById('illusionType-control').style.display =
+                sceneType === 'illusions' ? 'block' : 'none';
+        }
+
+        // Parameter sliders
+        function setupSlider(id, param, decimals = 2) {
+            const slider = document.getElementById(id);
+            const valueDisplay = document.getElementById(`${id}-value`);
+            slider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                valueDisplay.textContent = value.toFixed(decimals);
+                params[param] = value;
+                sendParams();
+            });
+        }
+
+        setupSlider('size', 'size', 2);
+        setupSlider('density', 'density', 2);
+        setupSlider('animationSpeed', 'animationSpeed', 2);
+        setupSlider('frequency', 'frequency', 2);
+        setupSlider('amplitude', 'amplitude', 2);
+        setupSlider('objectCount', 'objectCount', 0);
+        setupSlider('scaling_amount', 'scaling_amount', 2);
+        setupSlider('scaling_speed', 'scaling_speed', 2);
+        setupSlider('rotationX', 'rotationX', 2);
+        setupSlider('rotationY', 'rotationY', 2);
+        setupSlider('rotationZ', 'rotationZ', 2);
+        setupSlider('decay', 'decay', 2);
+        setupSlider('color-speed', 'color_speed', 2);
+        setupSlider('color-effect-intensity', 'color_effect_intensity', 2);
+
+        // Special handler for scrolling thickness
+        const scrollingSlider = document.getElementById('scrolling_thickness');
+        const scrollingValueDisplay = document.getElementById('scrolling_thickness-value');
+        scrollingSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            scrollingValueDisplay.textContent = value + '%';
+            params.scrolling_thickness = value;
+            params.scrolling_enabled = value > 0;
+            sendParams();
+        });
+
+        // Handler for scrolling speed
+        setupSlider('scrolling_speed', 'scrolling_speed', 1);
+
+        // Color preset buttons - unified handling for solid, gradient, and rainbow
+        document.querySelectorAll('.color-preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+
+                // Remove active from all color buttons
+                document.querySelectorAll('.color-preset-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (type === 'single') {
+                    // Solid color selected
+                    params.color_mode = 'base';
+                    params.color_type = 'single';
+                    params.color_single = btn.dataset.color;
+                } else if (type === 'gradient') {
+                    // Gradient selected
+                    params.color_mode = 'base';
+                    params.color_type = 'gradient';
+                    params.color_gradient = btn.dataset.gradient;
+                } else if (type === 'rainbow') {
+                    // Rainbow selected
+                    params.color_mode = 'rainbow';
+                }
+
+                sendParams();
+            });
+        });
+
+        // Color effect buttons - select all buttons with data-effect attribute
+        document.querySelectorAll('button[data-effect]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all effect buttons
+                document.querySelectorAll('button[data-effect]')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.color_effect = btn.dataset.effect;
+                sendParams();
+            });
+        });
+
+        // Global effect buttons
+        document.querySelectorAll('.effect-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const param = btn.dataset.param;
+                const value = btn.dataset.value;
+
+                // Remove active from current param buttons
+                document.querySelectorAll(`.effect-btn[data-param="${param}"]`)
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params[param] = value;
+
+                // If activating strobe (not off), deactivate pulse
+                if (param === 'strobe' && value !== 'off') {
+                    params.pulse = 'off';
+                    document.querySelectorAll('.effect-btn[data-param="pulse"]')
+                        .forEach(b => b.classList.remove('active'));
+                    document.querySelector('.effect-btn[data-param="pulse"][data-value="off"]')
+                        .classList.add('active');
+                }
+
+                // If activating pulse (not off), deactivate strobe
+                if (param === 'pulse' && value !== 'off') {
+                    params.strobe = 'off';
+                    document.querySelectorAll('.effect-btn[data-param="strobe"]')
+                        .forEach(b => b.classList.remove('active'));
+                    document.querySelector('.effect-btn[data-param="strobe"][data-value="off"]')
+                        .classList.add('active');
+                }
+
+                sendParams();
+            });
+        });
+
+        // Scene-specific parameter buttons
+        document.querySelectorAll('[data-param="shape"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="shape"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.shape = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        document.querySelectorAll('[data-param="waveType"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="waveType"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.waveType = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        document.querySelectorAll('[data-param="pattern"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="pattern"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.pattern = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        document.querySelectorAll('[data-param="illusionType"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="illusionType"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.illusionType = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        // Invert toggle buttons
+        document.getElementById('invert').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.invert = e.target.classList.contains('active');
+            sendParams();
+        });
+
+        document.getElementById('scrolling_loop').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.scrolling_loop = e.target.classList.contains('active');
+            sendParams();
+        });
+
+        document.getElementById('scrolling_invert_mask').addEventListener('click', (e) => {
+            e.target.classList.toggle('active');
+            params.scrolling_invert_mask = e.target.classList.contains('active');
+            sendParams();
+        });
+
+        // Scrolling direction buttons
+        document.querySelectorAll('[data-param="scrolling_direction"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="scrolling_direction"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scrolling_direction = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        console.log('Controller UI loaded');
+    </script>
+</body>
+</html>
