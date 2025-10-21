@@ -190,26 +190,6 @@ Example `sim_config.json`:
 }
 ```
 
-## Legacy Folder
-
-The `legacy/` directory contains archived files from previous development iterations:
-
-- **Refactor Documentation:**
-  - Progress tracking, guides, and summaries from the major refactoring effort
-  - `REFACTOR_COMPLETE.md`, `FRONTEND_REFACTOR_GUIDE.md`, etc.
-
-- **Backup Files:**
-  - `scene.py.backup` - Original 2,025-line monolithic scene implementation
-  - `index.html.backup` - Original 1,373-line HTML with inline JavaScript
-
-- **Superseded Implementations:**
-  - `artnet-bridge-js/` - JavaScript ArtNet bridge (replaced by Rust)
-  - `standalone-js-simulator/` - Old JavaScript simulator
-  - `test-files/` - Historical test files
-  - `docs/` - Archived documentation
-
-**Note:** Legacy files are excluded from active development via `.claudeignore`
-
 ## Performance
 
 - **Web Simulator:** 60 FPS target with depth-sorted rendering
