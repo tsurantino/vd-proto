@@ -53,10 +53,15 @@ class SceneParameters:
     # Copy system
     copy_spacing: float = 1.5
     copy_arrangement: str = 'linear'  # 'linear', 'circular', 'grid', 'spiral'
-    copy_scale_offset: float = 0.0  # Scale variation between copies (0-1)
-    copy_anim_offset: float = 0.0  # Animation phase offset between copies (0-1)
 
-    # Copy rotation (applied to entire copy set)
+    # Copy variation (simplified two-level offset system)
+    global_copy_offset: float = 0.0  # Master offset affecting all transforms (0-1)
+    copy_scale_offset: float = 0.0  # Scale variation between copies (0-1) - overrides global when >0
+    copy_rotation_var: float = 0.0  # Rotation variation between copies (0-1) - fine-tune mode
+    copy_translation_var: float = 0.0  # Translation variation between copies (0-1) - fine-tune mode
+
+    # Copy rotation override (optional different rotation for copy set)
+    use_copy_rotation_override: bool = False  # Checkbox to enable copy rotation override
     copy_rotation_x: float = 0.0  # -1 to 1 (amount of rotation)
     copy_rotation_y: float = 0.0
     copy_rotation_z: float = 0.0
@@ -328,32 +333,24 @@ class InteractiveScene(Scene):
         center_z = raster.length / 2
 
         if arrangement == 'linear':
-            # Arrange copies along X-axis
-            # Calculate desired spacing
-            desired_spacing = spacing * (raster.width * 0.3)
-            total_width = (count - 1) * desired_spacing
+            # Arrange copies along X-axis with fixed spacing that wraps
+            # This ensures equal spacing even when scrolling wraps objects around
 
-            # Auto-adjust spacing if copies would exceed bounds
-            # Assume each object takes up roughly 20% of width
-            object_width = raster.width * 0.2
-            available_width = raster.width - object_width
-            max_spacing = available_width / max(count - 1, 1)
-
-            # Use smaller of desired or max spacing to prevent clipping
-            actual_spacing = min(desired_spacing, max_spacing)
-            total_width = (count - 1) * actual_spacing
-            start_offset = -total_width / 2
+            # Fixed spacing based on grid width divided by number of copies
+            # This creates perfectly even distribution around the cylinder
+            actual_spacing = int((raster.width * spacing) / count)
 
             for i in range(count):
-                offset_x = int(start_offset + i * actual_spacing)
+                # Each copy is offset by a fixed amount, wrapping with modulo
+                offset_x = (i * actual_spacing) % raster.width
 
-                # Use numpy roll for wrapping (cleaner than clipping)
-                if offset_x != 0:
-                    shifted_mask = np.roll(base_mask, offset_x, axis=2)
-                else:
-                    shifted_mask = base_mask
-
-                combined_mask |= shifted_mask
+                # Use proper translation with wrapping via modulo
+                for z in range(raster.length):
+                    for y in range(raster.height):
+                        for x in range(raster.width):
+                            if base_mask[z, y, x]:
+                                new_x = (x + offset_x) % raster.width
+                                combined_mask[z, y, new_x] = True
 
         elif arrangement == 'circular':
             # Arrange copies in a ring (XZ plane)
@@ -508,7 +505,11 @@ class InteractiveScene(Scene):
         coords = rotate_coordinates(self.coords_cache, center, angles)
 
         # If we have copies with offsets, generate each copy individually
-        if self.params.objectCount > 1 and (self.params.copy_scale_offset > 0 or self.params.copy_anim_offset > 0):
+        has_variation = (self.params.global_copy_offset > 0 or
+                        self.params.copy_scale_offset > 0 or
+                        self.params.copy_rotation_var > 0 or
+                        self.params.copy_translation_var > 0)
+        if self.params.objectCount > 1 and has_variation:
             return self._generate_shape_copies_with_offsets(raster, time, shape, coords, center)
 
         # Otherwise, generate base shape and copy it
@@ -527,11 +528,15 @@ class InteractiveScene(Scene):
 
     def _generate_single_shape(self, raster, time, shape, coords, center, size, copy_index):
         """Generate a single shape with optional per-copy animation/scale offset"""
-        # Apply animation offset
-        offset_time = time + (copy_index * self.params.copy_anim_offset * 2 * np.pi / self.params.scaling_speed if self.params.scaling_speed > 0 else 0)
+        # Calculate effective offset using two-level system
+        # Use specific offset if set, otherwise fall back to global offset
+        effective_scale_offset = self.params.copy_scale_offset if self.params.copy_scale_offset > 0 else self.params.global_copy_offset
+
+        # Apply animation offset for scaling animation
+        offset_time = time + (copy_index * effective_scale_offset * 2 * np.pi / self.params.scaling_speed if self.params.scaling_speed > 0 else 0)
 
         # Apply scale offset (each copy gets progressively larger/smaller)
-        scale_multiplier = 1.0 + (copy_index * self.params.copy_scale_offset * 0.2)
+        scale_multiplier = 1.0 + (copy_index * effective_scale_offset * 0.2)
         effective_size = size * scale_multiplier
 
         if shape == 'sphere':
@@ -579,15 +584,26 @@ class InteractiveScene(Scene):
         # Calculate positions for each copy
         positions = self._calculate_copy_positions(raster, count, spacing, arrangement, base_center)
 
+        # Calculate effective variations using two-level offset system
+        effective_rotation_var = self.params.copy_rotation_var if self.params.copy_rotation_var > 0 else self.params.global_copy_offset
+        effective_translation_var = self.params.copy_translation_var if self.params.copy_translation_var > 0 else self.params.global_copy_offset
+
         # Generate each copy with its own offset
         for i, (offset_x, offset_y, offset_z) in enumerate(positions):
-            # Apply copy rotation with animation offset
-            # When anim_offset > 0, each copy gets a phase offset affecting rotation speed
-            rotation_phase = (i * self.params.copy_anim_offset) if self.params.copy_anim_offset > 0 else 0
+            # Apply copy rotation with variation
+            # When variation > 0, each copy gets a phase offset affecting rotation speed
+            rotation_phase = (i * effective_rotation_var) if effective_rotation_var > 0 else 0
 
             # Apply copy rotation to coordinates
             copy_coords = coords
-            if self.params.copy_rotation_x != 0 or self.params.copy_rotation_y != 0 or self.params.copy_rotation_z != 0:
+            # Check if using copy rotation override or main rotation
+            use_copy_rot = self.params.use_copy_rotation_override and (
+                self.params.copy_rotation_x != 0 or
+                self.params.copy_rotation_y != 0 or
+                self.params.copy_rotation_z != 0
+            )
+
+            if use_copy_rot:
                 # Use copy rotation speed and offset for animation
                 copy_rot_angles = self._calculate_rotation_angles(
                     time,
@@ -598,8 +614,8 @@ class InteractiveScene(Scene):
                     self.params.copy_rotation_offset
                 )
 
-                # Apply anim_offset phase to create varied rotation per copy
-                if self.params.copy_anim_offset > 0:
+                # Apply rotation variation to create varied rotation per copy
+                if effective_rotation_var > 0:
                     phase_shift = rotation_phase * 2 * np.pi
                     copy_rot_angles = (
                         copy_rot_angles[0] + phase_shift,
@@ -609,8 +625,8 @@ class InteractiveScene(Scene):
 
                 copy_coords = rotate_coordinates(coords, base_center, copy_rot_angles)
 
-            # Apply copy translation with animation offset
-            # When anim_offset > 0, each copy gets a wave-like translation offset
+            # Apply copy translation with variation
+            # When variation > 0, each copy gets a wave-like translation offset
             translation_offset_x = 0
             translation_offset_y = 0
             translation_offset_z = 0
@@ -623,8 +639,8 @@ class InteractiveScene(Scene):
                     wave_time_y = time * self.params.copy_translation_speed * (1.0 + self.params.copy_translation_offset * 0.5)
                     wave_time_z = time * self.params.copy_translation_speed * (1.0 + self.params.copy_translation_offset * 1.0)
 
-                    # Apply anim_offset phase to create wave pattern across copies
-                    if self.params.copy_anim_offset > 0:
+                    # Apply translation variation to create wave pattern across copies
+                    if effective_translation_var > 0:
                         wave_phase = rotation_phase * 2 * np.pi
                         wave_time_x += wave_phase
                         wave_time_y += wave_phase
@@ -1095,7 +1111,9 @@ class InteractiveScene(Scene):
         coords = rotate_coordinates(self.coords_cache, center, angles)
         z_coords, y_coords, x_coords = coords
 
-        scale = self.params.size * 0.1
+        # Apply pulsing/scaling effect to pattern scale
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        scale = self.params.size * 0.1 * pulse
         threshold = self.params.amplitude * 0.5
 
         # Base noise
@@ -1132,8 +1150,9 @@ class InteractiveScene(Scene):
         coords = rotate_coordinates(self.coords_cache, center, angles)
         z_coords, y_coords, x_coords = coords
 
-        # Frequency controlled by size
-        freq = 0.15 * self.params.size
+        # Apply pulsing/scaling effect to pattern frequency
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        freq = 0.15 * self.params.size * pulse
 
         # Multiple octaves for cloud-like appearance
         # Octave 1: Large features
@@ -1228,8 +1247,9 @@ class InteractiveScene(Scene):
         ny = (y_coords - center[1]) / raster.height
         nz = (z_coords - center[2]) / raster.length
 
-        # Size controls the scale of the fractal
-        scale = self.params.size * 3
+        # Apply pulsing/scaling effect to pattern scale
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        scale = self.params.size * 3 * pulse
 
         # Create a 3D fractal pattern using recursive sine functions
         # Each iteration adds smaller details
@@ -1297,8 +1317,9 @@ class InteractiveScene(Scene):
         # Density controls dot spacing
         spacing = max(2, int(8 - self.params.density * 6))  # 2-8 voxels apart
 
-        # Size controls dot size
-        dot_radius = 0.5 + self.params.size * 2  # 0.5-2.5 voxels
+        # Apply pulsing/scaling effect to dot size
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        dot_radius = (0.5 + self.params.size * 2) * pulse  # 0.5-2.5 voxels
 
         # Use modulo to create repeating pattern instead of loops
         # This is much faster than iterating through each dot position
@@ -1323,7 +1344,9 @@ class InteractiveScene(Scene):
             raster.height / 2,
             raster.length / 2
         )
-        size = min(center)
+        # Apply pulsing/scaling effect to cross size
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        size = min(center) * pulse
         # Use density to control cross line thickness (1-10 pixels)
         line_thickness = 1 + self.params.density * 9
         return generate_cross_grid(self.coords_cache, center, size, line_thickness)
@@ -1332,19 +1355,20 @@ class InteractiveScene(Scene):
         """Wireframe cube/box edges only"""
         z_coords, y_coords, x_coords = self.coords_cache
 
-        # Size controls the box size (0.3 to 0.95 of volume)
-        size_factor = 0.3 + self.params.size * 0.65
+        # Apply pulsing/scaling effect to box size
+        pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+        size_factor = (0.3 + self.params.size * 0.65) * pulse
 
         # Density controls edge thickness
         thickness = max(1, int(1 + self.params.density * 3))
 
-        # Calculate box boundaries
-        x_min = int(raster.width * (1 - size_factor) / 2)
-        x_max = int(raster.width * (1 + size_factor) / 2)
-        y_min = int(raster.height * (1 - size_factor) / 2)
-        y_max = int(raster.height * (1 + size_factor) / 2)
-        z_min = int(raster.length * (1 - size_factor) / 2)
-        z_max = int(raster.length * (1 + size_factor) / 2)
+        # Calculate box boundaries with clamping
+        x_min = max(0, int(raster.width * (1 - size_factor) / 2))
+        x_max = min(raster.width, int(raster.width * (1 + size_factor) / 2))
+        y_min = max(0, int(raster.height * (1 - size_factor) / 2))
+        y_max = min(raster.height, int(raster.height * (1 + size_factor) / 2))
+        z_min = max(0, int(raster.length * (1 - size_factor) / 2))
+        z_max = min(raster.length, int(raster.length * (1 + size_factor) / 2))
 
         mask = np.zeros(self.grid_shape, dtype=bool)
 
@@ -1896,9 +1920,13 @@ class InteractiveScene(Scene):
             center_y = raster.height / 2
             center_z = raster.length / 2
 
+            # Force broadcast sparse coordinates to full 3D arrays
+            x_full = x_coords + y_coords * 0 + z_coords * 0
+            z_full = z_coords + y_coords * 0 + x_coords * 0
+
             # Calculate cylindrical coordinates (using Y as vertical axis)
-            radius_xz = np.sqrt((x_coords - center_x)**2 + (z_coords - center_z)**2)
-            angle = np.arctan2(z_coords - center_z, x_coords - center_x)
+            radius_xz = np.sqrt((x_full - center_x)**2 + (z_full - center_z)**2)
+            angle = np.arctan2(z_full - center_z, x_full - center_x)
 
             # Create an Archimedean spiral: r = a + b*theta
             # Calculate max radius to determine spiral tightness

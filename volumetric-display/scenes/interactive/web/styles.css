@@ -408,33 +408,16 @@ button.active {
     /* Removed max-height and overflow - panel expands to fit content */
 }
 
-/* Disabled slider state */
-.slider-disabled {
-    opacity: 0.4;
-    pointer-events: none;
-    position: relative;
-    cursor: not-allowed !important;
-}
-
+/* Disabled slider state - ONLY affects range inputs, not buttons */
 .slider-disabled input[type="range"] {
     cursor: not-allowed !important;
-    opacity: 0.5;
+    opacity: 0.3;
+    pointer-events: none;
 }
 
 .slider-disabled label,
 .slider-disabled .value-display {
-    opacity: 0.6;
-}
-
-/* Re-enable pointer events on the container for tooltip */
-.control-group.slider-disabled {
-    pointer-events: auto;
-    cursor: help;
-}
-
-/* But keep input disabled */
-.control-group.slider-disabled input {
-    pointer-events: none;
+    opacity: 0.5;
 }
 
 /* Subtab Navigation */
@@ -504,53 +487,29 @@ button.active {
     font-style: italic;
 }
 
-/* Remove padding for Copy tab to make nested tabs tighter */
-#subtab-copy.subtab-content {
-    padding-top: 2px;
+/* Section styling for Copy tab */
+#copy-variation-section,
+#copy-motion-section {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #0aa;
 }
 
-/* Nested Subtab Navigation (for Copy tab) */
-.copy-subtab-nav {
-    display: flex;
-    gap: 5px;
-    margin: 8px 0 8px 0;
-    border-bottom: 1px solid #0aa;
-    padding-bottom: 5px;
+#copy-rotation-override-section {
+    margin-top: 10px;
+    padding-left: 15px;
+    border-left: 2px solid #0aa;
 }
 
-.copy-subtab-btn {
-    flex: 1;
-    background: #000;
-    color: #0aa;
-    border: 1px solid #0aa;
-    padding: 6px 10px;
-    margin: 0;
-    cursor: pointer;
-    font-family: 'Courier New', monospace;
-    font-weight: normal;
-    transition: all 0.2s;
-    font-size: 10px;
+/* Buttons in disabled groups - keep clickable but dimmed */
+.slider-disabled .button-group button {
+    opacity: 0.5;
 }
 
-.copy-subtab-btn:hover {
-    background: #002a2a;
-    border-color: #0ff;
-    color: #0ff;
+.slider-disabled .button-group button:hover {
+    opacity: 0.7;
 }
 
-.copy-subtab-btn.active {
-    background: #0ff;
-    color: #000;
-    font-weight: bold;
-    border-color: #0ff;
-}
-
-/* Nested Subtab Content */
-.copy-subtab-content {
-    display: none;
-    padding-top: 2px;
-}
-
-.copy-subtab-content.active {
-    display: block;
+.slider-disabled .button-group button.active {
+    opacity: 1;
 }
