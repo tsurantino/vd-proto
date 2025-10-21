@@ -194,6 +194,7 @@
                         <div class="button-group">
                             <button class="toggle-btn active" data-param="pattern" data-value="particles">Particles</button>
                             <button class="toggle-btn" data-param="pattern" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="pattern" data-value="galaxy">Galaxy</button>
                             <button class="toggle-btn" data-param="pattern" data-value="explode">Explode</button>
                         </div>
                     </div>
@@ -208,6 +209,28 @@
                             <button class="toggle-btn" data-param="illusionType" data-value="moirePattern">Moire</button>
                         </div>
                     </div>
+
+                    <!-- Procedural type selector for procedural -->
+                    <div class="control-group" id="proceduralType-control" style="display: none;">
+                        <label>Procedural Type</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="proceduralType" data-value="noise">Noise</button>
+                            <button class="toggle-btn" data-param="proceduralType" data-value="clouds">Clouds</button>
+                            <button class="toggle-btn" data-param="proceduralType" data-value="cellular">Cellular</button>
+                            <button class="toggle-btn" data-param="proceduralType" data-value="fractals">Fractals</button>
+                        </div>
+                    </div>
+
+                    <!-- Grid pattern selector for grid -->
+                    <div class="control-group" id="gridPattern-control" style="display: none;">
+                        <label>Grid Pattern</label>
+                        <div class="button-group">
+                            <button class="toggle-btn active" data-param="gridPattern" data-value="full">Full</button>
+                            <button class="toggle-btn" data-param="gridPattern" data-value="dots">Dots</button>
+                            <button class="toggle-btn" data-param="gridPattern" data-value="cross">Cross</button>
+                            <button class="toggle-btn" data-param="gridPattern" data-value="wireframe">Wireframe</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel">
@@ -219,7 +242,7 @@
                             <span id="size-value" class="value-display">1.00</span>
                         </div>
                         <div class="slider-input-container">
-                            <input type="range" id="size" min="0.1" max="3" step="0.1" value="1.0">
+                            <input type="range" id="size" min="0.3" max="3" step="0.1" value="1.0">
                         </div>
                     </div>
 
@@ -239,7 +262,7 @@
                             <span id="frequency-value" class="value-display">1.00</span>
                         </div>
                         <div class="slider-input-container">
-                            <input type="range" id="frequency" min="0.1" max="5" step="0.1" value="1.0">
+                            <input type="range" id="frequency" min="0.5" max="5" step="0.1" value="1.0">
                         </div>
                     </div>
 
@@ -269,7 +292,7 @@
                             <span id="scaling_amount-value" class="value-display">2.00</span>
                         </div>
                         <div class="slider-input-container">
-                            <input type="range" id="scaling_amount" min="0" max="5" step="0.1" value="2.0">
+                            <input type="range" id="scaling_amount" min="0" max="3" step="0.1" value="2.0">
                         </div>
                     </div>
 
@@ -399,6 +422,106 @@
         // Connect to Python server
         const socket = io(window.location.origin);
 
+        // Scene parameter configuration - defines which parameters each scene uses and their defaults
+        const sceneConfig = {
+            shapeMorph: {
+                enabled: ['size', 'density', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'],
+                defaults: {
+                    size: 1.2,
+                    density: 0.6,
+                    scaling_amount: 1.5,
+                    scaling_speed: 2.0,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0
+                },
+                tooltips: {
+                    size: 'Controls shape size',
+                    density: 'Controls cube edge thickness',
+                    scaling_amount: 'Pulsing magnitude',
+                    scaling_speed: 'Pulsing frequency'
+                }
+            },
+            waveField: {
+                enabled: ['size', 'frequency', 'amplitude', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'],
+                defaults: {
+                    size: 1.0,
+                    frequency: 2.0,
+                    amplitude: 0.6,
+                    scaling_amount: 1.0,
+                    scaling_speed: 2.0,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0
+                },
+                tooltips: {
+                    frequency: 'Wave frequency',
+                    amplitude: 'Wave height',
+                    scaling_amount: 'Modulates amplitude',
+                    scaling_speed: 'Pulse frequency'
+                }
+            },
+            particleFlow: {
+                enabled: ['size', 'density', 'amplitude', 'objectCount'],
+                defaults: {
+                    size: 0.8,
+                    density: 0.4,
+                    amplitude: 0.5,
+                    objectCount: 3
+                },
+                tooltips: {
+                    size: 'Particle/helix radius',
+                    density: 'Particle count or spiral tightness',
+                    amplitude: 'Thickness or expansion speed',
+                    objectCount: 'Number of strands/arms'
+                }
+            },
+            procedural: {
+                enabled: ['size', 'density', 'amplitude', 'rotationX', 'rotationY', 'rotationZ'],
+                defaults: {
+                    size: 1.5,
+                    density: 0.5,
+                    amplitude: 0.5,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0
+                },
+                tooltips: {
+                    size: 'Pattern scale/frequency',
+                    density: 'Coverage or iteration count',
+                    amplitude: 'Threshold or wall thickness'
+                }
+            },
+            grid: {
+                enabled: ['size', 'density', 'rotationX', 'rotationY', 'rotationZ'],
+                defaults: {
+                    size: 1.5,
+                    density: 0.3,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0
+                },
+                tooltips: {
+                    size: 'Dot/box size',
+                    density: 'Spacing or line thickness'
+                }
+            },
+            illusions: {
+                enabled: ['size', 'density'],
+                defaults: {
+                    size: 1.0,
+                    density: 0.0
+                },
+                tooltips: {
+                    size: 'Frame count or object size',
+                    density: 'Frame/stripe spacing'
+                }
+            }
+        };
+
+        // Session memory for per-scene parameter values
+        const sessionMemory = {};
+
         // Current parameters
         const params = {
             scene_type: 'shapeMorph',
@@ -436,7 +559,9 @@
                 shape: 'sphere',
                 waveType: 'ripple',
                 pattern: 'particles',
-                illusionType: 'infiniteCorridor'
+                illusionType: 'infiniteCorridor',
+                proceduralType: 'noise',
+                gridPattern: 'full'
             }
         };
 
@@ -471,13 +596,107 @@
             socket.emit('update_params', flatParams);
         }
 
+        // Update slider state (enabled/disabled) based on scene
+        function updateSliderStates(sceneType) {
+            const config = sceneConfig[sceneType];
+            if (!config) return;
+
+            const allParams = ['size', 'density', 'frequency', 'amplitude', 'objectCount',
+                             'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'];
+
+            allParams.forEach(paramName => {
+                const slider = document.getElementById(paramName);
+                const container = slider?.closest('.control-group');
+                if (!slider || !container) return;
+
+                const isEnabled = config.enabled.includes(paramName);
+
+                if (isEnabled) {
+                    // Enable slider
+                    slider.disabled = false;
+                    container.classList.remove('slider-disabled');
+                    container.removeAttribute('title');
+                } else {
+                    // Disable slider with tooltip
+                    slider.disabled = true;
+                    container.classList.add('slider-disabled');
+                    container.setAttribute('title', `Not used in ${sceneType}`);
+                }
+            });
+        }
+
+        // Save current scene parameters to session memory
+        function saveCurrentSceneParams() {
+            const sceneType = params.scene_type;
+            const config = sceneConfig[sceneType];
+            if (!config) return;
+
+            sessionMemory[sceneType] = {};
+            config.enabled.forEach(paramName => {
+                sessionMemory[sceneType][paramName] = params[paramName];
+            });
+        }
+
+        // Load scene parameters (from session memory or defaults)
+        function loadSceneParams(sceneType) {
+            const config = sceneConfig[sceneType];
+            if (!config) return;
+
+            // Check if we have user-modified values for this scene
+            const savedParams = sessionMemory[sceneType];
+
+            config.enabled.forEach(paramName => {
+                let value;
+
+                if (savedParams && savedParams[paramName] !== undefined) {
+                    // Use saved user value
+                    value = savedParams[paramName];
+                } else {
+                    // Use smart default
+                    value = config.defaults[paramName];
+                }
+
+                // Update params object
+                params[paramName] = value;
+
+                // Update slider UI
+                const slider = document.getElementById(paramName);
+                const valueDisplay = document.getElementById(`${paramName}-value`);
+                if (slider) {
+                    slider.value = value;
+                    if (valueDisplay) {
+                        // Determine decimal places based on slider step
+                        const step = parseFloat(slider.step);
+                        const decimals = step >= 1 ? 0 : (step === 0.1 ? 1 : 2);
+                        valueDisplay.textContent = value.toFixed(decimals);
+                    }
+                }
+            });
+        }
+
         // Scene selection
         document.querySelectorAll('button[data-scene]').forEach(btn => {
             btn.addEventListener('click', () => {
+                // Save current scene parameters before switching
+                saveCurrentSceneParams();
+
+                // Update UI
                 document.querySelectorAll('button[data-scene]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+
+                // Switch scene type
                 params.scene_type = btn.dataset.scene;
+
+                // Update scene-specific controls visibility
                 updateSceneParams(params.scene_type);
+
+                // Load parameters for new scene (from memory or defaults)
+                loadSceneParams(params.scene_type);
+
+                // Update slider enabled/disabled states
+                updateSliderStates(params.scene_type);
+
+                // Send updated parameters to server
                 sendParams();
             });
         });
@@ -491,6 +710,10 @@
                 sceneType === 'particleFlow' ? 'block' : 'none';
             document.getElementById('illusionType-control').style.display =
                 sceneType === 'illusions' ? 'block' : 'none';
+            document.getElementById('proceduralType-control').style.display =
+                sceneType === 'procedural' ? 'block' : 'none';
+            document.getElementById('gridPattern-control').style.display =
+                sceneType === 'grid' ? 'block' : 'none';
         }
 
         // Parameter sliders
@@ -501,6 +724,14 @@
                 const value = parseFloat(e.target.value);
                 valueDisplay.textContent = value.toFixed(decimals);
                 params[param] = value;
+
+                // Mark this parameter as user-modified in session memory
+                const sceneType = params.scene_type;
+                if (!sessionMemory[sceneType]) {
+                    sessionMemory[sceneType] = {};
+                }
+                sessionMemory[sceneType][param] = value;
+
                 sendParams();
             });
         }
@@ -645,6 +876,24 @@
             });
         });
 
+        document.querySelectorAll('[data-param="proceduralType"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="proceduralType"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.proceduralType = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        document.querySelectorAll('[data-param="gridPattern"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="gridPattern"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.scene_params.gridPattern = btn.dataset.value;
+                sendParams();
+            });
+        });
+
         // Invert toggle buttons
         document.getElementById('invert').addEventListener('click', (e) => {
             e.target.classList.toggle('active');
@@ -673,6 +922,23 @@
                 sendParams();
             });
         });
+
+        // Initialize scene on page load
+        function initializeScene() {
+            // Load default scene parameters
+            loadSceneParams(params.scene_type);
+            // Update slider states for default scene
+            updateSliderStates(params.scene_type);
+            console.log('✅ Scene parameter system initialized');
+            console.log('📊 Scene config:', sceneConfig);
+        }
+
+        // Call initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeScene);
+        } else {
+            initializeScene();
+        }
 
         console.log('Controller UI loaded');
     </script>

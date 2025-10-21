@@ -407,3 +407,32 @@ button.active {
 .colors-panel {
     /* Removed max-height and overflow - panel expands to fit content */
 }
+
+/* Disabled slider state */
+.slider-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    position: relative;
+    cursor: not-allowed !important;
+}
+
+.slider-disabled input[type="range"] {
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
+.slider-disabled label,
+.slider-disabled .value-display {
+    opacity: 0.6;
+}
+
+/* Re-enable pointer events on the container for tooltip */
+.control-group.slider-disabled {
+    pointer-events: auto;
+    cursor: help;
+}
+
+/* But keep input disabled */
+.control-group.slider-disabled input {
+    pointer-events: none;
+}
