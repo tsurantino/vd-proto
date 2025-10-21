@@ -6,7 +6,7 @@ Full volume, dots, cross, and wireframe patterns
 import numpy as np
 from .base import BaseScene
 from ..geometry.grids import generate_full, generate_dots, generate_cross, generate_wireframe
-from ..transforms import CopyManager, apply_object_scrolling
+from ..transforms import CopyManager, apply_object_scrolling, calculate_rotation_angles
 from ..geometry.utils import rotate_coordinates
 
 
@@ -27,14 +27,25 @@ class GridScene(BaseScene):
             raster.length / 2
         )
 
+        # Apply rotation to coordinates with speed and offset
+        angles = calculate_rotation_angles(
+            time,
+            params.rotationX,
+            params.rotationY,
+            params.rotationZ,
+            params.rotation_speed,
+            params.rotation_offset
+        )
+        coords = rotate_coordinates(self.coords_cache, center, angles)
+
         if pattern == 'full':
             base_mask = generate_full(self.grid_shape)
         elif pattern == 'dots':
-            base_mask = generate_dots(self.coords_cache, self.grid_shape, params, time)
+            base_mask = generate_dots(coords, self.grid_shape, params, time)
         elif pattern == 'cross':
-            base_mask = generate_cross(self.coords_cache, self.grid_shape, params, time, center)
+            base_mask = generate_cross(coords, self.grid_shape, params, time, center)
         elif pattern == 'wireframe':
-            base_mask = generate_wireframe(self.coords_cache, self.grid_shape, params, time)
+            base_mask = generate_wireframe(coords, self.grid_shape, params, time)
         else:
             base_mask = generate_full(self.grid_shape)
 

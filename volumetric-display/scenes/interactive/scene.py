@@ -25,6 +25,9 @@ from .colors.effects import ColorEffects
 # Import effects system
 from .effects import GlobalEffects, MaskingSystem
 
+# Import transforms
+from .transforms import apply_translation
+
 
 @dataclass
 class SceneParameters:
@@ -230,21 +233,27 @@ class InteractiveScene(Scene):
         delta_time = time - self.animation_time if self.animation_time > 0 else 0
         self.animation_time = time
 
+        # Scale time by animation speed for geometry generation
+        scaled_time = time * self.params.animationSpeed
+
         # Update masking system phase
-        self.masking_system.update_phase(time, self.params)
+        self.masking_system.update_phase(scaled_time, self.params)
 
         # Apply decay/trail effect (returns True if decay active)
         decay_active = self.global_effects.apply_decay(raster, self.previous_frame, self.params)
 
         # LAYER 1: Generate geometry (via active scene)
-        mask = self.active_scene.generate_geometry(raster, self.params, time)
+        mask = self.active_scene.generate_geometry(raster, self.params, scaled_time)
+
+        # Apply translation transform to geometry
+        mask = apply_translation(mask, raster, self.params, scaled_time)
 
         # LAYER 2: Apply colors (draws on top of decayed frame)
-        self._apply_colors(raster, mask, time)
+        self._apply_colors(raster, mask, scaled_time)
 
         # LAYER 3: Apply global effects (strobe, pulse, invert)
-        self.global_effects.apply_strobe(raster, self.params, time)
-        self.global_effects.apply_pulse(raster, self.params, time)
+        self.global_effects.apply_strobe(raster, self.params, scaled_time)
+        self.global_effects.apply_pulse(raster, self.params, scaled_time)
 
         # LAYER 4: Apply scrolling mask
         self.masking_system.apply_mask(raster, self.params)

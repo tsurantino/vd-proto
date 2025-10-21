@@ -6,7 +6,7 @@ import { setupSlider, setupScrollingThickness, updateCopySectionVisibility } fro
 import { setupButtonGroup, setupToggleButton, setupEffectButtons } from './ui/buttons.js';
 import { setupSubtabs } from './ui/tabs.js';
 import { setupColorPresets, setupColorEffectButtons } from './ui/colors.js';
-import { setupSceneSelection, initializeScene } from './ui/scenes.js';
+import { setupSceneSelection, initializeScene, updatePhysicsParams } from './ui/scenes.js';
 
 // Initialize systems
 const socketManager = new SocketManager();
@@ -41,6 +41,15 @@ setupSlider('copy_translation_speed', 'copy_translation_speed', 1, paramsManager
 setupSlider('copy_translation_offset', 'copy_translation_offset', 2, paramsManager, socketManager, sessionMemory);
 setupSlider('object_scroll_speed', 'object_scroll_speed', 1, paramsManager, socketManager, sessionMemory);
 
+// Physics-specific sliders
+setupSlider('particle_size_variation', 'particle_size_variation', 2, paramsManager, socketManager, sessionMemory);
+setupSlider('restitution', 'restitution', 2, paramsManager, socketManager, sessionMemory);
+setupSlider('air_resistance', 'air_resistance', 2, paramsManager, socketManager, sessionMemory);
+setupSlider('spread_angle', 'spread_angle', 1, paramsManager, socketManager, sessionMemory);
+setupSlider('turbulence', 'turbulence', 2, paramsManager, socketManager, sessionMemory);
+setupSlider('energy_boost', 'energy_boost', 2, paramsManager, socketManager, sessionMemory);
+setupSlider('trail_length', 'trail_length', 2, paramsManager, socketManager, sessionMemory);
+
 // Special sliders
 setupScrollingThickness(paramsManager, socketManager);
 
@@ -61,6 +70,20 @@ setupButtonGroup('[data-param="pattern"]', 'pattern', paramsManager, socketManag
 setupButtonGroup('[data-param="illusionType"]', 'illusionType', paramsManager, socketManager);
 setupButtonGroup('[data-param="proceduralType"]', 'proceduralType', paramsManager, socketManager);
 setupButtonGroup('[data-param="gridPattern"]', 'gridPattern', paramsManager, socketManager);
+// Physics type with special handling for parameter visibility
+document.querySelectorAll('[data-param="physicsType"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active from all buttons in this group
+        document.querySelectorAll('[data-param="physicsType"]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const physicsType = btn.dataset.value;
+        paramsManager.update('physicsType', physicsType);
+
+        // Update physics parameter visibility and reset to defaults
+        updatePhysicsParams(physicsType, paramsManager, socketManager);
+    });
+});
 setupButtonGroup('[data-param="copy_arrangement"]', 'copy_arrangement', paramsManager, socketManager);
 setupButtonGroup('[data-param="mask_scrolling_direction"]', 'scrolling_direction', paramsManager, socketManager);
 setupButtonGroup('[data-param="object_scroll_direction"]', 'object_scroll_direction', paramsManager, socketManager);
@@ -69,6 +92,21 @@ setupButtonGroup('[data-param="object_scroll_direction"]', 'object_scroll_direct
 setupToggleButton('invert', 'invert', paramsManager, socketManager);
 setupToggleButton('scrolling_loop', 'scrolling_loop', paramsManager, socketManager);
 setupToggleButton('scrolling_invert_mask', 'scrolling_invert_mask', paramsManager, socketManager);
+setupToggleButton('motion_blur', 'motion_blur', paramsManager, socketManager);
+setupToggleButton('enable_particle_collisions', 'enable_particle_collisions', paramsManager, socketManager);
+
+// Boundary bounce toggle (maps to boundary_mode: despawn/bounce)
+// When inactive (default): despawn mode
+// When active: bounce mode
+const boundaryToggle = document.getElementById('boundary_bounce_toggle');
+if (boundaryToggle) {
+    boundaryToggle.addEventListener('click', () => {
+        boundaryToggle.classList.toggle('active');
+        const isActive = boundaryToggle.classList.contains('active');
+        paramsManager.update('boundary_mode', isActive ? 'bounce' : 'despawn');
+        socketManager.sendParams(paramsManager.params);
+    });
+}
 
 // Setup UI components
 setupSubtabs();
@@ -85,7 +123,7 @@ updateCopySectionVisibility();
 
 // Initialize scene on page load
 function initialize() {
-    initializeScene(paramsManager, sceneConfig);
+    initializeScene(paramsManager, sessionMemory, sceneConfig);
     console.log('Controller UI loaded');
 }
 

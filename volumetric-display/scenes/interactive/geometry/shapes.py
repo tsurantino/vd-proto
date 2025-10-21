@@ -145,7 +145,7 @@ def generate_cross_grid(coords, center, size, line_thickness=2):
     Args:
         coords: Tuple of (z, y, x) coordinate arrays
         center: Tuple of (cx, cy, cz)
-        size: Half-size of bounding volume
+        size: Half-size of bounding volume (length of each cross arm from center)
         line_thickness: Thickness of cross lines
 
     Returns:
@@ -159,15 +159,15 @@ def generate_cross_grid(coords, center, size, line_thickness=2):
     dy = np.abs(y_coords - cy)
     dz = np.abs(z_coords - cz)
 
-    # Create cross pattern: lines along each axis
-    # X-axis line (dy and dz near center)
-    x_line = (dy < line_thickness) & (dz < line_thickness)
+    # Create cross pattern: lines along each axis, limited by size
+    # X-axis line (dy and dz near center, dx within size bounds)
+    x_line = (dy < line_thickness) & (dz < line_thickness) & (dx < size)
 
-    # Y-axis line (dx and dz near center)
-    y_line = (dx < line_thickness) & (dz < line_thickness)
+    # Y-axis line (dx and dz near center, dy within size bounds)
+    y_line = (dx < line_thickness) & (dz < line_thickness) & (dy < size)
 
-    # Z-axis line (dx and dy near center)
-    z_line = (dx < line_thickness) & (dy < line_thickness)
+    # Z-axis line (dx and dy near center, dz within size bounds)
+    z_line = (dx < line_thickness) & (dy < line_thickness) & (dz < size)
 
     return x_line | y_line | z_line
 

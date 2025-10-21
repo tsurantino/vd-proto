@@ -73,9 +73,11 @@ def generate_cross(coords, grid_shape, params, time, center):
     Returns:
         Boolean mask of cross pattern voxels
     """
-    # Apply pulsing/scaling effect to cross size
+    # Apply size parameter and pulsing/scaling effect to cross size
+    # params.size controls base size (0-3 range, typically around 1-2)
+    base_size = min(center) * (0.3 + params.size * 0.6)  # Scale from 30% to 90% of display
     pulse = 1.0 + (params.scaling_amount * 0.1) * np.sin(time * params.scaling_speed)
-    size = min(center) * pulse
+    size = base_size * pulse
     # Use density to control cross line thickness (1-10 pixels)
     line_thickness = 1 + params.density * 9
     return generate_cross_grid(coords, center, size, line_thickness)

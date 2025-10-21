@@ -8,6 +8,9 @@ from .procedural import ProceduralScene
 from .grid import GridScene
 from .illusions import IllusionsScene
 
+# Unified physics scene
+from .physics import PhysicsScene
+
 # Scene registry for factory pattern
 SCENE_REGISTRY = {
     'shapeMorph': ShapeMorphScene,
@@ -16,6 +19,7 @@ SCENE_REGISTRY = {
     'procedural': ProceduralScene,
     'grid': GridScene,
     'illusions': IllusionsScene,
+    'physics': PhysicsScene,
 }
 
 __all__ = [
@@ -26,5 +30,6 @@ __all__ = [
     'ProceduralScene',
     'GridScene',
     'IllusionsScene',
+    'PhysicsScene',
     'SCENE_REGISTRY',
 ]

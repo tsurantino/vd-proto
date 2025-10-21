@@ -57,7 +57,19 @@ export class ParamsManager {
                 pattern: 'particles',
                 illusionType: 'infiniteCorridor',
                 proceduralType: 'noise',
-                gridPattern: 'full'
+                gridPattern: 'full',
+                physicsType: 'fountain',
+                // Physics-specific params
+                particle_size_variation: 0.0,
+                restitution: 0.8,
+                air_resistance: 0.05,
+                spread_angle: 15.0,
+                enable_particle_collisions: false,
+                motion_blur: false,
+                turbulence: 0.3,
+                boundary_mode: 'despawn',
+                energy_boost: 0.0,
+                trail_length: 0.0
             }
         };
     }

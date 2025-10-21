@@ -157,5 +157,49 @@ export const sceneConfig = {
             size: 'Frame count or object size',
             density: 'Frame/stripe spacing'
         }
+    },
+    // Unified Physics scene
+    physics: {
+        enabled: ['size', 'density', 'frequency', 'amplitude', 'particle_size_variation', 'restitution', 'air_resistance', 'spread_angle', 'enable_particle_collisions', 'motion_blur', 'turbulence', 'boundary_mode', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'copy_translation_x', 'copy_translation_y', 'copy_translation_z', 'copy_translation_speed', 'copy_translation_offset', 'object_scroll_speed'],
+        enabledTabs: ['scaling', 'rotation', 'translation', 'scrolling', 'particles'],
+        defaults: {
+            size: 1.5,
+            density: 0.3,
+            frequency: 2.0,
+            amplitude: 0.5,
+            particle_size_variation: 0.0,
+            restitution: 0.8,
+            air_resistance: 0.05,
+            spread_angle: 15.0,
+            enable_particle_collisions: false,
+            motion_blur: false,
+            turbulence: 0.3,
+            boundary_mode: 'despawn',
+            scaling_amount: 1.0,
+            scaling_speed: 0.0,
+            rotationX: 0.0,
+            rotationY: 0.0,
+            rotationZ: 0.0,
+            rotation_speed: 0.0,
+            rotation_offset: 0.0,
+            copy_translation_x: 0.0,
+            copy_translation_y: 0.0,
+            copy_translation_z: 0.0,
+            copy_translation_speed: 0.0,
+            copy_translation_offset: 0.0,
+            object_scroll_speed: 0.0
+        },
+        tooltips: {
+            size: 'Particle size (radius in voxels)',
+            density: 'Emission rate (fountain/rain) or particle count (bouncing/orbital)',
+            frequency: 'Velocity (fountain), attractor strength (orbital), wind speed (rain)',
+            amplitude: 'Gravity strength (fountain/bouncing/rain) or num attractors (orbital)',
+            restitution: 'Bounciness (0=no bounce, 1=perfect bounce)',
+            air_resistance: 'Air drag (0=none, 1=heavy)',
+            spread_angle: 'Fountain cone angle (degrees)',
+            enable_particle_collisions: 'Ball-to-ball collisions (bouncing only, expensive)',
+            motion_blur: 'Velocity-based particle trails',
+            turbulence: 'Wind turbulence/gusts (rain only)'
+        }
     }
 };

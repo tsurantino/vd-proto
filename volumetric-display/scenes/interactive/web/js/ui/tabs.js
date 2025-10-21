@@ -30,13 +30,39 @@ export function updateTabStates(sceneType, sceneConfig) {
     const config = sceneConfig[sceneType];
     if (!config) return;
 
-    const allTabs = ['scale', 'rotation', 'translation', 'scrolling', 'copy'];
+    const allTabs = ['scale', 'rotation', 'translation', 'scrolling', 'copy', 'particles'];
     const enabledTabs = config.enabledTabs || [];
+
+    // Special handling: hide PART for non-physics, hide COP for physics
+    const isPhysics = sceneType === 'physics';
 
     allTabs.forEach(tabName => {
         const tabBtn = document.querySelector(`.subtab-btn[data-subtab="${tabName}"]`);
         if (!tabBtn) return;
 
+        // Special visibility rules for particles and copy tabs
+        if (tabName === 'particles') {
+            // Only show particles tab for physics scenes
+            if (isPhysics) {
+                tabBtn.style.display = '';
+            } else {
+                tabBtn.style.display = 'none';
+                return;
+            }
+        } else if (tabName === 'copy') {
+            // Only show copy tab for non-physics scenes
+            if (!isPhysics) {
+                tabBtn.style.display = '';
+            } else {
+                tabBtn.style.display = 'none';
+                return;
+            }
+        } else {
+            // All other tabs are always visible
+            tabBtn.style.display = '';
+        }
+
+        // Enable/disable based on scene config
         if (enabledTabs.includes(tabName)) {
             // Enable tab
             tabBtn.classList.remove('disabled');
