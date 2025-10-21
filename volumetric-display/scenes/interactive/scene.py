@@ -329,28 +329,31 @@ class InteractiveScene(Scene):
 
         if arrangement == 'linear':
             # Arrange copies along X-axis
-            total_width = (count - 1) * spacing * (raster.width * 0.3)
+            # Calculate desired spacing
+            desired_spacing = spacing * (raster.width * 0.3)
+            total_width = (count - 1) * desired_spacing
+
+            # Auto-adjust spacing if copies would exceed bounds
+            # Assume each object takes up roughly 20% of width
+            object_width = raster.width * 0.2
+            available_width = raster.width - object_width
+            max_spacing = available_width / max(count - 1, 1)
+
+            # Use smaller of desired or max spacing to prevent clipping
+            actual_spacing = min(desired_spacing, max_spacing)
+            total_width = (count - 1) * actual_spacing
             start_offset = -total_width / 2
 
             for i in range(count):
-                offset_x = int(start_offset + i * spacing * (raster.width * 0.3))
+                offset_x = int(start_offset + i * actual_spacing)
 
-                # Skip if offset is completely out of bounds
-                if offset_x >= raster.width or offset_x <= -raster.width:
-                    continue
-
-                # Shift mask by offset with bounds checking
-                if offset_x >= 0:
-                    # Positive offset - shift right
-                    src_end = raster.width - offset_x
-                    if src_end > 0:
-                        combined_mask[:, :, offset_x:offset_x+src_end] |= base_mask[:, :, :src_end]
+                # Use numpy roll for wrapping (cleaner than clipping)
+                if offset_x != 0:
+                    shifted_mask = np.roll(base_mask, offset_x, axis=2)
                 else:
-                    # Negative offset - shift left
-                    src_start = -offset_x
-                    dest_end = raster.width + offset_x
-                    if dest_end > 0:
-                        combined_mask[:, :, :dest_end] |= base_mask[:, :, src_start:]
+                    shifted_mask = base_mask
+
+                combined_mask |= shifted_mask
 
         elif arrangement == 'circular':
             # Arrange copies in a ring (XZ plane)
