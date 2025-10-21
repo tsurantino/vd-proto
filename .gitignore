@@ -127,6 +127,7 @@ Temporary Items
 # Project-specific
 *.json.bak
 *.backup
+/ideas/
 
 # Claude Code ignore file
 .claudeignore
