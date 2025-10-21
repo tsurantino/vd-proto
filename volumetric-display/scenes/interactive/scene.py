@@ -43,10 +43,36 @@ class SceneParameters:
     scaling_amount: float = 2.0
     scaling_speed: float = 2.0
 
-    # Movement
+    # Movement / Main Rotation
     rotationX: float = 0.0
     rotationY: float = 0.0
     rotationZ: float = 0.0
+    rotation_speed: float = 0.0  # Animation speed for rotation
+    rotation_offset: float = 0.0  # Offset between X/Y/Z axes (0-1)
+
+    # Copy system
+    copy_spacing: float = 1.5
+    copy_arrangement: str = 'linear'  # 'linear', 'circular', 'grid', 'spiral'
+    copy_scale_offset: float = 0.0  # Scale variation between copies (0-1)
+    copy_anim_offset: float = 0.0  # Animation phase offset between copies (0-1)
+
+    # Copy rotation (applied to entire copy set)
+    copy_rotation_x: float = 0.0  # -1 to 1 (amount of rotation)
+    copy_rotation_y: float = 0.0
+    copy_rotation_z: float = 0.0
+    copy_rotation_speed: float = 0.0  # Animation speed for copy rotation
+    copy_rotation_offset: float = 0.0  # Offset between X/Y/Z axes (0-1)
+
+    # Copy translation (applied to entire copy set)
+    copy_translation_x: float = 0.0  # -1 to 1 (amount of translation)
+    copy_translation_y: float = 0.0
+    copy_translation_z: float = 0.0
+    copy_translation_speed: float = 0.0  # Animation speed for copy translation
+    copy_translation_offset: float = 0.0  # Offset between X/Y/Z axes (0-1)
+
+    # Object scrolling system
+    object_scroll_speed: float = 0.0
+    object_scroll_direction: str = 'y'  # 'y', 'x', 'z', 'diagonal-xz', 'diagonal-yz', 'diagonal-xy'
 
     # Color system
     color_type: str = 'single'  # 'single' or 'gradient'
@@ -227,6 +253,179 @@ class InteractiveScene(Scene):
             gridZ=raster.length
         )
 
+    def _apply_object_scrolling(self, mask, raster, time):
+        """
+        Apply object scrolling by translating the entire mask based on direction and speed.
+
+        Args:
+            mask: Boolean array to scroll
+            raster: Raster object with grid dimensions
+            time: Current animation time
+
+        Returns:
+            Scrolled mask
+        """
+        if self.params.object_scroll_speed == 0:
+            return mask
+
+        # Calculate scroll offset based on time and speed
+        scroll_distance = time * self.params.object_scroll_speed * 5  # Scale for visible movement
+        direction = self.params.object_scroll_direction
+
+        # Determine offset for each axis based on direction
+        offset_x = 0
+        offset_y = 0
+        offset_z = 0
+
+        if direction == 'x':
+            offset_x = int(scroll_distance) % raster.width
+        elif direction == 'y':
+            offset_y = int(scroll_distance) % raster.height
+        elif direction == 'z':
+            offset_z = int(scroll_distance) % raster.length
+        elif direction == 'diagonal-xz':
+            offset_x = int(scroll_distance * 0.707) % raster.width  # 1/sqrt(2)
+            offset_z = int(scroll_distance * 0.707) % raster.length
+        elif direction == 'diagonal-yz':
+            offset_y = int(scroll_distance * 0.707) % raster.height
+            offset_z = int(scroll_distance * 0.707) % raster.length
+        elif direction == 'diagonal-xy':
+            offset_x = int(scroll_distance * 0.707) % raster.width
+            offset_y = int(scroll_distance * 0.707) % raster.height
+
+        # Apply scrolling using numpy roll for wrapping
+        scrolled_mask = mask
+        if offset_z != 0:
+            scrolled_mask = np.roll(scrolled_mask, offset_z, axis=0)
+        if offset_y != 0:
+            scrolled_mask = np.roll(scrolled_mask, offset_y, axis=1)
+        if offset_x != 0:
+            scrolled_mask = np.roll(scrolled_mask, offset_x, axis=2)
+
+        return scrolled_mask
+
+    def _apply_copy_arrangement(self, base_mask, raster, count, spacing, arrangement):
+        """
+        Create multiple copies of base_mask arranged in a pattern.
+
+        Args:
+            base_mask: Boolean array to copy
+            raster: Raster object with grid dimensions
+            count: Number of copies (including original)
+            spacing: Distance multiplier between copies
+            arrangement: 'linear', 'circular', 'grid', or 'spiral'
+
+        Returns:
+            Combined mask with all copies
+        """
+        if count <= 1:
+            return base_mask
+
+        combined_mask = np.zeros(self.grid_shape, dtype=bool)
+
+        center_x = raster.width / 2
+        center_y = raster.height / 2
+        center_z = raster.length / 2
+
+        if arrangement == 'linear':
+            # Arrange copies along X-axis
+            total_width = (count - 1) * spacing * (raster.width * 0.3)
+            start_offset = -total_width / 2
+
+            for i in range(count):
+                offset_x = int(start_offset + i * spacing * (raster.width * 0.3))
+
+                # Skip if offset is completely out of bounds
+                if offset_x >= raster.width or offset_x <= -raster.width:
+                    continue
+
+                # Shift mask by offset with bounds checking
+                if offset_x >= 0:
+                    # Positive offset - shift right
+                    src_end = raster.width - offset_x
+                    if src_end > 0:
+                        combined_mask[:, :, offset_x:offset_x+src_end] |= base_mask[:, :, :src_end]
+                else:
+                    # Negative offset - shift left
+                    src_start = -offset_x
+                    dest_end = raster.width + offset_x
+                    if dest_end > 0:
+                        combined_mask[:, :, :dest_end] |= base_mask[:, :, src_start:]
+
+        elif arrangement == 'circular':
+            # Arrange copies in a ring (XZ plane)
+            radius = spacing * min(center_x, center_z) * 0.5
+
+            for i in range(count):
+                angle = (i / count) * 2 * np.pi
+                offset_x = int(radius * np.cos(angle))
+                offset_z = int(radius * np.sin(angle))
+
+                # Translate base_mask to new position
+                z_coords, y_coords, x_coords = self.coords_cache
+                translated_x = x_coords - center_x - offset_x
+                translated_z = z_coords - center_z - offset_z
+
+                # Create a shifted version by checking which voxels from base_mask map to new positions
+                for z in range(raster.length):
+                    for y in range(raster.height):
+                        for x in range(raster.width):
+                            if base_mask[z, y, x]:
+                                new_x = x + offset_x
+                                new_z = z + offset_z
+                                if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
+                                    combined_mask[new_z, y, new_x] = True
+
+        elif arrangement == 'grid':
+            # Arrange copies in 2D grid (XZ plane)
+            grid_size = int(np.ceil(np.sqrt(count)))
+            cell_size_x = (raster.width * spacing) / grid_size
+            cell_size_z = (raster.length * spacing) / grid_size
+            start_x = center_x - (grid_size * cell_size_x) / 2
+            start_z = center_z - (grid_size * cell_size_z) / 2
+
+            copy_idx = 0
+            for row in range(grid_size):
+                for col in range(grid_size):
+                    if copy_idx >= count:
+                        break
+                    offset_x = int(start_x + col * cell_size_x - center_x)
+                    offset_z = int(start_z + row * cell_size_z - center_z)
+
+                    # Translate base_mask
+                    for z in range(raster.length):
+                        for y in range(raster.height):
+                            for x in range(raster.width):
+                                if base_mask[z, y, x]:
+                                    new_x = x + offset_x
+                                    new_z = z + offset_z
+                                    if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
+                                        combined_mask[new_z, y, new_x] = True
+                    copy_idx += 1
+
+        elif arrangement == 'spiral':
+            # Arrange copies along a spiral path (XZ plane)
+            spiral_radius_step = spacing * min(center_x, center_z) * 0.2
+            angle_step = (2 * np.pi) / max(count / 2, 1)
+
+            for i in range(count):
+                angle = i * angle_step
+                radius = i * spiral_radius_step
+                offset_x = int(radius * np.cos(angle))
+                offset_z = int(radius * np.sin(angle))
+
+                # Translate base_mask
+                for z in range(raster.length):
+                    for y in range(raster.height):
+                        for x in range(raster.width):
+                            if base_mask[z, y, x]:
+                                new_x = x + offset_x
+                                new_z = z + offset_z
+                                if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
+                                    combined_mask[new_z, y, new_x] = True
+
+        return combined_mask
+
     # ================================================================
     # LAYER 1: GEOMETRY GENERATION
     # ================================================================
@@ -235,26 +434,58 @@ class InteractiveScene(Scene):
         """Generate geometry mask based on scene type"""
         scene_type = self.params.scene_type
 
+        # Generate base geometry
         if scene_type == 'shapeMorph':
-            return self._geometry_shape_morph(raster, time)
+            mask = self._geometry_shape_morph(raster, time)
         elif scene_type == 'waveField':
-            return self._geometry_wave_field(raster, time)
+            mask = self._geometry_wave_field(raster, time)
         elif scene_type == 'particleFlow':
-            return self._geometry_particle_flow(raster, time)
+            mask = self._geometry_particle_flow(raster, time)
         elif scene_type == 'procedural':
-            return self._geometry_procedural(raster, time)
+            mask = self._geometry_procedural(raster, time)
         elif scene_type == 'grid':
-            return self._geometry_grid(raster, time)
+            mask = self._geometry_grid(raster, time)
         elif scene_type == 'illusions':
-            return self._geometry_illusions(raster, time)
+            mask = self._geometry_illusions(raster, time)
         else:
             # Default: fill entire volume
-            return np.ones((raster.length, raster.height, raster.width), dtype=bool)
+            mask = np.ones((raster.length, raster.height, raster.width), dtype=bool)
+
+        # Apply object scrolling to the entire geometry
+        mask = self._apply_object_scrolling(mask, raster, time)
+
+        return mask
+
+    def _calculate_rotation_angles(self, time, rot_x, rot_y, rot_z, speed, offset):
+        """
+        Calculate rotation angles with optional animation speed and offset.
+
+        Args:
+            time: Current animation time
+            rot_x, rot_y, rot_z: Base rotation amounts (-1 to 1)
+            speed: Animation speed (0-5)
+            offset: Phase offset between axes (0-1) - creates off-axis rotation
+
+        Returns:
+            Tuple of (angle_x, angle_y, angle_z) in radians
+        """
+        if speed > 0:
+            # Animate rotation with speed and offset
+            # Offset creates phase difference between axes for interesting spinning effects
+            angle_x = (rot_x * np.pi) + (time * speed * 1.0)
+            angle_y = (rot_y * np.pi) + (time * speed * (1.0 + offset * 0.5))
+            angle_z = (rot_z * np.pi) + (time * speed * (1.0 + offset * 1.0))
+        else:
+            # Static rotation (no animation)
+            angle_x = rot_x * np.pi
+            angle_y = rot_y * np.pi
+            angle_z = rot_z * np.pi
+
+        return (angle_x, angle_y, angle_z)
 
     def _geometry_shape_morph(self, raster, time):
         """Shape morph geometry"""
         shape = self.params.scene_params.get('shape', 'sphere')
-        size = self.params.size
 
         center = (
             raster.width / 2,
@@ -262,72 +493,230 @@ class InteractiveScene(Scene):
             raster.length / 2
         )
 
-        # Apply rotation to coordinates
-        # Controller sends values -1 to 1, convert to radians (-π to π)
-        angles = (
-            self.params.rotationX * np.pi,
-            self.params.rotationY * np.pi,
-            self.params.rotationZ * np.pi
+        # Apply rotation to coordinates with speed and offset
+        angles = self._calculate_rotation_angles(
+            time,
+            self.params.rotationX,
+            self.params.rotationY,
+            self.params.rotationZ,
+            self.params.rotation_speed,
+            self.params.rotation_offset
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
 
+        # If we have copies with offsets, generate each copy individually
+        if self.params.objectCount > 1 and (self.params.copy_scale_offset > 0 or self.params.copy_anim_offset > 0):
+            return self._generate_shape_copies_with_offsets(raster, time, shape, coords, center)
+
+        # Otherwise, generate base shape and copy it
+        base_mask = self._generate_single_shape(raster, time, shape, coords, center, self.params.size, 0)
+
+        # Apply copy arrangement if count > 1 (simple translation without offsets)
+        if self.params.objectCount > 1:
+            return self._apply_copy_arrangement(
+                base_mask, raster,
+                self.params.objectCount,
+                self.params.copy_spacing,
+                self.params.copy_arrangement
+            )
+
+        return base_mask
+
+    def _generate_single_shape(self, raster, time, shape, coords, center, size, copy_index):
+        """Generate a single shape with optional per-copy animation/scale offset"""
+        # Apply animation offset
+        offset_time = time + (copy_index * self.params.copy_anim_offset * 2 * np.pi / self.params.scaling_speed if self.params.scaling_speed > 0 else 0)
+
+        # Apply scale offset (each copy gets progressively larger/smaller)
+        scale_multiplier = 1.0 + (copy_index * self.params.copy_scale_offset * 0.2)
+        effective_size = size * scale_multiplier
+
         if shape == 'sphere':
-            radius = min(center) * size * 0.8
+            radius = min(center) * effective_size * 0.8
             return generate_pulsing_sphere(
-                coords, center, radius, time,
+                coords, center, radius, offset_time,
                 pulse_speed=self.params.scaling_speed,
                 pulse_amount=self.params.scaling_amount
             )
 
         elif shape == 'cube':
-            base_size = min(center) * size * 0.8
-            # Apply pulsing/scaling effect
-            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            base_size = min(center) * effective_size * 0.8
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(offset_time * self.params.scaling_speed)
             cube_size = base_size * pulse
-            # Use density to control edge thickness (0-1 -> 1.0-3.0 pixels)
-            # Ensure minimum thickness of 1.0 to prevent invisible edges
             edge_thickness = 1.0 + self.params.density * 2.0
             return generate_cube(coords, center, cube_size, edge_thickness)
 
         elif shape == 'torus':
-            base_major_r = min(center[0], center[2]) * size * 0.6
-            # Apply pulsing/scaling effect
-            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            base_major_r = min(center[0], center[2]) * effective_size * 0.6
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(offset_time * self.params.scaling_speed)
             major_r = base_major_r * pulse
             minor_r = major_r * 0.3
             return generate_torus(coords, center, major_r, minor_r)
 
         elif shape == 'pyramid':
-            # Base sits on XY plane, extends along Z axis
-            base_base_size = min(center[0], center[1]) * size * 0.6
-            # Height along Z axis (length dimension)
-            base_height = raster.length * size * 0.9
-            # Apply pulsing/scaling effect
-            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(time * self.params.scaling_speed)
+            base_base_size = min(center[0], center[1]) * effective_size * 0.6
+            base_height = raster.length * effective_size * 0.9
+            pulse = 1.0 + (self.params.scaling_amount * 0.1) * np.sin(offset_time * self.params.scaling_speed)
             base_size = base_base_size * pulse
             height = base_height * pulse
             return generate_pyramid(coords, center, base_size, height)
 
         else:
             # Default sphere
-            radius = min(center) * size * 0.8
+            radius = min(center) * effective_size * 0.8
             return generate_sphere(coords, center, radius)
+
+    def _generate_shape_copies_with_offsets(self, raster, time, shape, coords, base_center):
+        """Generate multiple copies with individual scale and animation offsets"""
+        combined_mask = np.zeros(self.grid_shape, dtype=bool)
+        count = self.params.objectCount
+        spacing = self.params.copy_spacing
+        arrangement = self.params.copy_arrangement
+
+        # Calculate positions for each copy
+        positions = self._calculate_copy_positions(raster, count, spacing, arrangement, base_center)
+
+        # Generate each copy with its own offset
+        for i, (offset_x, offset_y, offset_z) in enumerate(positions):
+            # Apply copy rotation with animation offset
+            # When anim_offset > 0, each copy gets a phase offset affecting rotation speed
+            rotation_phase = (i * self.params.copy_anim_offset) if self.params.copy_anim_offset > 0 else 0
+
+            # Apply copy rotation to coordinates
+            copy_coords = coords
+            if self.params.copy_rotation_x != 0 or self.params.copy_rotation_y != 0 or self.params.copy_rotation_z != 0:
+                # Use copy rotation speed and offset for animation
+                copy_rot_angles = self._calculate_rotation_angles(
+                    time,
+                    self.params.copy_rotation_x,
+                    self.params.copy_rotation_y,
+                    self.params.copy_rotation_z,
+                    self.params.copy_rotation_speed,
+                    self.params.copy_rotation_offset
+                )
+
+                # Apply anim_offset phase to create varied rotation per copy
+                if self.params.copy_anim_offset > 0:
+                    phase_shift = rotation_phase * 2 * np.pi
+                    copy_rot_angles = (
+                        copy_rot_angles[0] + phase_shift,
+                        copy_rot_angles[1] + phase_shift,
+                        copy_rot_angles[2] + phase_shift
+                    )
+
+                copy_coords = rotate_coordinates(coords, base_center, copy_rot_angles)
+
+            # Apply copy translation with animation offset
+            # When anim_offset > 0, each copy gets a wave-like translation offset
+            translation_offset_x = 0
+            translation_offset_y = 0
+            translation_offset_z = 0
+
+            if self.params.copy_translation_x != 0 or self.params.copy_translation_y != 0 or self.params.copy_translation_z != 0:
+                # Use copy translation speed for animation
+                if self.params.copy_translation_speed > 0:
+                    # Animate with speed and offset
+                    wave_time_x = time * self.params.copy_translation_speed * 1.0
+                    wave_time_y = time * self.params.copy_translation_speed * (1.0 + self.params.copy_translation_offset * 0.5)
+                    wave_time_z = time * self.params.copy_translation_speed * (1.0 + self.params.copy_translation_offset * 1.0)
+
+                    # Apply anim_offset phase to create wave pattern across copies
+                    if self.params.copy_anim_offset > 0:
+                        wave_phase = rotation_phase * 2 * np.pi
+                        wave_time_x += wave_phase
+                        wave_time_y += wave_phase
+                        wave_time_z += wave_phase
+
+                    translation_offset_x = self.params.copy_translation_x * 10 * np.sin(wave_time_x)
+                    translation_offset_y = self.params.copy_translation_y * 10 * np.sin(wave_time_y)
+                    translation_offset_z = self.params.copy_translation_z * 10 * np.sin(wave_time_z)
+                else:
+                    # Static offset
+                    translation_offset_x = self.params.copy_translation_x * 10
+                    translation_offset_y = self.params.copy_translation_y * 10
+                    translation_offset_z = self.params.copy_translation_z * 10
+
+            # Create center position for this copy (base arrangement + translation offsets)
+            copy_center = (
+                base_center[0] + offset_x + translation_offset_x,
+                base_center[1] + offset_y + translation_offset_y,
+                base_center[2] + offset_z + translation_offset_z
+            )
+
+            # Generate shape with scale and animation offset
+            copy_mask = self._generate_single_shape(raster, time, shape, copy_coords, copy_center, self.params.size, i)
+
+            # Merge into combined mask
+            combined_mask |= copy_mask
+
+        return combined_mask
+
+    def _calculate_copy_positions(self, raster, count, spacing, arrangement, center):
+        """Calculate offset positions for each copy"""
+        positions = []
+        center_x, center_y, center_z = center
+
+        if arrangement == 'linear':
+            total_width = (count - 1) * spacing * (raster.width * 0.3)
+            start_offset = -total_width / 2
+            for i in range(count):
+                offset_x = start_offset + i * spacing * (raster.width * 0.3)
+                positions.append((offset_x, 0, 0))
+
+        elif arrangement == 'circular':
+            radius = spacing * min(center_x, center_z) * 0.5
+            for i in range(count):
+                angle = (i / count) * 2 * np.pi
+                offset_x = radius * np.cos(angle)
+                offset_z = radius * np.sin(angle)
+                positions.append((offset_x, 0, offset_z))
+
+        elif arrangement == 'grid':
+            grid_size = int(np.ceil(np.sqrt(count)))
+            cell_size_x = (raster.width * spacing) / grid_size
+            cell_size_z = (raster.length * spacing) / grid_size
+            start_x = -(grid_size * cell_size_x) / 2
+            start_z = -(grid_size * cell_size_z) / 2
+
+            copy_idx = 0
+            for row in range(grid_size):
+                for col in range(grid_size):
+                    if copy_idx >= count:
+                        break
+                    offset_x = start_x + col * cell_size_x
+                    offset_z = start_z + row * cell_size_z
+                    positions.append((offset_x, 0, offset_z))
+                    copy_idx += 1
+
+        elif arrangement == 'spiral':
+            spiral_radius_step = spacing * min(center_x, center_z) * 0.2
+            angle_step = (2 * np.pi) / max(count / 2, 1)
+            for i in range(count):
+                angle = i * angle_step
+                radius = i * spiral_radius_step
+                offset_x = radius * np.cos(angle)
+                offset_z = radius * np.sin(angle)
+                positions.append((offset_x, 0, offset_z))
+
+        return positions
 
     def _geometry_wave_field(self, raster, time):
         """Wave field geometry"""
         wave_type = self.params.scene_params.get('waveType', 'ripple')
 
-        # Apply rotation to coordinates
-        # Controller sends values -1 to 1, convert to radians (-π to π)
+        # Apply rotation to coordinates with speed and offset
         center = (
             raster.width / 2,
             raster.height / 2,
             raster.length / 2
         )
-        angles = (
-            self.params.rotationX * np.pi,
-            self.params.rotationY * np.pi,
-            self.params.rotationZ * np.pi
+        angles = self._calculate_rotation_angles(
+            time,
+            self.params.rotationX,
+            self.params.rotationY,
+            self.params.rotationZ,
+            self.params.rotation_speed,
+            self.params.rotation_offset
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
 
@@ -371,16 +760,41 @@ class InteractiveScene(Scene):
             )
 
     def _geometry_particle_flow(self, raster, time):
-        """Particle flow geometry"""
+        """Particle flow geometry with optional rotation"""
         pattern = self.params.scene_params.get('pattern', 'particles')
-        z_coords, y_coords, x_coords = self.coords_cache
+
+        # Apply rotation to coordinates if any rotation is non-zero
+        center = (
+            raster.width / 2,
+            raster.height / 2,
+            raster.length / 2
+        )
+
+        # Check if rotation is enabled
+        has_rotation = (self.params.rotationX != 0 or
+                       self.params.rotationY != 0 or
+                       self.params.rotationZ != 0)
+
+        if has_rotation:
+            angles = self._calculate_rotation_angles(
+                time,
+                self.params.rotationX,
+                self.params.rotationY,
+                self.params.rotationZ,
+                self.params.rotation_speed,
+                self.params.rotation_offset
+            )
+            coords = rotate_coordinates(self.coords_cache, center, angles)
+            z_coords, y_coords, x_coords = coords
+        else:
+            z_coords, y_coords, x_coords = self.coords_cache
 
         if pattern == 'spiral':
-            return self._particle_spiral(raster, time)
+            base_mask = self._particle_spiral(raster, time, coords=(z_coords, y_coords, x_coords))
         elif pattern == 'galaxy':
-            return self._particle_galaxy(raster, time)
+            base_mask = self._particle_galaxy(raster, time, coords=(z_coords, y_coords, x_coords))
         elif pattern == 'explode':
-            return self._particle_explode(raster, time)
+            base_mask = self._particle_explode(raster, time, coords=(z_coords, y_coords, x_coords))
         else:
             # Default: flowing particles
             mask = np.zeros(self.grid_shape, dtype=bool)
@@ -400,11 +814,25 @@ class InteractiveScene(Scene):
                 particle_size = 2 * self.params.size
                 mask |= distance < particle_size
 
-            return mask
+            base_mask = mask
 
-    def _particle_spiral(self, raster, time):
+        # Apply copy arrangement if count > 1
+        if self.params.objectCount > 1 and pattern in ['spiral', 'galaxy']:
+            return self._apply_copy_arrangement(
+                base_mask, raster,
+                self.params.objectCount,
+                self.params.copy_spacing,
+                self.params.copy_arrangement
+            )
+
+        return base_mask
+
+    def _particle_spiral(self, raster, time, coords=None):
         """Spiral/helix pattern with adjustable parameters - travels along Z axis"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         center_x = raster.width / 2
         center_y = raster.height / 2
@@ -450,9 +878,12 @@ class InteractiveScene(Scene):
 
         return mask
 
-    def _particle_galaxy(self, raster, time):
+    def _particle_galaxy(self, raster, time, coords=None):
         """Galaxy-style spiral arms with enhanced customization - travels along Z axis"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         center_x = raster.width / 2
         center_y = raster.height / 2
@@ -557,9 +988,12 @@ class InteractiveScene(Scene):
 
         return mask
 
-    def _particle_explode(self, raster, time):
+    def _particle_explode(self, raster, time, coords=None):
         """Particles exploding from a random center point"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         # Use time to create explosion cycles
         # Each explosion lasts a few seconds, then resets
@@ -641,16 +1075,19 @@ class InteractiveScene(Scene):
 
     def _procedural_noise(self, raster, time):
         """Multi-octave sine-based noise pattern"""
-        # Apply rotation to coordinates
+        # Apply rotation to coordinates with speed and offset
         center = (
             raster.width / 2,
             raster.height / 2,
             raster.length / 2
         )
-        angles = (
-            self.params.rotationX * np.pi,
-            self.params.rotationY * np.pi,
-            self.params.rotationZ * np.pi
+        angles = self._calculate_rotation_angles(
+            time,
+            self.params.rotationX,
+            self.params.rotationY,
+            self.params.rotationZ,
+            self.params.rotation_speed,
+            self.params.rotation_offset
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
         z_coords, y_coords, x_coords = coords
@@ -681,10 +1118,13 @@ class InteractiveScene(Scene):
             raster.height / 2,
             raster.length / 2
         )
-        angles = (
-            self.params.rotationX * np.pi,
-            self.params.rotationY * np.pi,
-            self.params.rotationZ * np.pi
+        angles = self._calculate_rotation_angles(
+            time,
+            self.params.rotationX,
+            self.params.rotationY,
+            self.params.rotationZ,
+            self.params.rotation_speed,
+            self.params.rotation_offset
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
         z_coords, y_coords, x_coords = coords
@@ -769,10 +1209,13 @@ class InteractiveScene(Scene):
             raster.height / 2,
             raster.length / 2
         )
-        angles = (
-            self.params.rotationX * np.pi,
-            self.params.rotationY * np.pi,
-            self.params.rotationZ * np.pi
+        angles = self._calculate_rotation_angles(
+            time,
+            self.params.rotationX,
+            self.params.rotationY,
+            self.params.rotationZ,
+            self.params.rotation_speed,
+            self.params.rotation_offset
         )
         coords = rotate_coordinates(self.coords_cache, center, angles)
         z_coords, y_coords, x_coords = coords
@@ -815,19 +1258,30 @@ class InteractiveScene(Scene):
         return fractal > threshold
 
     def _geometry_grid(self, raster, time):
-        """Grid - multiple pattern types"""
+        """Grid - multiple pattern types with optional copy"""
         pattern = self.params.scene_params.get('gridPattern', 'full')
 
         if pattern == 'full':
-            return self._grid_full(raster, time)
+            base_mask = self._grid_full(raster, time)
         elif pattern == 'dots':
-            return self._grid_dots(raster, time)
+            base_mask = self._grid_dots(raster, time)
         elif pattern == 'cross':
-            return self._grid_cross(raster, time)
+            base_mask = self._grid_cross(raster, time)
         elif pattern == 'wireframe':
-            return self._grid_wireframe(raster, time)
+            base_mask = self._grid_wireframe(raster, time)
         else:
-            return self._grid_full(raster, time)
+            base_mask = self._grid_full(raster, time)
+
+        # Apply copy arrangement if count > 1 (for wireframe only, since others fill volume)
+        if self.params.objectCount > 1 and pattern in ['wireframe', 'cross']:
+            return self._apply_copy_arrangement(
+                base_mask, raster,
+                self.params.objectCount,
+                self.params.copy_spacing,
+                self.params.copy_arrangement
+            )
+
+        return base_mask
 
     def _grid_full(self, raster, time):
         """Full volume - all voxels lit"""
@@ -925,23 +1379,61 @@ class InteractiveScene(Scene):
         return mask
 
     def _geometry_illusions(self, raster, time):
-        """Optical illusion effects"""
+        """Optical illusion effects with optional rotation"""
         illusion_type = self.params.scene_params.get('illusionType', 'infiniteCorridor')
 
-        if illusion_type == 'infiniteCorridor':
-            return self._illusion_infinite_corridor(raster, time)
-        elif illusion_type == 'waterfallIllusion':
-            return self._illusion_waterfall(raster, time)
-        elif illusion_type == 'pulfrich':
-            return self._illusion_pulfrich(raster, time)
-        elif illusion_type == 'moirePattern':
-            return self._illusion_moire(raster, time)
-        else:
-            return self._illusion_infinite_corridor(raster, time)
+        # Apply rotation to coordinates if any rotation is non-zero
+        center = (
+            raster.width / 2,
+            raster.height / 2,
+            raster.length / 2
+        )
 
-    def _illusion_infinite_corridor(self, raster, time):
+        has_rotation = (self.params.rotationX != 0 or
+                       self.params.rotationY != 0 or
+                       self.params.rotationZ != 0)
+
+        if has_rotation:
+            angles = self._calculate_rotation_angles(
+                time,
+                self.params.rotationX,
+                self.params.rotationY,
+                self.params.rotationZ,
+                self.params.rotation_speed,
+                self.params.rotation_offset
+            )
+            coords = rotate_coordinates(self.coords_cache, center, angles)
+        else:
+            coords = self.coords_cache
+
+        if illusion_type == 'infiniteCorridor':
+            base_mask = self._illusion_infinite_corridor(raster, time, coords)
+        elif illusion_type == 'waterfallIllusion':
+            base_mask = self._illusion_waterfall(raster, time, coords)
+        elif illusion_type == 'pulfrich':
+            base_mask = self._illusion_pulfrich(raster, time, coords)
+        elif illusion_type == 'moirePattern':
+            base_mask = self._illusion_moire(raster, time, coords)
+        else:
+            base_mask = self._illusion_infinite_corridor(raster, time, coords)
+
+        # Apply copy arrangement if count > 1
+        if self.params.objectCount > 1:
+            return self._apply_copy_arrangement(
+                base_mask, raster,
+                self.params.objectCount,
+                self.params.copy_spacing,
+                self.params.copy_arrangement
+            )
+
+        return base_mask
+
+    def _illusion_infinite_corridor(self, raster, time, coords=None):
         """Infinite corridor - scrolling perspective frames along Y axis (vertical)"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         # Parameters
         frame_spacing = max(3, int(4 * (1 + self.params.density)))
@@ -1006,9 +1498,12 @@ class InteractiveScene(Scene):
 
         return mask
 
-    def _illusion_waterfall(self, raster, time):
+    def _illusion_waterfall(self, raster, time, coords=None):
         """Waterfall illusion - moving vertical stripes"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         offset = time * 10
         stripe_spacing = max(2, int(5 - self.params.density * 3))
@@ -1031,9 +1526,12 @@ class InteractiveScene(Scene):
 
         return mask
 
-    def _illusion_pulfrich(self, raster, time):
+    def _illusion_pulfrich(self, raster, time, coords=None):
         """Pulfrich effect - rotating objects with brightness variation in XY plane"""
-        z_coords, y_coords, x_coords = self.coords_cache
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
 
         # Density controls orbital radius (how spread out the ring is)
         # 0.0 = tight ring (radius 6), 1.0 = wide ring (radius 18)
@@ -1073,8 +1571,13 @@ class InteractiveScene(Scene):
 
         return mask > 0.3
 
-    def _illusion_moire(self, raster, time):
+    def _illusion_moire(self, raster, time, coords=None):
         """Moire pattern - overlapping rotated grids"""
+        if coords is None:
+            z_coords, y_coords, x_coords = self.coords_cache
+        else:
+            z_coords, y_coords, x_coords = coords
+
         grid_spacing = max(2, int(3 * (1 + self.params.density)))
         angle = time * 0.1
 
@@ -1414,6 +1917,9 @@ class InteractiveScene(Scene):
 
             # Distance from the spiral curve
             dist_from_band = np.abs(radius_xz - spiral_radius_expected)
+
+            # Return mask for spiral mode
+            return dist_from_band < thickness
 
         # Wave masking (3D sinusoidal wave)
         elif direction == 'wave':

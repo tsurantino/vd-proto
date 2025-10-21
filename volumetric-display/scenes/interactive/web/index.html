@@ -120,27 +120,27 @@
                     <div class="control-group slider-control">
                         <div class="slider-label-container">
                             <label>MASK SPD</label>
-                            <span id="scrolling_speed-value" class="value-display">1.0</span>
+                            <span id="mask_scrolling_speed-value" class="value-display">1.0</span>
                         </div>
                         <div class="slider-input-container">
-                            <input type="range" id="scrolling_speed" min="0" max="10" step="0.1" value="1.0">
+                            <input type="range" id="mask_scrolling_speed" min="0" max="10" step="0.1" value="1.0">
                         </div>
                     </div>
 
                     <div class="control-group">
                         <label>Mask Direction</label>
                         <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
-                            <button class="toggle-btn active" data-param="scrolling_direction" data-value="y">Y</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="x">X</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="z">Z</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xz">Diag XZ</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-yz">Diag YZ</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="diagonal-xy">Diag XY</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="radial">Radial</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="spiral">Spiral</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="wave">Wave</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="rings">Rings</button>
-                            <button class="toggle-btn" data-param="scrolling_direction" data-value="noise">Noise</button>
+                            <button class="toggle-btn active" data-param="mask_scrolling_direction" data-value="y">Y</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="x">X</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="z">Z</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="diagonal-xz">Diag XZ</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="diagonal-yz">Diag YZ</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="diagonal-xy">Diag XY</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="radial">Radial</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="spiral">Spiral</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="wave">Wave</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="rings">Rings</button>
+                            <button class="toggle-btn" data-param="mask_scrolling_direction" data-value="noise">Noise</button>
                         </div>
                     </div>
 
@@ -236,6 +236,7 @@
                 <div class="panel">
                     <h3>Global Scene Parameters</h3>
 
+                    <!-- Main parameters (always visible) -->
                     <div class="control-group slider-control">
                         <div class="slider-label-container">
                             <label>SIZE</label>
@@ -276,65 +277,281 @@
                         </div>
                     </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>COUNT</label>
-                            <span id="objectCount-value" class="value-display">1</span>
+                    <!-- Subtab Navigation -->
+                    <div class="subtab-nav">
+                        <button class="subtab-btn active" data-subtab="scale">Scale</button>
+                        <button class="subtab-btn" data-subtab="rotation">Rotation</button>
+                        <button class="subtab-btn" data-subtab="scrolling">Scrolling</button>
+                        <button class="subtab-btn" data-subtab="copy">Copy</button>
+                    </div>
+
+                    <!-- Scale Tab -->
+                    <div id="subtab-scale" class="subtab-content active">
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>SCALE AMT</label>
+                                <span id="scaling_amount-value" class="value-display">2.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="scaling_amount" min="0" max="3" step="0.1" value="2.0">
+                            </div>
                         </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>SCALE SPD</label>
+                                <span id="scaling_speed-value" class="value-display">2.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="scaling_speed" min="0.1" max="10" step="0.1" value="2.0">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>SCALE AMT</label>
-                            <span id="scaling_amount-value" class="value-display">2.00</span>
+                    <!-- Rotation Tab -->
+                    <div id="subtab-rotation" class="subtab-content">
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>ROT X</label>
+                                <span id="rotationX-value" class="value-display">0.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
+                            </div>
                         </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="scaling_amount" min="0" max="3" step="0.1" value="2.0">
+
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>ROT Y</label>
+                                <span id="rotationY-value" class="value-display">0.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
+                            </div>
+                        </div>
+
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>ROT Z</label>
+                                <span id="rotationZ-value" class="value-display">0.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+                            </div>
+                        </div>
+
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>ROT SPEED</label>
+                                <span id="rotation_speed-value" class="value-display">0.0</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="rotation_speed" min="0" max="5" step="0.1" value="0.0">
+                            </div>
+                        </div>
+
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>ROT OFFSET</label>
+                                <span id="rotation_offset-value" class="value-display">0.00</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="rotation_offset" min="0" max="1" step="0.05" value="0.0">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>SCALE SPD</label>
-                            <span id="scaling_speed-value" class="value-display">2.00</span>
+                    <!-- Scrolling Tab -->
+                    <div id="subtab-scrolling" class="subtab-content">
+                        <div class="control-group slider-control">
+                            <div class="slider-label-container">
+                                <label>OBJ SPD</label>
+                                <span id="object_scroll_speed-value" class="value-display">0.0</span>
+                            </div>
+                            <div class="slider-input-container">
+                                <input type="range" id="object_scroll_speed" min="0" max="10" step="0.1" value="0.0">
+                            </div>
                         </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="scaling_speed" min="0.1" max="10" step="0.1" value="2.0">
+
+                        <div class="control-group">
+                            <label>Object Direction</label>
+                            <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                                <button class="toggle-btn active" data-param="object_scroll_direction" data-value="y">Y</button>
+                                <button class="toggle-btn" data-param="object_scroll_direction" data-value="x">X</button>
+                                <button class="toggle-btn" data-param="object_scroll_direction" data-value="z">Z</button>
+                                <button class="toggle-btn" data-param="object_scroll_direction" data-value="diagonal-xz">Diag XZ</button>
+                                <button class="toggle-btn" data-param="object_scroll_direction" data-value="diagonal-yz">Diag YZ</button>
+                                <button class="toggle-btn" data-param="object_scroll_direction" data-value="diagonal-xy">Diag XY</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="subsection-title">Rotation</div>
+                    <!-- Copy Tab with Nested Subtabs -->
+                    <div id="subtab-copy" class="subtab-content">
+                        <!-- Nested subtab navigation -->
+                        <div class="copy-subtab-nav">
+                            <button class="copy-subtab-btn active" data-copy-subtab="common">Common</button>
+                            <button class="copy-subtab-btn" data-copy-subtab="rotation">Rotation</button>
+                            <button class="copy-subtab-btn" data-copy-subtab="translation">Translation</button>
+                        </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>ROT X</label>
-                            <span id="rotationX-value" class="value-display">0.00</span>
-                        </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="rotationX" min="-1" max="1" step="0.1" value="0.0">
-                        </div>
-                    </div>
+                        <!-- Common Subtab -->
+                        <div id="copy-subtab-common" class="copy-subtab-content active">
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>COPIES</label>
+                                    <span id="objectCount-value" class="value-display">1</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="objectCount" min="1" max="8" step="1" value="1">
+                                </div>
+                            </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>ROT Y</label>
-                            <span id="rotationY-value" class="value-display">0.00</span>
-                        </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="rotationY" min="-1" max="1" step="0.1" value="0.0">
-                        </div>
-                    </div>
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>SPACING</label>
+                                    <span id="copy_spacing-value" class="value-display">1.50</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_spacing" min="0.5" max="3" step="0.1" value="1.5">
+                                </div>
+                            </div>
 
-                    <div class="control-group slider-control">
-                        <div class="slider-label-container">
-                            <label>ROT Z</label>
-                            <span id="rotationZ-value" class="value-display">0.00</span>
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>SCALE OFFSET</label>
+                                    <span id="copy_scale_offset-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_scale_offset" min="0" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>ANIM OFFSET</label>
+                                    <span id="copy_anim_offset-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_anim_offset" min="0" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group">
+                                <label>Arrangement</label>
+                                <div class="button-group">
+                                    <button class="toggle-btn active" data-param="copy_arrangement" data-value="linear">Linear</button>
+                                    <button class="toggle-btn" data-param="copy_arrangement" data-value="circular">Circular</button>
+                                    <button class="toggle-btn" data-param="copy_arrangement" data-value="grid">Grid</button>
+                                    <button class="toggle-btn" data-param="copy_arrangement" data-value="spiral">Spiral</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="slider-input-container">
-                            <input type="range" id="rotationZ" min="-1" max="1" step="0.1" value="0.0">
+
+                        <!-- Rotation Subtab -->
+                        <div id="copy-subtab-rotation" class="copy-subtab-content">
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>COPY ROT X</label>
+                                    <span id="copy_rotation_x-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_rotation_x" min="-1" max="1" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>COPY ROT Y</label>
+                                    <span id="copy_rotation_y-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_rotation_y" min="-1" max="1" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>COPY ROT Z</label>
+                                    <span id="copy_rotation_z-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_rotation_z" min="-1" max="1" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>ROT SPEED</label>
+                                    <span id="copy_rotation_speed-value" class="value-display">0.0</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_rotation_speed" min="0" max="5" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>ROT OFFSET</label>
+                                    <span id="copy_rotation_offset-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_rotation_offset" min="0" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Translation Subtab -->
+                        <div id="copy-subtab-translation" class="copy-subtab-content">
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>TRANS X</label>
+                                    <span id="copy_translation_x-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_translation_x" min="-1" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>TRANS Y</label>
+                                    <span id="copy_translation_y-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_translation_y" min="-1" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>TRANS Z</label>
+                                    <span id="copy_translation_z-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_translation_z" min="-1" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>TRANS SPEED</label>
+                                    <span id="copy_translation_speed-value" class="value-display">0.0</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_translation_speed" min="0" max="5" step="0.1" value="0.0">
+                                </div>
+                            </div>
+
+                            <div class="control-group slider-control">
+                                <div class="slider-label-container">
+                                    <label>TRANS OFFSET</label>
+                                    <span id="copy_translation_offset-value" class="value-display">0.00</span>
+                                </div>
+                                <div class="slider-input-container">
+                                    <input type="range" id="copy_translation_offset" min="0" max="1" step="0.05" value="0.0">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -425,7 +642,8 @@
         // Scene parameter configuration - defines which parameters each scene uses and their defaults
         const sceneConfig = {
             shapeMorph: {
-                enabled: ['size', 'density', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'],
+                enabled: ['size', 'density', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'objectCount', 'copy_spacing', 'copy_scale_offset', 'copy_anim_offset', 'copy_rotation_x', 'copy_rotation_y', 'copy_rotation_z', 'copy_rotation_speed', 'copy_rotation_offset', 'copy_translation_x', 'copy_translation_y', 'copy_translation_z', 'copy_translation_speed', 'copy_translation_offset', 'object_scroll_speed'],
+                enabledTabs: ['scale', 'rotation', 'scrolling', 'copy'],
                 defaults: {
                     size: 1.2,
                     density: 0.6,
@@ -433,7 +651,26 @@
                     scaling_speed: 2.0,
                     rotationX: 0.0,
                     rotationY: 0.0,
-                    rotationZ: 0.0
+                    rotationZ: 0.0,
+                    rotation_speed: 0.0,
+                    rotation_offset: 0.0,
+                    objectCount: 1,
+                    copy_spacing: 1.5,
+                    copy_arrangement: 'linear',
+                    copy_scale_offset: 0.0,
+                    copy_anim_offset: 0.0,
+                    copy_rotation_x: 0.0,
+                    copy_rotation_y: 0.0,
+                    copy_rotation_z: 0.0,
+                    copy_rotation_speed: 0.0,
+                    copy_rotation_offset: 0.0,
+                    copy_translation_x: 0.0,
+                    copy_translation_y: 0.0,
+                    copy_translation_z: 0.0,
+                    copy_translation_speed: 0.0,
+                    copy_translation_offset: 0.0,
+                    object_scroll_speed: 0.0,
+                    object_scroll_direction: 'y'
                 },
                 tooltips: {
                     size: 'Controls shape size',
@@ -443,7 +680,8 @@
                 }
             },
             waveField: {
-                enabled: ['size', 'frequency', 'amplitude', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'],
+                enabled: ['size', 'frequency', 'amplitude', 'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'object_scroll_speed'],
+                enabledTabs: ['scale', 'rotation', 'scrolling'],
                 defaults: {
                     size: 1.0,
                     frequency: 2.0,
@@ -452,7 +690,11 @@
                     scaling_speed: 2.0,
                     rotationX: 0.0,
                     rotationY: 0.0,
-                    rotationZ: 0.0
+                    rotationZ: 0.0,
+                    rotation_speed: 0.0,
+                    rotation_offset: 0.0,
+                    object_scroll_speed: 0.0,
+                    object_scroll_direction: 'y'
                 },
                 tooltips: {
                     frequency: 'Wave frequency',
@@ -462,29 +704,42 @@
                 }
             },
             particleFlow: {
-                enabled: ['size', 'density', 'amplitude', 'objectCount'],
+                enabled: ['size', 'density', 'amplitude', 'objectCount', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'copy_spacing'],
+                enabledTabs: ['rotation', 'copy'],
                 defaults: {
                     size: 0.8,
                     density: 0.4,
                     amplitude: 0.5,
-                    objectCount: 3
+                    objectCount: 3,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0,
+                    rotation_speed: 0.0,
+                    rotation_offset: 0.0,
+                    copy_spacing: 1.5,
+                    copy_arrangement: 'circular'
                 },
                 tooltips: {
                     size: 'Particle/helix radius',
                     density: 'Particle count or spiral tightness',
                     amplitude: 'Thickness or expansion speed',
-                    objectCount: 'Number of strands/arms'
+                    objectCount: 'Number of strands/arms or copies'
                 }
             },
             procedural: {
-                enabled: ['size', 'density', 'amplitude', 'rotationX', 'rotationY', 'rotationZ'],
+                enabled: ['size', 'density', 'amplitude', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'object_scroll_speed'],
+                enabledTabs: ['rotation', 'scrolling'],
                 defaults: {
                     size: 1.5,
                     density: 0.5,
                     amplitude: 0.5,
                     rotationX: 0.0,
                     rotationY: 0.0,
-                    rotationZ: 0.0
+                    rotationZ: 0.0,
+                    rotation_speed: 0.0,
+                    rotation_offset: 0.0,
+                    object_scroll_speed: 0.0,
+                    object_scroll_direction: 'y'
                 },
                 tooltips: {
                     size: 'Pattern scale/frequency',
@@ -493,13 +748,19 @@
                 }
             },
             grid: {
-                enabled: ['size', 'density', 'rotationX', 'rotationY', 'rotationZ'],
+                enabled: ['size', 'density', 'rotationX', 'rotationY', 'rotationZ', 'objectCount', 'copy_spacing', 'object_scroll_speed'],
+                enabledTabs: ['rotation', 'scrolling', 'copy'],
                 defaults: {
                     size: 1.5,
                     density: 0.3,
                     rotationX: 0.0,
                     rotationY: 0.0,
-                    rotationZ: 0.0
+                    rotationZ: 0.0,
+                    objectCount: 1,
+                    copy_spacing: 1.5,
+                    copy_arrangement: 'grid',
+                    object_scroll_speed: 0.0,
+                    object_scroll_direction: 'y'
                 },
                 tooltips: {
                     size: 'Dot/box size',
@@ -507,10 +768,19 @@
                 }
             },
             illusions: {
-                enabled: ['size', 'density'],
+                enabled: ['size', 'density', 'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset', 'objectCount', 'copy_spacing'],
+                enabledTabs: ['rotation', 'copy'],
                 defaults: {
                     size: 1.0,
-                    density: 0.0
+                    density: 0.0,
+                    rotationX: 0.0,
+                    rotationY: 0.0,
+                    rotationZ: 0.0,
+                    rotation_speed: 0.0,
+                    rotation_offset: 0.0,
+                    objectCount: 1,
+                    copy_spacing: 1.5,
+                    copy_arrangement: 'linear'
                 },
                 tooltips: {
                     size: 'Frame count or object size',
@@ -536,6 +806,14 @@
             rotationX: 0.0,
             rotationY: 0.0,
             rotationZ: 0.0,
+            // Copy system
+            copy_spacing: 1.5,
+            copy_arrangement: 'linear',
+            copy_scale_offset: 0.0,
+            copy_anim_offset: 0.0,
+            // Object scrolling system
+            object_scroll_speed: 0.0,
+            object_scroll_direction: 'y',
             // Color system
             color_type: 'single',
             color_single: '#FF0000',
@@ -549,8 +827,10 @@
             strobe: 'off',
             pulse: 'off',
             invert: false,
+            // Mask scrolling (separate from object scrolling)
             scrolling_enabled: false,
             scrolling_direction: 'y',
+            scrolling_speed: 1.0,
             scrolling_thickness: 0,
             scrolling_loop: false,
             scrolling_invert_mask: false,
@@ -596,13 +876,70 @@
             socket.emit('update_params', flatParams);
         }
 
-        // Update slider state (enabled/disabled) based on scene
+        // Subtab switching
+        function switchSubtab(subtabName) {
+            // Hide all subtab content
+            document.querySelectorAll('.subtab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active from all buttons
+            document.querySelectorAll('.subtab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected subtab
+            document.getElementById(`subtab-${subtabName}`)?.classList.add('active');
+            document.querySelector(`.subtab-btn[data-subtab="${subtabName}"]`)?.classList.add('active');
+        }
+
+        // Setup subtab button listeners
+        document.querySelectorAll('.subtab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!btn.classList.contains('disabled')) {
+                    switchSubtab(btn.dataset.subtab);
+                }
+            });
+        });
+
+        // Nested Copy subtab switching
+        function switchCopySubtab(subtabName) {
+            // Hide all copy subtab content
+            document.querySelectorAll('.copy-subtab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active from all copy subtab buttons
+            document.querySelectorAll('.copy-subtab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected copy subtab
+            document.getElementById(`copy-subtab-${subtabName}`)?.classList.add('active');
+            document.querySelector(`.copy-subtab-btn[data-copy-subtab="${subtabName}"]`)?.classList.add('active');
+        }
+
+        // Setup copy subtab button listeners
+        document.querySelectorAll('.copy-subtab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                switchCopySubtab(btn.dataset.copySubtab);
+            });
+        });
+
+        // Update slider state (enabled/disabled) based on scene and tab states
         function updateSliderStates(sceneType) {
             const config = sceneConfig[sceneType];
             if (!config) return;
 
             const allParams = ['size', 'density', 'frequency', 'amplitude', 'objectCount',
-                             'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ'];
+                             'scaling_amount', 'scaling_speed', 'rotationX', 'rotationY', 'rotationZ',
+                             'rotation_speed', 'rotation_offset',
+                             'copy_spacing', 'copy_scale_offset', 'copy_anim_offset',
+                             'copy_rotation_x', 'copy_rotation_y', 'copy_rotation_z',
+                             'copy_rotation_speed', 'copy_rotation_offset',
+                             'copy_translation_x', 'copy_translation_y', 'copy_translation_z',
+                             'copy_translation_speed', 'copy_translation_offset',
+                             'object_scroll_speed'];
 
             allParams.forEach(paramName => {
                 const slider = document.getElementById(paramName);
@@ -621,6 +958,33 @@
                     slider.disabled = true;
                     container.classList.add('slider-disabled');
                     container.setAttribute('title', `Not used in ${sceneType}`);
+                }
+            });
+
+            // Update tab states
+            updateTabStates(sceneType);
+        }
+
+        // Update which tabs are enabled/disabled based on scene
+        function updateTabStates(sceneType) {
+            const config = sceneConfig[sceneType];
+            if (!config) return;
+
+            const allTabs = ['scale', 'rotation', 'scrolling', 'copy'];
+            const enabledTabs = config.enabledTabs || [];
+
+            allTabs.forEach(tabName => {
+                const tabBtn = document.querySelector(`.subtab-btn[data-subtab="${tabName}"]`);
+                if (!tabBtn) return;
+
+                if (enabledTabs.includes(tabName)) {
+                    // Enable tab
+                    tabBtn.classList.remove('disabled');
+                    tabBtn.removeAttribute('title');
+                } else {
+                    // Disable tab with tooltip
+                    tabBtn.classList.add('disabled');
+                    tabBtn.setAttribute('title', `Not available for ${sceneType}`);
                 }
             });
         }
@@ -750,6 +1114,10 @@
         setupSlider('decay', 'decay', 2);
         setupSlider('color-speed', 'color_speed', 2);
         setupSlider('color-effect-intensity', 'color_effect_intensity', 2);
+        setupSlider('copy_spacing', 'copy_spacing', 2);
+        setupSlider('copy_scale_offset', 'copy_scale_offset', 2);
+        setupSlider('copy_anim_offset', 'copy_anim_offset', 2);
+        setupSlider('object_scroll_speed', 'object_scroll_speed', 1);
 
         // Special handler for scrolling thickness
         const scrollingSlider = document.getElementById('scrolling_thickness');
@@ -762,8 +1130,15 @@
             sendParams();
         });
 
-        // Handler for scrolling speed
-        setupSlider('scrolling_speed', 'scrolling_speed', 1);
+        // Mask scrolling speed slider
+        const maskScrollSpeedSlider = document.getElementById('mask_scrolling_speed');
+        const maskScrollSpeedDisplay = document.getElementById('mask_scrolling_speed-value');
+        maskScrollSpeedSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            maskScrollSpeedDisplay.textContent = value.toFixed(1);
+            params.scrolling_speed = value;
+            sendParams();
+        });
 
         // Color preset buttons - unified handling for solid, gradient, and rainbow
         document.querySelectorAll('.color-preset-btn').forEach(btn => {
@@ -894,6 +1269,16 @@
             });
         });
 
+        // Copy arrangement buttons
+        document.querySelectorAll('[data-param="copy_arrangement"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="copy_arrangement"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.copy_arrangement = btn.dataset.value;
+                sendParams();
+            });
+        });
+
         // Invert toggle buttons
         document.getElementById('invert').addEventListener('click', (e) => {
             e.target.classList.toggle('active');
@@ -913,12 +1298,22 @@
             sendParams();
         });
 
-        // Scrolling direction buttons
-        document.querySelectorAll('[data-param="scrolling_direction"]').forEach(btn => {
+        // Mask scrolling direction buttons
+        document.querySelectorAll('[data-param="mask_scrolling_direction"]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('[data-param="scrolling_direction"]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-param="mask_scrolling_direction"]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 params.scrolling_direction = btn.dataset.value;
+                sendParams();
+            });
+        });
+
+        // Object scrolling direction buttons
+        document.querySelectorAll('[data-param="object_scroll_direction"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('[data-param="object_scroll_direction"]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                params.object_scroll_direction = btn.dataset.value;
                 sendParams();
             });
         });
