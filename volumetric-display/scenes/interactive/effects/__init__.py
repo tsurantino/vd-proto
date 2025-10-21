@@ -1,3 +1,9 @@
-"""Global effects module"""
+"""Effects System - Global effects and masking"""
 
-__all__ = []
+from .global_effects import GlobalEffects
+from .masking import MaskingSystem
+
+__all__ = [
+    'GlobalEffects',
+    'MaskingSystem',
+]
