@@ -124,6 +124,30 @@ class InteractiveScene(Scene):
 
     def update_parameters(self, params_dict: Dict[str, Any]):
         """Update scene parameters from web UI"""
+        # Track what actually changed for logging
+        scrolling_changed = False
+        strobe_changed = False
+        pulse_changed = False
+
+        # Check for changes before updating
+        if 'scrolling_thickness' in params_dict or 'scrolling_enabled' in params_dict or 'scrolling_direction' in params_dict:
+            new_enabled = params_dict.get('scrolling_enabled', self.params.scrolling_enabled)
+            new_thickness = params_dict.get('scrolling_thickness', self.params.scrolling_thickness)
+            new_direction = params_dict.get('scrolling_direction', self.params.scrolling_direction)
+
+            scrolling_changed = (
+                new_enabled != self.params.scrolling_enabled or
+                new_thickness != self.params.scrolling_thickness or
+                new_direction != self.params.scrolling_direction
+            )
+
+        if 'strobe' in params_dict:
+            strobe_changed = params_dict['strobe'] != self.params.strobe
+
+        if 'pulse' in params_dict:
+            pulse_changed = params_dict['pulse'] != self.params.pulse
+
+        # Now update the parameters
         for key, value in params_dict.items():
             if hasattr(self.params, key):
                 setattr(self.params, key, value)
@@ -131,12 +155,12 @@ class InteractiveScene(Scene):
                 # Scene-specific params
                 self.params.scene_params[key] = value
 
-        # Debug logging for scrolling parameters
-        if 'scrolling_thickness' in params_dict or 'scrolling_enabled' in params_dict:
+        # Only log when values actually changed
+        if scrolling_changed:
             print(f"🔄 SCROLL UPDATE: enabled={self.params.scrolling_enabled}, thickness={self.params.scrolling_thickness}, direction={self.params.scrolling_direction}")
-        if 'strobe' in params_dict:
+        if strobe_changed:
             print(f"⚡ STROBE UPDATE: {self.params.strobe}")
-        if 'pulse' in params_dict:
+        if pulse_changed:
             print(f"💓 PULSE UPDATE: {self.params.pulse}")
 
     def render(self, raster: Raster, time: float):
@@ -445,29 +469,47 @@ class InteractiveScene(Scene):
         # Parameters
         frame_spacing = max(3, int(4 * (1 + self.params.density)))
         num_frames = int(5 + self.params.size * 5)
-        scroll_offset = (time * 3) % (frame_spacing * num_frames)
+
+        # Continuous scroll offset (no wrapping at this level)
+        scroll_offset = time * 3
 
         mask = np.zeros(self.grid_shape, dtype=bool)
 
-        for frame in range(num_frames):
+        # Collect all frame data first so we can sort by depth
+        frames_to_draw = []
+
+        # Generate enough frames to fill the visible area plus wrapping buffer
+        for frame in range(num_frames * 2):  # Double to handle wrapping
             # Position along Y axis (height) - scrolling upward
-            base_y = (frame * frame_spacing - scroll_offset)
+            base_y = (frame * frame_spacing - scroll_offset) % (frame_spacing * num_frames)
             y = int(base_y) % raster.height
 
-            # Calculate perspective scale based on Y position
-            # Bottom (y near 0) = small (far away)
-            # Top (y near height) = large (close)
-            normalized_pos = y / raster.height
+            # Skip if this frame is outside visible range
+            if y < 0 or y >= raster.height:
+                continue
+
+            # Calculate perspective scale based on continuous position (before wrapping)
+            # Use the continuous base_y for smooth perspective transitions
+            # Map to [0, 1] range across the full loop cycle
+            normalized_pos = (base_y % (frame_spacing * num_frames)) / (frame_spacing * num_frames)
             scale = 0.2 + normalized_pos * 0.8 * self.params.size
 
             # Frame dimensions in XZ plane
             width = max(1, int(raster.width / 2 * scale))
             depth = max(1, int(raster.length / 2 * scale))
 
-            # Draw rectangular frame at this Y position
-            center_x = raster.width // 2
-            center_z = raster.length // 2
+            # Store frame data (scale is our depth key - smaller = farther)
+            frames_to_draw.append((scale, y, width, depth))
 
+        # Sort frames by scale (smallest/farthest first, largest/nearest last)
+        # This ensures proper depth ordering - distant frames drawn first, near frames on top
+        frames_to_draw.sort(key=lambda f: f[0])
+
+        # Now draw frames in back-to-front order
+        center_x = raster.width // 2
+        center_z = raster.length // 2
+
+        for scale, y, width, depth in frames_to_draw:
             # Draw all four edges of the rectangle
             # Top and bottom edges (parallel to X axis)
             for x in range(-width, width + 1):
