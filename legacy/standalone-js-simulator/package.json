@@ -1,0 +1,26 @@
+{
+  "name": "volumetric-display-simulator",
+  "version": "1.0.0",
+  "description": "Volumetric LED display simulator for 40x40x20 cube",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "old-server": "python3 -m http.server 8000",
+    "artnet": "python3 artnet/artnet_bridge_server.py --config artnet/sim_config_4.json",
+    "artnet-sim": "cd artnet && ./volumetric_display sim_config_4.json"
+  },
+  "keywords": [
+    "volumetric",
+    "display",
+    "led",
+    "3d",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "marked": "^11.0.0"
+  }
+}

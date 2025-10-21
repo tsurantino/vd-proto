@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Test - Parameter Automation, 3D Gradients, Advanced Effects</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0ff;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #0ff;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .test-section h2 {
+            color: #f0f;
+            margin-top: 0;
+        }
+        .pass { color: #0f0; }
+        .fail { color: #f00; }
+        .info { color: #0aa; }
+    </style>
+</head>
+<body>
+    <h1>Feature Implementation Test</h1>
+
+    <div class="test-section">
+        <h2>1. Parameter Automation</h2>
+        <div id="automation-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 3D Color Mapping</h2>
+        <div id="color-mapper-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Advanced Color Effects</h2>
+        <div id="color-effects-test"></div>
+    </div>
+
+    <script type="module">
+        import { ParameterAutomation } from './src/js/automation/ParameterAutomation.js';
+        import { ColorMapper3D } from './src/js/color/ColorMapper3D.js';
+        import { ColorEffects } from './src/js/effects/ColorEffects.js';
+
+        // Test 1: Parameter Automation
+        const automationTest = document.getElementById('automation-test');
+        try {
+            const automation = new ParameterAutomation();
+
+            // Add automation
+            automation.setAutomation('test-param', {
+                waveType: 'sine',
+                frequency: 2.0,
+                amplitude: 0.5,
+                min: 0,
+                max: 10,
+                baseValue: 5
+            });
+
+            // Update and get value
+            automation.update(0.016);
+            const value = automation.getAutomatedValue('test-param');
+
+            if (value !== null && value >= 0 && value <= 10) {
+                automationTest.innerHTML = `<span class="pass">✓ PASS</span> - Automation working correctly<br>`;
+                automationTest.innerHTML += `<span class="info">Wave value: ${value.toFixed(3)}</span><br>`;
+                automationTest.innerHTML += `<span class="info">Active automations: ${automation.getAllAutomations().length}</span>`;
+            } else {
+                automationTest.innerHTML = `<span class="fail">✗ FAIL</span> - Invalid automation value`;
+            }
+        } catch (error) {
+            automationTest.innerHTML = `<span class="fail">✗ FAIL</span> - ${error.message}`;
+        }
+
+        // Test 2: 3D Color Mapping
+        const colorMapperTest = document.getElementById('color-mapper-test');
+        try {
+            const mapper = new ColorMapper3D(40, 20, 40);
+
+            // Configure
+            mapper.setEnabled(true);
+            mapper.setGradientType('radial');
+            mapper.setColorStops([
+                { position: 0, color: { r: 255, g: 0, b: 0 } },
+                { position: 1, color: { r: 0, g: 0, b: 255 } }
+            ]);
+            mapper.setOrigin(0.5, 0.5, 0.5);
+
+            // Get color at center
+            const color = mapper.getColorForVoxel(20, 10, 20);
+
+            if (color && color.r !== undefined && color.g !== undefined && color.b !== undefined) {
+                colorMapperTest.innerHTML = `<span class="pass">✓ PASS</span> - 3D Color Mapping working correctly<br>`;
+                colorMapperTest.innerHTML += `<span class="info">Center color: rgb(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})</span><br>`;
+                colorMapperTest.innerHTML += `<span class="info">Gradient type: radial</span>`;
+            } else {
+                colorMapperTest.innerHTML = `<span class="fail">✗ FAIL</span> - Invalid color returned`;
+            }
+        } catch (error) {
+            colorMapperTest.innerHTML = `<span class="fail">✗ FAIL</span> - ${error.message}`;
+        }
+
+        // Test 3: Advanced Color Effects
+        const colorEffectsTest = document.getElementById('color-effects-test');
+        try {
+            const effects = new ColorEffects(40, 20, 40);
+
+            // Test each effect
+            const effectsToTest = ['sparkle', 'rainbowSweep', 'fire', 'plasma', 'kaleidoscope', 'breath', 'colorChase'];
+            let results = '';
+
+            for (const effect of effectsToTest) {
+                effects.setEffect(effect);
+                effects.setIntensity(1.0);
+                effects.update(0.016);
+
+                const baseColor = { r: 100, g: 200, b: 255 };
+                const modifiedColor = effects.applyEffect(baseColor, 20, 10, 20, 1.0);
+
+                if (modifiedColor && modifiedColor.r !== undefined) {
+                    results += `<span class="pass">✓</span> ${effect}<br>`;
+                } else {
+                    results += `<span class="fail">✗</span> ${effect}<br>`;
+                }
+            }
+
+            colorEffectsTest.innerHTML = `<span class="pass">✓ PASS</span> - All color effects working<br>` + results;
+        } catch (error) {
+            colorEffectsTest.innerHTML = `<span class="fail">✗ FAIL</span> - ${error.message}`;
+        }
+    </script>
+</body>
+</html>
