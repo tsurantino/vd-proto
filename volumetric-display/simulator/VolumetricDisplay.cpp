@@ -412,6 +412,7 @@ void VolumetricDisplay::setupOpenGL() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);  // Borderless window
+  glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);    // Always on top
 #ifdef __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
@@ -969,9 +970,16 @@ void VolumetricDisplay::mouseButtonCallback(GLFWwindow* window, int button, int 
 
 void VolumetricDisplay::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
   if (window_dragging) {
-    // Move window
-    int new_x = window_start_x + static_cast<int>(xpos - drag_start_x);
-    int new_y = window_start_y + static_cast<int>(ypos - drag_start_y);
+    // Move window using screen coordinates to avoid jitter
+    // The cursor pos relative to window doesn't change, so we need current window pos
+    int win_x, win_y;
+    glfwGetWindowPos(window, &win_x, &win_y);
+    // Screen cursor = window pos + local cursor pos
+    double screen_x = win_x + xpos;
+    double screen_y = win_y + ypos;
+    // New window pos = screen cursor - original local cursor offset
+    int new_x = static_cast<int>(screen_x - drag_start_x);
+    int new_y = static_cast<int>(screen_y - drag_start_y);
     glfwSetWindowPos(window, new_x, new_y);
   } else if (window_resizing) {
     // Resize window
