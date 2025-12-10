@@ -139,6 +139,9 @@ class InteractiveScene(Scene):
         # Previous frame for decay
         self.previous_frame = None
 
+        # Copy indices for per-copy coloring (from CopyManager)
+        self.copy_indices = None
+
         # Color time tracking
         self.color_time = 0
 
@@ -243,7 +246,8 @@ class InteractiveScene(Scene):
         decay_active = self.global_effects.apply_decay(raster, self.previous_frame, self.params)
 
         # LAYER 1: Generate geometry (via active scene)
-        mask = self.active_scene.generate_geometry(raster, self.params, scaled_time)
+        mask, copy_indices = self.active_scene.generate_geometry(raster, self.params, scaled_time)
+        self.copy_indices = copy_indices  # Store for per-copy coloring
 
         # Apply translation transform to geometry
         mask = apply_translation(mask, raster, self.params, scaled_time)

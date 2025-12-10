@@ -46,7 +46,7 @@ class ShapeMorphScene(BaseScene):
 
         if params.objectCount > 1 and has_variation:
             # Generate with individual variation per copy
-            mask = self.copy_manager.generate_with_variation(
+            mask, copy_indices = self.copy_manager.generate_with_variation(
                 raster, time, self._generate_single_shape_wrapper(shape, params), params, coords, center
             )
         else:
@@ -55,7 +55,7 @@ class ShapeMorphScene(BaseScene):
 
             # Apply copy arrangement if count > 1 (simple translation without offsets)
             if params.objectCount > 1:
-                mask = self.copy_manager.apply_arrangement(
+                mask, copy_indices = self.copy_manager.apply_arrangement(
                     base_mask, raster,
                     params.objectCount,
                     params.copy_spacing,
@@ -63,11 +63,12 @@ class ShapeMorphScene(BaseScene):
                 )
             else:
                 mask = base_mask
+                copy_indices = np.where(mask, 0, -1).astype(np.int8)
 
         # Apply object scrolling
         mask = apply_object_scrolling(mask, raster, params, time)
 
-        return mask
+        return mask, copy_indices
 
     def _generate_single_shape_wrapper(self, shape, params):
         """Wrapper to match CopyManager signature."""

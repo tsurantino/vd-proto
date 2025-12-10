@@ -77,7 +77,7 @@ class WaveFieldScene(BaseScene):
         # Apply object scrolling
         mask = apply_object_scrolling(mask, raster, params, time)
 
-        return mask
+        return mask, None  # No copy indices for wave field
 
     @classmethod
     def get_enabled_parameters(cls):
