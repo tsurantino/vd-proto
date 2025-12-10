@@ -24,25 +24,6 @@
 </head>
 <body>
     <div class="container">
-        <div id="status" class="panel">
-            <div class="status-item">
-                <span class="status-label">Status:</span>
-                <span id="connection-status" class="status-value disconnected">Disconnected</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">FPS:</span>
-                <span id="fps" class="status-value">0</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Active LEDs:</span>
-                <span id="active-leds" class="status-value">0</span>
-            </div>
-            <div class="status-item">
-                <span class="status-label">Grid:</span>
-                <span id="grid-size" class="status-value">0×0×0</span>
-            </div>
-        </div>
-
         <div class="controls-grid">
             <!-- COLUMN 1: Global Controls -->
             <div>
@@ -149,6 +130,25 @@
                             <button class="toggle-btn" id="scrolling_loop" data-param="scrolling_loop">Loop</button>
                             <button class="toggle-btn" id="scrolling_invert_mask" data-param="scrolling_invert_mask">Invert Mask</button>
                             <button class="toggle-btn" id="invert" data-param="invert">Invert Colors</button>
+                        </div>
+                    </div>
+
+                    <div id="status" class="status-footer">
+                        <div class="status-item">
+                            <span class="status-label">Status:</span>
+                            <span id="connection-status" class="status-value disconnected">Disconnected</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">FPS:</span>
+                            <span id="fps" class="status-value">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Active LEDs:</span>
+                            <span id="active-leds" class="status-value">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Grid:</span>
+                            <span id="grid-size" class="status-value">0×0×0</span>
                         </div>
                     </div>
                 </div>
