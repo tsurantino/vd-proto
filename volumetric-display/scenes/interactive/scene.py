@@ -26,7 +26,7 @@ from .colors.effects import ColorEffects
 from .effects import GlobalEffects, MaskingSystem
 
 # Import transforms
-from .transforms import apply_translation
+from .transforms import apply_translation_with_indices
 
 
 @dataclass
@@ -250,10 +250,11 @@ class InteractiveScene(Scene):
 
         # LAYER 1: Generate geometry (via active scene)
         mask, copy_indices = self.active_scene.generate_geometry(raster, self.params, scaled_time)
-        self.copy_indices = copy_indices  # Store for per-copy coloring
 
-        # Apply translation transform to geometry
-        mask = apply_translation(mask, raster, self.params, scaled_time)
+        # Apply translation transform to BOTH geometry and copy indices
+        # (keeps them aligned so copy color effects work correctly)
+        mask, copy_indices = apply_translation_with_indices(mask, copy_indices, raster, self.params, scaled_time)
+        self.copy_indices = copy_indices  # Store for per-copy coloring
 
         # LAYER 2: Apply colors (draws on top of decayed frame)
         self._apply_colors(raster, mask, scaled_time)
