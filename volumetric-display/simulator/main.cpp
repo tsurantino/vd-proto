@@ -27,6 +27,8 @@ ABSL_FLAG(std::string, rotate_rate, "0,0,0",
 ABSL_FLAG(bool, color_correction, false, "Enable color correction");
 ABSL_FLAG(float, voxel_scale, 0.15f, "Scaling factor for individual voxels (e.g., 0.8 for smaller voxels with gaps)");
 ABSL_FLAG(int, universes_per_layer, 3, "Number of universes per layer");
+ABSL_FLAG(float, cube_spacing, 0.0f, "Visual gap between cubes in voxel units");
+ABSL_FLAG(float, wireframe_alpha, 1.0f, "Wireframe opacity (0.0-1.0)");
 
 // Entry point
 int main(int argc, char *argv[]) {
@@ -142,6 +144,8 @@ int main(int argc, char *argv[]) {
     std::string rotate_rate_str = absl::GetFlag(FLAGS_rotate_rate);
     const bool color_correction_enabled = absl::GetFlag(FLAGS_color_correction);
     float voxel_scale = absl::GetFlag(FLAGS_voxel_scale);
+    float cube_spacing = absl::GetFlag(FLAGS_cube_spacing);
+    float wireframe_alpha = absl::GetFlag(FLAGS_wireframe_alpha);
 
     // Rotation rate
     glm::vec3 rotation_rate(0.0f);
@@ -159,7 +163,8 @@ int main(int argc, char *argv[]) {
     // Create and run the volumetric display with the new parameters
     VolumetricDisplay display(width, height, length, universes_per_layer,
                                       layer_span, alpha, rotation_rate,
-                                      color_correction_enabled, cube_configs, voxel_scale);
+                                      color_correction_enabled, cube_configs, voxel_scale,
+                                      cube_spacing, wireframe_alpha);
 
     // Configure icon and run
     SetIcon(argv[0]);

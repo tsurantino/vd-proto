@@ -65,10 +65,10 @@ const char* wireframe_vertex_shader_source = R"glsl(
 const char* wireframe_fragment_shader_source = R"glsl(
     #version 330 core
     out vec4 FragColor;
-    uniform vec3 color;
+    uniform vec4 color;
     void main()
     {
-        FragColor = vec4(color, 1.0f);
+        FragColor = color;
     }
 )glsl";
 
@@ -107,9 +107,12 @@ VolumetricDisplay::VolumetricDisplay(int width, int height, int length,
                                      float alpha,
                                      const glm::vec3 &initial_rotation_rate, bool color_correction_enabled,
                                      const std::vector<CubeConfig>& cubes_config,
-                                     float voxel_scale)
+                                     float voxel_scale,
+                                     float cube_spacing,
+                                     float wireframe_alpha)
     : universes_per_layer(universes_per_layer), layer_span(layer_span),
       alpha(alpha), voxel_scale(voxel_scale),
+      cube_spacing_(cube_spacing), wireframe_alpha_(wireframe_alpha),
       show_axis(false), show_wireframe(false), needs_update(false),
       rotation_rate(initial_rotation_rate),
       running(false),
@@ -261,14 +264,29 @@ void VolumetricDisplay::drawWireframeCubes() {
 
     glUniformMatrix4fv(glGetUniformLocation(wireframe_shader_program, "view"), 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(glGetUniformLocation(wireframe_shader_program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-    glUniform3f(glGetUniformLocation(wireframe_shader_program, "color"), 1.0f, 1.0f, 1.0f);
+    glUniform4f(glGetUniformLocation(wireframe_shader_program, "color"), 1.0f, 1.0f, 1.0f, wireframe_alpha_);
 
     glBindVertexArray(wireframe_vao);
 
+    // Calculate spacing offset using same logic as voxels
+    glm::vec3 first_cube_pos = cubes_config_[0].position;
+    float first_cube_width = static_cast<float>(cubes_config_[0].width);
+    float first_cube_height = static_cast<float>(cubes_config_[0].height);
+    float first_cube_length = static_cast<float>(cubes_config_[0].length);
+
     for (const auto& cube_cfg : cubes_config_) {
+        // Calculate spacing offset for this cube
+        glm::vec3 relative_pos = cube_cfg.position - first_cube_pos;
+        glm::vec3 spacing_offset(0.0f);
+        if (first_cube_width > 0) spacing_offset.x = (relative_pos.x / first_cube_width) * cube_spacing_;
+        if (first_cube_height > 0) spacing_offset.y = (relative_pos.y / first_cube_height) * cube_spacing_;
+        if (first_cube_length > 0) spacing_offset.z = (relative_pos.z / first_cube_length) * cube_spacing_;
+
+        glm::vec3 adjusted_position = cube_cfg.position + spacing_offset;
+
         glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length));
         glm::vec3 center_offset(cube_cfg.width / 2.0f, cube_cfg.height / 2.0f, cube_cfg.length / 2.0f);
-        glm::mat4 trans_matrix = glm::translate(glm::mat4(1.0f), cube_cfg.position + center_offset);
+        glm::mat4 trans_matrix = glm::translate(glm::mat4(1.0f), adjusted_position + center_offset);
 
         glm::mat4 model = trans_matrix * scale_matrix;
 
@@ -298,12 +316,27 @@ void VolumetricDisplay::drawAxes() {
     glBindVertexArray(axis_vao);
 
     // First, draw the world coordinate axis widget
+    // Calculate spacing offset using same logic as voxels/wireframes
+    glm::vec3 first_cube_pos = cubes_config_[0].position;
+    float first_cube_width = static_cast<float>(cubes_config_[0].width);
+    float first_cube_height = static_cast<float>(cubes_config_[0].height);
+    float first_cube_length = static_cast<float>(cubes_config_[0].length);
+
     glm::vec3 min_bounds = cubes_config_[0].position;
     glm::vec3 max_bounds = cubes_config_[0].position + glm::vec3(cubes_config_[0].width, cubes_config_[0].height, cubes_config_[0].length);
 
     for (const auto& cube_cfg : cubes_config_) {
-        glm::vec3 cube_min = cube_cfg.position;
-        glm::vec3 cube_max = cube_cfg.position + glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length);
+        // Calculate spacing offset for this cube
+        glm::vec3 relative_pos = cube_cfg.position - first_cube_pos;
+        glm::vec3 spacing_offset(0.0f);
+        if (first_cube_width > 0) spacing_offset.x = (relative_pos.x / first_cube_width) * cube_spacing_;
+        if (first_cube_height > 0) spacing_offset.y = (relative_pos.y / first_cube_height) * cube_spacing_;
+        if (first_cube_length > 0) spacing_offset.z = (relative_pos.z / first_cube_length) * cube_spacing_;
+
+        glm::vec3 adjusted_position = cube_cfg.position + spacing_offset;
+
+        glm::vec3 cube_min = adjusted_position;
+        glm::vec3 cube_max = adjusted_position + glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length);
 
         min_bounds = glm::min(min_bounds, cube_min);
         max_bounds = glm::max(max_bounds, cube_max);
@@ -495,11 +528,27 @@ void VolumetricDisplay::setupVBO() {
     std::vector<glm::vec3> instance_positions(num_voxels);
 
     // Compute transform matrices for each cube and store as class members
+    // Apply cube spacing offset based on cube position relative to first cube
     cube_local_transforms_.clear();
     cube_world_transforms_.clear();
+
+    glm::vec3 first_cube_pos = cubes_config_[0].position;
+    float first_cube_width = static_cast<float>(cubes_config_[0].width);
+    float first_cube_height = static_cast<float>(cubes_config_[0].height);
+    float first_cube_length = static_cast<float>(cubes_config_[0].length);
+
     for (const auto& cube_cfg : cubes_config_) {
         glm::mat4 local_transform = computeCubeLocalTransformMatrix(cube_cfg.world_orientation, glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length));
-        glm::mat4 world_transform = computeCubeToWorldTransformMatrix(cube_cfg.world_orientation, cube_cfg.position);
+
+        // Calculate spacing offset: how many "cube units" away from first cube
+        glm::vec3 relative_pos = cube_cfg.position - first_cube_pos;
+        glm::vec3 spacing_offset(0.0f);
+        if (first_cube_width > 0) spacing_offset.x = (relative_pos.x / first_cube_width) * cube_spacing_;
+        if (first_cube_height > 0) spacing_offset.y = (relative_pos.y / first_cube_height) * cube_spacing_;
+        if (first_cube_length > 0) spacing_offset.z = (relative_pos.z / first_cube_length) * cube_spacing_;
+
+        glm::vec3 adjusted_position = cube_cfg.position + spacing_offset;
+        glm::mat4 world_transform = computeCubeToWorldTransformMatrix(cube_cfg.world_orientation, adjusted_position);
 
         cube_local_transforms_.push_back(local_transform);
         cube_world_transforms_.push_back(world_transform);
@@ -866,13 +915,28 @@ glm::vec3 VolumetricDisplay::calculateSceneCenter() {
         return glm::vec3(0.0f);
     }
 
-    // Calculate bounding box of all cubes using individual cube dimensions
+    // Calculate spacing offset using same logic as voxels/wireframes
+    glm::vec3 first_cube_pos = cubes_config_[0].position;
+    float first_cube_width = static_cast<float>(cubes_config_[0].width);
+    float first_cube_height = static_cast<float>(cubes_config_[0].height);
+    float first_cube_length = static_cast<float>(cubes_config_[0].length);
+
+    // Calculate bounding box of all cubes using individual cube dimensions (with spacing)
     glm::vec3 min_bounds = cubes_config_[0].position;
     glm::vec3 max_bounds = cubes_config_[0].position + glm::vec3(cubes_config_[0].width, cubes_config_[0].height, cubes_config_[0].length);
 
     for (const auto& cube_cfg : cubes_config_) {
-        glm::vec3 cube_min = cube_cfg.position;
-        glm::vec3 cube_max = cube_cfg.position + glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length);
+        // Calculate spacing offset for this cube
+        glm::vec3 relative_pos = cube_cfg.position - first_cube_pos;
+        glm::vec3 spacing_offset(0.0f);
+        if (first_cube_width > 0) spacing_offset.x = (relative_pos.x / first_cube_width) * cube_spacing_;
+        if (first_cube_height > 0) spacing_offset.y = (relative_pos.y / first_cube_height) * cube_spacing_;
+        if (first_cube_length > 0) spacing_offset.z = (relative_pos.z / first_cube_length) * cube_spacing_;
+
+        glm::vec3 adjusted_position = cube_cfg.position + spacing_offset;
+
+        glm::vec3 cube_min = adjusted_position;
+        glm::vec3 cube_max = adjusted_position + glm::vec3(cube_cfg.width, cube_cfg.height, cube_cfg.length);
 
         min_bounds = glm::min(min_bounds, cube_min);
         max_bounds = glm::max(max_bounds, cube_max);

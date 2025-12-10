@@ -34,7 +34,9 @@ public:
                       int universes_per_layer, int layer_span, float alpha,
                       const glm::vec3& initial_rotation_rate, bool color_correction_enabled,
                       const std::vector<CubeConfig>& cubes_config,
-                      float voxel_scale);
+                      float voxel_scale,
+                      float cube_spacing = 0.0f,
+                      float wireframe_alpha = 1.0f);
     ~VolumetricDisplay();
     void run();
 
@@ -90,6 +92,8 @@ private:
     GLuint shader_program, wireframe_shader_program, axis_shader_program;
     size_t vertex_count;
     float alpha, voxel_scale;
+    float cube_spacing_;
+    float wireframe_alpha_;
     bool show_axis = false;
     bool show_wireframe = false;
     std::atomic<bool> needs_update;
