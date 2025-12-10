@@ -163,6 +163,8 @@ VolumetricDisplay::VolumetricDisplay(int width, int height, int length,
         }
     }
 
+    int bound_count = 0;
+    int skipped_count = 0;
     for (size_t i = 0; i < listener_info_.size(); ++i) {
         const auto& info = listener_info_[i];
         try {
@@ -170,12 +172,23 @@ VolumetricDisplay::VolumetricDisplay(int width, int height, int length,
             socket->open(boost::asio::ip::udp::v4());
             socket->bind(boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(info.ip), info.port));
             sockets.push_back(std::move(socket));
-            artnet_threads.emplace_back(&VolumetricDisplay::listenArtNet, this, i);
+            bound_count++;
         } catch (const boost::system::system_error& e) {
-            LOG(FATAL) << "Failed to bind socket to " << info.ip << ":" << info.port << " - " << e.what();
-            throw;
+            LOG(WARNING) << "Skipping listener " << info.ip << ":" << info.port
+                         << " (cannot bind: " << e.what() << ")";
+            sockets.push_back(nullptr);  // Maintain index alignment
+            skipped_count++;
         }
+        // Always spawn thread to maintain index alignment with sockets vector.
+        // Thread will check for null socket and exit early if binding failed.
+        artnet_threads.emplace_back(&VolumetricDisplay::listenArtNet, this, i);
     }
+
+    if (bound_count == 0) {
+        throw std::runtime_error("Failed to bind any ArtNet listeners. Check your configuration.");
+    }
+
+    LOG(INFO) << "Successfully bound " << bound_count << " listener(s), skipped " << skipped_count;
 }
 
 
@@ -671,6 +684,13 @@ void VolumetricDisplay::listenArtNet(int listener_index) {
     // This thread is responsible for ONE specific socket (IP:Port).
     // It looks up its own configuration using its index.
     const auto& info = listener_info_[listener_index];
+
+    // Check if socket was successfully bound (may be null if binding failed)
+    if (!sockets[listener_index]) {
+        LOG(INFO) << "Skipping thread for " << info.ip << ":" << info.port << " (socket not bound)";
+        return;
+    }
+
     LOG(INFO) << "Thread started for cube " << info.cube_index << " on " << info.ip << ":" << info.port;
 
     // This listener only ever writes to the pixel buffer for its assigned cube.

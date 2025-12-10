@@ -97,6 +97,10 @@ def apply_translation_with_indices(mask, copy_indices, raster, params, time):
     if not has_static_translation and not has_animated_translation:
         return mask, copy_indices
 
+    # Handle None copy_indices (from scenes like physics that don't support copy colors)
+    if copy_indices is None:
+        return apply_translation(mask, raster, params, time), None
+
     # Calculate animated offset if speed is set
     animated_offset = 0
     if has_animated_translation:

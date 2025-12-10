@@ -78,6 +78,10 @@ def apply_object_scrolling_with_indices(mask, copy_indices, raster, params, time
     if params.object_scroll_speed == 0:
         return mask, copy_indices
 
+    # Handle None copy_indices (from scenes like physics that don't support copy colors)
+    if copy_indices is None:
+        return apply_object_scrolling(mask, raster, params, time), None
+
     # Calculate scroll offset based on time and speed
     scroll_distance = time * params.object_scroll_speed * 5  # Scale for visible movement
     direction = params.object_scroll_direction

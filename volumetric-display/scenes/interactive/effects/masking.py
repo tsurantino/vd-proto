@@ -9,16 +9,20 @@ import numpy as np
 class MaskingSystem:
     """
     Manages scrolling mask effects with multiple pattern types.
+    Also handles static gap masking for multi-cube configurations.
     """
 
-    def __init__(self, coords_cache):
+    def __init__(self, coords_cache, gap_regions=None):
         """
         Initialize masking system.
 
         Args:
             coords_cache: Cached coordinate arrays (z, y, x)
+            gap_regions: List of gap region dicts, e.g. [{"axis": "y", "min": 20, "max": 30}]
         """
         self.coords_cache = coords_cache
+        self.gap_regions = gap_regions or []
+        self.gap_mask_cache = None  # Static mask, computed once
         self.mask_phase = 0
         self.last_frame_time = 0
 
@@ -35,14 +39,59 @@ class MaskingSystem:
             self.mask_phase += delta_time * params.scrolling_speed
         self.last_frame_time = time
 
+    def _create_gap_mask(self, raster):
+        """
+        Create boolean mask where True = valid voxel (not in gap).
+
+        Args:
+            raster: Raster object with dimensions
+
+        Returns:
+            Boolean mask array, or None if no gaps defined
+        """
+        if not self.gap_regions:
+            return None
+
+        z_coords, y_coords, x_coords = self.coords_cache
+
+        # Start with all True (all voxels valid)
+        valid_mask = np.ones((raster.length, raster.height, raster.width), dtype=bool)
+
+        for gap in self.gap_regions:
+            axis = gap.get('axis', 'y')
+            gap_min = gap.get('min', 0)
+            gap_max = gap.get('max', 0)
+
+            # Broadcast sparse coordinates to full grid
+            if axis == 'x':
+                coords = x_coords + y_coords * 0 + z_coords * 0
+            elif axis == 'y':
+                coords = y_coords + x_coords * 0 + z_coords * 0
+            else:  # z
+                coords = z_coords + y_coords * 0 + x_coords * 0
+
+            # Mark gap voxels as invalid
+            gap_region = (coords >= gap_min) & (coords < gap_max)
+            valid_mask = valid_mask & ~gap_region
+
+        return valid_mask
+
     def apply_mask(self, raster, params):
         """
-        Apply scrolling mask if enabled.
+        Apply gap mask (always) and scrolling mask (if enabled).
 
         Args:
             raster: Raster object to modify
             params: SceneParameters with scrolling settings
         """
+        # Apply gap mask first (always, regardless of scrolling settings)
+        if self.gap_regions:
+            if self.gap_mask_cache is None:
+                self.gap_mask_cache = self._create_gap_mask(raster)
+            if self.gap_mask_cache is not None:
+                raster.data[~self.gap_mask_cache] = 0
+
+        # Apply scrolling mask if enabled
         if not params.scrolling_enabled or params.scrolling_thickness == 0:
             return
 

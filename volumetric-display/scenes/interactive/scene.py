@@ -120,6 +120,7 @@ class InteractiveScene(Scene):
 
     def __init__(self, **kwargs):
         self.properties = kwargs.get("properties")
+        self.scene_config = kwargs.get("scene_config", {})
         self.params = SceneParameters()
 
         # Initialize with grid scene
@@ -287,8 +288,11 @@ class InteractiveScene(Scene):
             gridZ=raster.length
         )
 
-        # Initialize masking system
-        self.masking_system = MaskingSystem(self.coords_cache)
+        # Extract gap regions from config for multi-cube gap masking
+        gap_regions = self.scene_config.get('gaps', [])
+
+        # Initialize masking system with gap regions
+        self.masking_system = MaskingSystem(self.coords_cache, gap_regions=gap_regions)
 
     def _create_active_scene(self):
         """Create active scene instance based on scene_type"""

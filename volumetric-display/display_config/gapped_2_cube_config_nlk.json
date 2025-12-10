@@ -1,0 +1,125 @@
+{
+  "world_geometry": "20x50x20",
+  "gaps": [
+    {"axis": "y", "min": 20, "max": 30}
+  ],
+  "cubes": [
+    {
+      "position": [0, 0, 0],
+      "dimensions": "20x20x20",
+      "orientation": ["Y", "-Z", "-X"],
+      "world_orientation": ["-Y", "Z", "-X"],
+      "artnet_mappings": [
+        {
+          "ip": "127.0.0.1",
+          "port": "6454",
+          "z_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [0, 30, 0],
+      "dimensions": "20x20x20",
+      "orientation": ["Y", "-Z", "-X"],
+      "world_orientation": ["-Y", "Z", "-X"],
+      "artnet_mappings": [
+        {
+          "ip": "127.0.0.1",
+          "port": "6455",
+          "z_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [0, 0, 0],
+      "dimensions": "20x20x20",
+      "orientation": ["-Z", "-Y", "X"],
+      "world_orientation": ["Y", "X", "-Z"],
+      "artnet_mappings": [
+        {
+          "ip": "2.0.99.15",
+          "port": "6454",
+          "z_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+          "universe": 0
+        },
+        {
+          "ip": "2.0.99.16",
+          "port": "6454",
+          "z_idx": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [0, 30, 0],
+      "dimensions": "20x20x20",
+      "orientation": ["-Z", "-Y", "X"],
+      "world_orientation": ["Y", "X", "-Z"],
+      "artnet_mappings": [
+        {
+          "ip": "2.0.99.7",
+          "port": "6454",
+          "z_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+          "universe": 0
+        },
+        {
+          "ip": "2.0.99.8",
+          "port": "6454",
+          "z_idx": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+          "universe": 0
+        }
+      ]
+    },
+    {
+      "position": [0, 0, 0],
+      "dimensions": "20x20x20",
+      "orientation": ["-Z", "-Y", "X"],
+      "world_orientation": ["Y", "X", "-Z"],
+      "artnet_mappings": [
+        {
+          "ip": "2.0.99.3",
+          "port": "6454",
+          "z_idx": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+          "universe": 0
+        },
+        {
+          "ip": "2.0.99.4",
+          "port": "6454",
+          "z_idx": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+          "universe": 0
+        }
+      ]
+    }
+  ],
+  "orientation": ["-Z", "Y", "X"],
+  "controller_addresses": {
+    "0": {
+      "ip": "192.168.0.50",
+      "port": 51333
+    },
+    "1": {
+      "ip": "192.168.0.51",
+      "port": 51333
+    },
+    "2": {
+      "ip": "192.168.0.52",
+      "port": 51333
+    },
+    "3": {
+      "ip": "192.168.0.53",
+      "port": 51333
+    }
+  },
+  "scene": {
+    "3d_snake": {
+      "controller_mapping": {
+        "p1": 0,
+        "p2": 1,
+        "p3": 2,
+        "p4": 3
+      }
+    }
+  }
+}

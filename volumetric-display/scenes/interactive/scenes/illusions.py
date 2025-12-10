@@ -9,7 +9,7 @@ from ..geometry.illusions import (
     generate_infinite_corridor, generate_waterfall,
     generate_pulfrich, generate_moire
 )
-from ..transforms import CopyManager, calculate_rotation_angles
+from ..transforms import CopyManager, calculate_rotation_angles, apply_object_scrolling_with_indices
 from ..geometry.utils import rotate_coordinates
 
 
@@ -70,6 +70,11 @@ class IllusionsScene(BaseScene):
         else:
             copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
 
+        # Apply object scrolling (to both mask and copy_indices)
+        base_mask, copy_indices = apply_object_scrolling_with_indices(
+            base_mask, copy_indices, raster, params, time
+        )
+
         return base_mask, copy_indices
 
     @classmethod
@@ -77,12 +82,12 @@ class IllusionsScene(BaseScene):
         return [
             'size', 'density',
             'rotationX', 'rotationY', 'rotationZ', 'rotation_speed', 'rotation_offset',
-            'objectCount', 'copy_spacing'
+            'objectCount', 'copy_spacing', 'object_scroll_speed'
         ]
 
     @classmethod
     def get_enabled_tabs(cls):
-        return ['rotation', 'copy']
+        return ['rotation', 'scrolling', 'copy']
 
     @classmethod
     def get_defaults(cls):
@@ -96,7 +101,9 @@ class IllusionsScene(BaseScene):
             'rotation_offset': 0.0,
             'objectCount': 1,
             'copy_spacing': 1.5,
-            'copy_arrangement': 'linear'
+            'copy_arrangement': 'linear',
+            'object_scroll_speed': 0.0,
+            'object_scroll_direction': 'y'
         }
 
     @classmethod

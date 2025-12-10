@@ -89,10 +89,21 @@ class PhysicsFountainScene(BaseScene):
         self.emitter.particle_lifetime = params.scene_params.get('particle_lifetime', 10.0)
         self.emitter.particle_radius = params.scene_params.get('particle_radius', 1.5)
 
-        # Update emitter position
+        # Update emitter position (base position from params)
         emitter_x = params.scene_params.get('emitter_x', self.grid_shape[0]/2)
         emitter_y = params.scene_params.get('emitter_y', self.grid_shape[1]/2)
         emitter_z = params.scene_params.get('emitter_z', 0.0)
+
+        # Apply translation offsets (allows moving emitter across multi-cube displays)
+        emitter_x += params.copy_translation_x * self.grid_shape[0]
+        emitter_y += params.copy_translation_y * self.grid_shape[1]
+        emitter_z += params.copy_translation_z * self.grid_shape[2]
+
+        # Wrap within bounds (x and y wrap, z clamps)
+        emitter_x = emitter_x % self.grid_shape[0]
+        emitter_y = emitter_y % self.grid_shape[1]
+        emitter_z = max(0, min(emitter_z, self.grid_shape[2] - 1))
+
         self.emitter.position = np.array([emitter_x, emitter_y, emitter_z])
 
         # Update forces if parameters changed
@@ -144,7 +155,7 @@ class PhysicsFountainScene(BaseScene):
 
     @classmethod
     def get_enabled_tabs(cls):
-        return []  # No standard tabs (rotation, copy, etc.)
+        return ['translation']  # Enable translation for emitter position adjustment
 
     @classmethod
     def get_defaults(cls):
@@ -170,6 +181,11 @@ class PhysicsFountainScene(BaseScene):
             # Rendering defaults
             'render_mode': 'sphere',
             'motion_blur': False,
+
+            # Translation defaults (for emitter position adjustment)
+            'copy_translation_x': 0.0,
+            'copy_translation_y': 0.0,
+            'copy_translation_z': 0.0,
         }
 
     @classmethod
