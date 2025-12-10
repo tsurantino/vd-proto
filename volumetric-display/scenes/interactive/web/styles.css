@@ -254,11 +254,11 @@ button.active {
 }
 
 .connected {
-    color: #0aa !important;
+    color: #0ff;
 }
 
 .disconnected {
-    color: #0aa !important;
+    color: #0ff;
     opacity: 0.5;
 }
 
