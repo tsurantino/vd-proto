@@ -33,12 +33,15 @@ class CopyManager:
             arrangement: 'linear', 'circular', 'grid', or 'spiral'
 
         Returns:
-            Combined mask with all copies
+            Tuple of (combined_mask, copy_indices) where copy_indices contains
+            the copy index (0, 1, 2, ...) for each voxel (-1 for empty voxels)
         """
         if count <= 1:
-            return base_mask
+            copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
+            return base_mask, copy_indices
 
         combined_mask = np.zeros(self.grid_shape, dtype=bool)
+        copy_indices = np.full(self.grid_shape, -1, dtype=np.int8)
 
         center_x = raster.width / 2
         center_y = raster.height / 2
@@ -63,6 +66,7 @@ class CopyManager:
                             if base_mask[z, y, x]:
                                 new_x = (x + offset_x) % raster.width
                                 combined_mask[z, y, new_x] = True
+                                copy_indices[z, y, new_x] = i
 
         elif arrangement == 'circular':
             # Arrange copies in a ring (XZ plane)
@@ -82,6 +86,7 @@ class CopyManager:
                                 new_z = z + offset_z
                                 if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
                                     combined_mask[new_z, y, new_x] = True
+                                    copy_indices[new_z, y, new_x] = i
 
         elif arrangement == 'grid':
             # Arrange copies in 2D grid (XZ plane)
@@ -108,6 +113,7 @@ class CopyManager:
                                     new_z = z + offset_z
                                     if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
                                         combined_mask[new_z, y, new_x] = True
+                                        copy_indices[new_z, y, new_x] = copy_idx
                     copy_idx += 1
 
         elif arrangement == 'spiral':
@@ -130,8 +136,9 @@ class CopyManager:
                                 new_z = z + offset_z
                                 if 0 <= new_x < raster.width and 0 <= new_z < raster.length:
                                     combined_mask[new_z, y, new_x] = True
+                                    copy_indices[new_z, y, new_x] = i
 
-        return combined_mask
+        return combined_mask, copy_indices
 
     def calculate_positions(self, raster, count, spacing, arrangement, center):
         """
@@ -207,9 +214,11 @@ class CopyManager:
             base_center: Tuple of (cx, cy, cz)
 
         Returns:
-            Combined mask with all varied copies
+            Tuple of (combined_mask, copy_indices) where copy_indices contains
+            the copy index (0, 1, 2, ...) for each voxel (-1 for empty voxels)
         """
         combined_mask = np.zeros(self.grid_shape, dtype=bool)
+        copy_indices = np.full(self.grid_shape, -1, dtype=np.int8)
         count = params.objectCount
         spacing = params.copy_spacing
         arrangement = params.copy_arrangement
@@ -298,7 +307,9 @@ class CopyManager:
             # Generate shape with scale and animation offset
             copy_mask = shape_generator(raster, time, copy_coords, copy_center, params.size, i)
 
-            # Merge into combined mask
+            # Merge into combined mask and track copy indices
+            new_voxels = copy_mask & ~combined_mask  # Only new voxels (avoid overwriting)
             combined_mask |= copy_mask
+            copy_indices[new_voxels] = i
 
-        return combined_mask
+        return combined_mask, copy_indices
