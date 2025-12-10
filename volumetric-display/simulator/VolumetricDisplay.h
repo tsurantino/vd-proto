@@ -103,6 +103,16 @@ private:
     bool left_mouse_button_pressed = false;
     bool right_mouse_button_pressed = false;
     double last_mouse_x, last_mouse_y;
+
+    // Borderless window drag/resize state
+    bool window_dragging = false;
+    double drag_start_x = 0, drag_start_y = 0;
+    int window_start_x = 0, window_start_y = 0;
+    bool window_resizing = false;
+    int resize_edge = 0;  // Bitmask: 1=left, 2=right, 4=top, 8=bottom
+    static constexpr int RESIZE_BORDER = 8;  // Pixels from edge to trigger resize
+    static constexpr int TITLE_BAR_HEIGHT = 30;  // Virtual title bar for dragging
+    int getResizeEdge(double x, double y);
     int viewport_width, viewport_height;
     float viewport_aspect = 1.0f;
     double last_frame_time = 0.0;

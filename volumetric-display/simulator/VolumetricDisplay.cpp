@@ -411,6 +411,7 @@ void VolumetricDisplay::setupOpenGL() {
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);  // Borderless window
 #ifdef __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
@@ -881,6 +882,10 @@ glm::vec3 VolumetricDisplay::calculateSceneCenter() {
 }
 
 void VolumetricDisplay::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  }
+
   if (key == GLFW_KEY_A && action == GLFW_PRESS) {
     show_axis = !show_axis;
   }
@@ -904,19 +909,58 @@ void VolumetricDisplay::windowCloseCallback(GLFWwindow* window) {
   view_update.notify_all();
 }
 
+// Returns bitmask: 1=left, 2=right, 4=top, 8=bottom
+int VolumetricDisplay::getResizeEdge(double x, double y) {
+  int edge = 0;
+  if (x < RESIZE_BORDER) edge |= 1;  // left
+  if (x > viewport_width - RESIZE_BORDER) edge |= 2;  // right
+  if (y < RESIZE_BORDER) edge |= 4;  // top
+  if (y > viewport_height - RESIZE_BORDER) edge |= 8;  // bottom
+  return edge;
+}
+
 void VolumetricDisplay::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-  if (action == GLFW_PRESS) {
-    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+  double xpos, ypos;
+  glfwGetCursorPos(window, &xpos, &ypos);
+
+  if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+    int edge = getResizeEdge(xpos, ypos);
+
+    if (edge != 0) {
+      // Start resize
+      window_resizing = true;
+      resize_edge = edge;
+      drag_start_x = xpos;
+      drag_start_y = ypos;
+      glfwGetWindowSize(window, &window_start_x, &window_start_y);
+    } else if (ypos < TITLE_BAR_HEIGHT) {
+      // Start drag (virtual title bar area)
+      window_dragging = true;
+      drag_start_x = xpos;
+      drag_start_y = ypos;
+      glfwGetWindowPos(window, &window_start_x, &window_start_y);
+    } else {
+      // Normal camera controls
       if (mods & GLFW_MOD_SHIFT) {
         right_mouse_button_pressed = true;
       } else {
         left_mouse_button_pressed = true;
       }
     }
+  } else if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_MIDDLE) {
+    // Middle click anywhere to drag
+    window_dragging = true;
+    drag_start_x = xpos;
+    drag_start_y = ypos;
+    glfwGetWindowPos(window, &window_start_x, &window_start_y);
   } else if (action == GLFW_RELEASE) {
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
+      window_dragging = false;
+      window_resizing = false;
       right_mouse_button_pressed = false;
       left_mouse_button_pressed = false;
+    } else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+      window_dragging = false;
     }
   }
 
@@ -924,7 +968,37 @@ void VolumetricDisplay::mouseButtonCallback(GLFWwindow* window, int button, int 
 }
 
 void VolumetricDisplay::cursorPositionCallback(GLFWwindow* window, double xpos, double ypos) {
-  if (left_mouse_button_pressed) {
+  if (window_dragging) {
+    // Move window
+    int new_x = window_start_x + static_cast<int>(xpos - drag_start_x);
+    int new_y = window_start_y + static_cast<int>(ypos - drag_start_y);
+    glfwSetWindowPos(window, new_x, new_y);
+  } else if (window_resizing) {
+    // Resize window
+    int dx = static_cast<int>(xpos - drag_start_x);
+    int dy = static_cast<int>(ypos - drag_start_y);
+    int new_width = window_start_x;
+    int new_height = window_start_y;
+    int win_x, win_y;
+    glfwGetWindowPos(window, &win_x, &win_y);
+
+    if (resize_edge & 2) new_width += dx;   // right
+    if (resize_edge & 8) new_height += dy;  // bottom
+    if (resize_edge & 1) {  // left
+      new_width -= dx;
+      glfwSetWindowPos(window, win_x + dx, win_y);
+    }
+    if (resize_edge & 4) {  // top
+      new_height -= dy;
+      glfwSetWindowPos(window, win_x, win_y + dy);
+    }
+
+    // Enforce minimum size
+    if (new_width < 200) new_width = 200;
+    if (new_height < 200) new_height = 200;
+
+    glfwSetWindowSize(window, new_width, new_height);
+  } else if (left_mouse_button_pressed) {
     // Rotation
     float dx = static_cast<float>(xpos - last_mouse_x);
     float dy = static_cast<float>(ypos - last_mouse_y);
