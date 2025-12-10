@@ -87,6 +87,7 @@ document.querySelectorAll('[data-param="physicsType"]').forEach(btn => {
 setupButtonGroup('[data-param="copy_arrangement"]', 'copy_arrangement', paramsManager, socketManager);
 setupButtonGroup('[data-param="mask_scrolling_direction"]', 'scrolling_direction', paramsManager, socketManager);
 setupButtonGroup('[data-param="object_scroll_direction"]', 'object_scroll_direction', paramsManager, socketManager);
+setupButtonGroup('[data-param="copy_color_mode"]', 'copy_color_mode', paramsManager, socketManager);
 
 // Setup toggle buttons
 setupToggleButton('invert', 'invert', paramsManager, socketManager);
