@@ -40,7 +40,9 @@ class BaseScene(ABC):
             rotated_coords: Optional pre-rotated coordinates (z, y, x)
 
         Returns:
-            Boolean mask array
+            Tuple of (mask, copy_indices) where:
+            - mask: Boolean mask array
+            - copy_indices: Int8 array with copy index per voxel (-1 for empty), or None
         """
         pass
 

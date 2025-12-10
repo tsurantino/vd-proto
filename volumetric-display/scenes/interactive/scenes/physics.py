@@ -401,15 +401,17 @@ class PhysicsScene(BaseScene):
 
         # Map parameters based on type
         if physics_type == 'fountain':
-            return self._generate_fountain(raster, params, time)
+            mask = self._generate_fountain(raster, params, time)
         elif physics_type == 'bouncing':
-            return self._generate_bouncing(raster, params, time)
+            mask = self._generate_bouncing(raster, params, time)
         elif physics_type == 'orbital':
-            return self._generate_orbital(raster, params, time)
+            mask = self._generate_orbital(raster, params, time)
         elif physics_type == 'rain':
-            return self._generate_rain(raster, params, time)
+            mask = self._generate_rain(raster, params, time)
+        else:
+            mask = np.zeros(self.grid_shape, dtype=bool)
 
-        return np.zeros(self.grid_shape, dtype=bool)
+        return mask, None  # No copy indices for physics
 
     def _generate_fountain(self, raster, params, time):
         """Generate fountain using mapped parameters."""

@@ -61,14 +61,16 @@ class IllusionsScene(BaseScene):
 
         # Apply copy arrangement if count > 1
         if params.objectCount > 1:
-            base_mask = self.copy_manager.apply_arrangement(
+            base_mask, copy_indices = self.copy_manager.apply_arrangement(
                 base_mask, raster,
                 params.objectCount,
                 params.copy_spacing,
                 params.copy_arrangement
             )
+        else:
+            copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
 
-        return base_mask
+        return base_mask, copy_indices
 
     @classmethod
     def get_enabled_parameters(cls):

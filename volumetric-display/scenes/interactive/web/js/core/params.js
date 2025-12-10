@@ -38,6 +38,8 @@ export class ParamsManager {
             color_effect_intensity: 1.0,
             color_mode: 'rainbow',
             color_speed: 1.0,
+            // Copy colors
+            copy_color_mode: 'none',
             // Global effects
             decay: 0.0,
             strobe: 'off',

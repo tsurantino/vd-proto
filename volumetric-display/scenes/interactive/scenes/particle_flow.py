@@ -59,17 +59,19 @@ class ParticleFlowScene(BaseScene):
 
         # Apply copy arrangement if count > 1 (for spiral and galaxy)
         if params.objectCount > 1 and pattern in ['spiral', 'galaxy']:
-            base_mask = self.copy_manager.apply_arrangement(
+            base_mask, copy_indices = self.copy_manager.apply_arrangement(
                 base_mask, raster,
                 params.objectCount,
                 params.copy_spacing,
                 params.copy_arrangement
             )
+        else:
+            copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
 
         # Apply object scrolling
         mask = apply_object_scrolling(base_mask, raster, params, time)
 
-        return mask
+        return mask, copy_indices
 
     @classmethod
     def get_enabled_parameters(cls):

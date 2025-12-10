@@ -100,6 +100,9 @@ class SceneParameters:
     scrolling_loop: bool = False
     scrolling_invert_mask: bool = False
 
+    # Copy colors (per-copy color variation)
+    copy_color_mode: str = 'none'  # 'none', 'hue_shift', 'brightness', 'saturation', 'complementary', 'analogous'
+
     # Scene-specific params
     scene_params: Dict[str, Any] = field(default_factory=dict)
 
@@ -138,6 +141,9 @@ class InteractiveScene(Scene):
 
         # Previous frame for decay
         self.previous_frame = None
+
+        # Copy indices for per-copy coloring (from CopyManager)
+        self.copy_indices = None
 
         # Color time tracking
         self.color_time = 0
@@ -243,7 +249,8 @@ class InteractiveScene(Scene):
         decay_active = self.global_effects.apply_decay(raster, self.previous_frame, self.params)
 
         # LAYER 1: Generate geometry (via active scene)
-        mask = self.active_scene.generate_geometry(raster, self.params, scaled_time)
+        mask, copy_indices = self.active_scene.generate_geometry(raster, self.params, scaled_time)
+        self.copy_indices = copy_indices  # Store for per-copy coloring
 
         # Apply translation transform to geometry
         mask = apply_translation(mask, raster, self.params, scaled_time)
@@ -315,6 +322,10 @@ class InteractiveScene(Scene):
         else:
             self._apply_base_colors(raster, mask, time)
 
+        # Apply copy color variation (after base colors, before effects)
+        if self.params.copy_color_mode != 'none' and self.copy_indices is not None:
+            self._apply_copy_color_variation(raster, mask)
+
         # Apply color effect
         self._apply_color_effect(raster, mask, time)
 
@@ -382,3 +393,118 @@ class InteractiveScene(Scene):
         self.color_effects.apply_to_raster(
             raster.data, mask, self.coords_cache, self.color_time
         )
+
+    def _apply_copy_color_variation(self, raster, mask):
+        """Apply per-copy color variation based on copy_color_mode.
+
+        Modifies colors of each copy based on which copy the voxel belongs to.
+        Uses HSV manipulation for smooth color transitions.
+        """
+        mode = self.params.copy_color_mode
+        copy_indices = self.copy_indices
+
+        # Get masked colors and copy indices
+        masked_colors = raster.data[mask].astype(np.float32)
+        masked_indices = copy_indices[mask]
+
+        # Only process voxels that belong to a copy (index >= 0)
+        valid_mask = masked_indices >= 0
+        if not np.any(valid_mask):
+            return
+
+        # Get max copy index for normalization
+        max_copy = masked_indices.max()
+        if max_copy <= 0:
+            return  # Only one copy, no variation needed
+
+        # Convert RGB to HSV for manipulation
+        r = masked_colors[valid_mask, 0] / 255.0
+        g = masked_colors[valid_mask, 1] / 255.0
+        b = masked_colors[valid_mask, 2] / 255.0
+
+        # RGB to HSV conversion
+        max_c = np.maximum(np.maximum(r, g), b)
+        min_c = np.minimum(np.minimum(r, g), b)
+        delta = max_c - min_c
+
+        # Hue calculation
+        h = np.zeros_like(r)
+        s = np.zeros_like(r)
+        v = max_c
+
+        # Avoid division by zero
+        nonzero_delta = delta > 0
+        if np.any(nonzero_delta):
+            # Saturation
+            nonzero_v = max_c > 0
+            s[nonzero_v] = delta[nonzero_v] / max_c[nonzero_v]
+
+            # Hue
+            r_max = (max_c == r) & nonzero_delta
+            g_max = (max_c == g) & nonzero_delta
+            b_max = (max_c == b) & nonzero_delta
+
+            h[r_max] = 60 * (((g[r_max] - b[r_max]) / delta[r_max]) % 6)
+            h[g_max] = 60 * (((b[g_max] - r[g_max]) / delta[g_max]) + 2)
+            h[b_max] = 60 * (((r[b_max] - g[b_max]) / delta[b_max]) + 4)
+
+        # Get copy indices for valid voxels (0, 1, 2, ...)
+        copy_idx = masked_indices[valid_mask].astype(np.float32)
+
+        # Apply color mode
+        if mode == 'hue_shift':
+            # Shift hue by 40 degrees per copy
+            h = (h + copy_idx * 40) % 360
+        elif mode == 'brightness':
+            # Darken each subsequent copy (copy 0 brightest)
+            v = v * (1 - copy_idx * 0.15)
+            v = np.clip(v, 0, 1)
+        elif mode == 'saturation':
+            # Reduce saturation per copy
+            s = s * (1 - copy_idx * 0.2)
+            s = np.clip(s, 0, 1)
+        elif mode == 'complementary':
+            # Odd copies get complementary color (+180 degrees)
+            odd_copies = (copy_idx.astype(int) % 2) == 1
+            h[odd_copies] = (h[odd_copies] + 180) % 360
+        elif mode == 'analogous':
+            # Spread copies across ±60 degree range centered on base hue
+            offset = (copy_idx - max_copy / 2) * 25
+            h = (h + offset) % 360
+
+        # Convert HSV back to RGB
+        c = v * s
+        x = c * (1 - np.abs((h / 60) % 2 - 1))
+        m = v - c
+
+        # Initialize RGB arrays
+        r_out = np.zeros_like(h)
+        g_out = np.zeros_like(h)
+        b_out = np.zeros_like(h)
+
+        # Sector assignments
+        sector0 = (h >= 0) & (h < 60)
+        sector1 = (h >= 60) & (h < 120)
+        sector2 = (h >= 120) & (h < 180)
+        sector3 = (h >= 180) & (h < 240)
+        sector4 = (h >= 240) & (h < 300)
+        sector5 = (h >= 300) & (h < 360)
+
+        r_out[sector0] = c[sector0]; g_out[sector0] = x[sector0]; b_out[sector0] = 0
+        r_out[sector1] = x[sector1]; g_out[sector1] = c[sector1]; b_out[sector1] = 0
+        r_out[sector2] = 0; g_out[sector2] = c[sector2]; b_out[sector2] = x[sector2]
+        r_out[sector3] = 0; g_out[sector3] = x[sector3]; b_out[sector3] = c[sector3]
+        r_out[sector4] = x[sector4]; g_out[sector4] = 0; b_out[sector4] = c[sector4]
+        r_out[sector5] = c[sector5]; g_out[sector5] = 0; b_out[sector5] = x[sector5]
+
+        r_out = ((r_out + m) * 255).astype(np.uint8)
+        g_out = ((g_out + m) * 255).astype(np.uint8)
+        b_out = ((b_out + m) * 255).astype(np.uint8)
+
+        # Apply modified colors back
+        result_colors = masked_colors.copy()
+        result_colors[valid_mask, 0] = r_out
+        result_colors[valid_mask, 1] = g_out
+        result_colors[valid_mask, 2] = b_out
+
+        raster.data[mask] = result_colors.astype(np.uint8)

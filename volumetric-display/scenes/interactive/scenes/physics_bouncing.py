@@ -149,7 +149,7 @@ class PhysicsBouncingScene(BaseScene):
             motion_blur=motion_blur
         )
 
-        return mask
+        return mask, None  # No copy indices for physics
 
     @classmethod
     def get_enabled_parameters(cls):

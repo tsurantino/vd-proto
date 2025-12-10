@@ -50,7 +50,7 @@ class ProceduralScene(BaseScene):
         # Apply object scrolling
         mask = apply_object_scrolling(mask, raster, params, time)
 
-        return mask
+        return mask, None  # No copy indices for procedural
 
     @classmethod
     def get_enabled_parameters(cls):
