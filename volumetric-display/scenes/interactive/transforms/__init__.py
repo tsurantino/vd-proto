@@ -3,7 +3,7 @@
 from .rotation import calculate_rotation_angles
 from .copy import CopyManager
 from .translation import apply_translation, apply_translation_with_indices
-from .scrolling import apply_object_scrolling
+from .scrolling import apply_object_scrolling, apply_object_scrolling_with_indices
 
 __all__ = [
     'calculate_rotation_angles',
@@ -11,4 +11,5 @@ __all__ = [
     'apply_translation',
     'apply_translation_with_indices',
     'apply_object_scrolling',
+    'apply_object_scrolling_with_indices',
 ]

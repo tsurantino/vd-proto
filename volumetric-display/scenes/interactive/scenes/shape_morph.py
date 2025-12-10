@@ -6,7 +6,7 @@ Morphing geometric shapes: sphere, cube, torus, pyramid
 import numpy as np
 from .base import BaseScene
 from ..geometry.shapes import generate_pulsing_sphere, generate_cube, generate_torus, generate_pyramid
-from ..transforms import CopyManager, apply_object_scrolling, calculate_rotation_angles
+from ..transforms import CopyManager, apply_object_scrolling_with_indices, calculate_rotation_angles
 from ..geometry.utils import rotate_coordinates
 
 
@@ -65,8 +65,8 @@ class ShapeMorphScene(BaseScene):
                 mask = base_mask
                 copy_indices = np.where(mask, 0, -1).astype(np.int8)
 
-        # Apply object scrolling
-        mask = apply_object_scrolling(mask, raster, params, time)
+        # Apply object scrolling (to both mask and copy_indices)
+        mask, copy_indices = apply_object_scrolling_with_indices(mask, copy_indices, raster, params, time)
 
         return mask, copy_indices
 

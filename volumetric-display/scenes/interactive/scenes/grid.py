@@ -6,7 +6,7 @@ Full volume, dots, cross, and wireframe patterns
 import numpy as np
 from .base import BaseScene
 from ..geometry.grids import generate_full, generate_dots, generate_cross, generate_wireframe
-from ..transforms import CopyManager, apply_object_scrolling, calculate_rotation_angles
+from ..transforms import CopyManager, apply_object_scrolling_with_indices, calculate_rotation_angles
 from ..geometry.utils import rotate_coordinates
 
 
@@ -60,8 +60,8 @@ class GridScene(BaseScene):
         else:
             copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
 
-        # Apply object scrolling
-        mask = apply_object_scrolling(base_mask, raster, params, time)
+        # Apply object scrolling (to both mask and copy_indices)
+        mask, copy_indices = apply_object_scrolling_with_indices(base_mask, copy_indices, raster, params, time)
 
         return mask, copy_indices
 

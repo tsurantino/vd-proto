@@ -8,7 +8,7 @@ from .base import BaseScene
 from ..geometry.particles import (
     generate_spiral, generate_galaxy, generate_explode, generate_flowing_particles
 )
-from ..transforms import CopyManager, apply_object_scrolling, calculate_rotation_angles
+from ..transforms import CopyManager, apply_object_scrolling_with_indices, calculate_rotation_angles
 from ..geometry.utils import rotate_coordinates
 
 
@@ -68,8 +68,8 @@ class ParticleFlowScene(BaseScene):
         else:
             copy_indices = np.where(base_mask, 0, -1).astype(np.int8)
 
-        # Apply object scrolling
-        mask = apply_object_scrolling(base_mask, raster, params, time)
+        # Apply object scrolling (to both mask and copy_indices)
+        mask, copy_indices = apply_object_scrolling_with_indices(base_mask, copy_indices, raster, params, time)
 
         return mask, copy_indices
 
