@@ -232,33 +232,25 @@ button.active {
 #status.status-footer {
     padding: 15px 0 0 0;
     margin-top: 15px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.status-col {
     text-align: center;
-    font-size: 0;  /* Remove whitespace between inline elements */
-}
-
-.status-item {
-    display: inline;
-    font-size: 10px;  /* Restore font size */
-}
-
-.status-item:not(:last-child)::after {
-    content: " · ";
-    color: #0aa;
 }
 
 .status-label {
+    font-size: 9px;
     color: #0aa;
+    text-transform: uppercase;
+    margin-bottom: 2px;
 }
 
 .status-value {
-    color: #0aa;
-    display: inline-block;
-    min-width: 80px;
-    text-align: left;
-}
-
-#active-leds {
-    min-width: 60px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #0ff;
 }
 
 .connected {
